@@ -12,7 +12,18 @@ const MAX_UTTERANCES = 3;
  * text 100%. A line that has already scrolled out of view is frozen: a late refinement can't
  * pull it back or reflow what the reader is looking at.
  */
-export function Captions({ captions, speaking, onOpen }: { captions: Caption[]; speaking: boolean; onOpen: () => void }) {
+export function Captions({
+  captions,
+  names,
+  speaking,
+  onOpen,
+}: {
+  captions: Caption[];
+  /** Group calls: speaker names by id, shown before each line. */
+  names: Record<string, string> | null;
+  speaking: boolean;
+  onOpen: () => void;
+}) {
   const box = useRef<HTMLDivElement>(null);
   const frozen = useRef(new Map<string, string>());
   const [now, setNow] = useState(() => Date.now());
@@ -58,6 +69,7 @@ export function Captions({ captions, speaking, onOpen }: { captions: Caption[]; 
           const fading = c.doneAt !== null && now - c.doneAt > LINGER_MS;
           return (
             <p key={c.id} data-id={c.id} className={`cap ${c.doneAt === null ? "live" : "done"} ${fading ? "fading" : ""}`} dir="auto">
+              {names && <span className="cap-who">{names[c.from] ?? ""}</span>}
               {c.text}
             </p>
           );

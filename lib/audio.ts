@@ -25,10 +25,10 @@ export class MicCapture {
   private node: AudioWorkletNode | null = null;
   private source: MediaStreamAudioSourceNode | null = null;
   private sink: GainNode | null = null;
-  private remote: { analyser: AnalyserNode; source: MediaStreamAudioSourceNode; buf: Float32Array<ArrayBuffer> } | null = null;
+  private remote: { analyser: AnalyserNode; sources: MediaStreamAudioSourceNode[]; buf: Float32Array<ArrayBuffer> } | null = null;
   private local: Level = { floor: -60 };
   private remoteLevel: Level = { floor: -60 };
-  private preroll: ArrayBuffer[] = [];
+  private preroll: { pcm: ArrayBuffer; db: number }[] = [];
   private above = 0;
   private below = 0;
   private speaking = false;
@@ -36,7 +36,8 @@ export class MicCapture {
 
   constructor(
     private track: MediaStreamTrack,
-    private onChunk: (pcm: ArrayBuffer) => void,
+    /** `db` = the chunk's level in dBFS (used server-side to tell who is nearest in a shared room). */
+    private onChunk: (pcm: ArrayBuffer, db: number) => void,
     private onSpeech: (on: boolean) => void,
   ) {
     // Created inside the Join tap so iOS lets it run.
@@ -58,17 +59,23 @@ export class MicCapture {
     if (this.ctx.state !== "running") await this.ctx.resume().catch(() => {});
   }
 
-  /** Watch the other side's audio so their voice leaking from our speaker doesn't open the gate. */
-  setRemote(stream: MediaStream | null) {
-    this.remote?.source.disconnect();
+  /**
+   * Watch the audio we play from the other people, so their voices leaking from our speaker
+   * don't open the gate. Each track gets its own source (a stream source only reads one track).
+   */
+  setRemote(tracks: MediaStreamTrack[]) {
+    for (const s of this.remote?.sources ?? []) s.disconnect();
     this.remote = null;
-    if (!stream || !stream.getAudioTracks().length) return;
+    if (!tracks.length) return;
     try {
-      const source = this.ctx.createMediaStreamSource(stream);
       const analyser = this.ctx.createAnalyser();
       analyser.fftSize = 2048;
-      source.connect(analyser);
-      this.remote = { source, analyser, buf: new Float32Array(analyser.fftSize) };
+      const sources = tracks.map((t) => {
+        const s = this.ctx.createMediaStreamSource(new MediaStream([t]));
+        s.connect(analyser);
+        return s;
+      });
+      this.remote = { sources, analyser, buf: new Float32Array(analyser.fftSize) };
     } catch {
       // Some browsers can't tap a remote WebRTC stream; the gate still works without it.
     }
@@ -91,20 +98,20 @@ export class MicCapture {
     const voiced = db > threshold;
 
     if (!this.speaking) {
-      this.preroll.push(pcm);
+      this.preroll.push({ pcm, db });
       if (this.preroll.length > PREROLL_CHUNKS) this.preroll.shift();
       this.above = voiced ? this.above + 1 : 0;
       if (this.above >= OPEN_CHUNKS) {
         this.speaking = true;
         this.below = 0;
         this.onSpeech(true);
-        for (const c of this.preroll) this.onChunk(c);
+        for (const c of this.preroll) this.onChunk(c.pcm, c.db);
         this.preroll = [];
       }
       return;
     }
 
-    this.onChunk(pcm);
+    this.onChunk(pcm, db);
     this.below = voiced ? 0 : this.below + 1;
     if (this.below >= HANGOVER_CHUNKS) {
       this.speaking = false;
@@ -117,7 +124,7 @@ export class MicCapture {
     this.node?.port.close();
     this.node?.disconnect();
     this.source?.disconnect();
-    this.remote?.source.disconnect();
+    for (const s of this.remote?.sources ?? []) s.disconnect();
     this.ctx.close().catch(() => {});
   }
 }

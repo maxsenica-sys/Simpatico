@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { langInfo } from "../shared/lang";
 import { log } from "./log";
 
-export type ContextLine = { who: "A" | "B"; lang: string; text: string };
+export type ContextLine = { who: string; lang: string; text: string };
 
 export type RefineInput = {
   /** Finalised source-language transcript of the utterance (not the machine translation). */
@@ -10,7 +10,7 @@ export type RefineInput = {
   sourceLang: string;
   targetLang: string;
   /** Which participant is speaking, matching the labels used in `context`. */
-  speaker: "A" | "B";
+  speaker: string;
   /** Up to the last 6 utterances of the conversation, both sides, oldest first. */
   context: ContextLine[];
   glossary: Record<string, string>;

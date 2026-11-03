@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
-import type { CallController, CallState } from "@/lib/call";
+import { worst, type CallController, type CallState, type Participant } from "@/lib/call";
+import { langInfo } from "@/shared/lang";
 import { useT } from "@/lib/i18n";
 import { Captions } from "./Captions";
 import { Notice } from "./Notice";
@@ -14,9 +15,9 @@ const NO_VIDEO_GRACE_MS = 4000;
 export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController; shareUrl: string; onRejoin: () => void }) {
   const t = useT();
   const s = useSyncExternalStore(call.subscribe, call.getState, call.getState);
-  const remoteRef = useRef<HTMLVideoElement>(null);
+  const stageRef = useRef<HTMLVideoElement>(null);
   const selfRef = useRef<HTMLVideoElement>(null);
-  const [needsTap, setNeedsTap] = useState(false);
+  const [blocked, setBlocked] = useState<Set<string>>(new Set());
   const [selfView, setSelfView] = useState(true);
   const [controls, setControls] = useState(true);
   const [transcript, setTranscript] = useState(false);
@@ -27,18 +28,24 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const [firstOwnAt, setFirstOwnAt] = useState<number | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const group = s.kind === "group";
+  const stage: Participant | undefined = s.participants.find((p) => p.id === s.activeId) ?? s.participants[0];
+
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(id);
   }, []);
 
-  // Remote audio + video both play through this one element, so it is never unmounted or display:none.
+  // The stage only shows video; each person's audio plays through their own <audio> below.
   useEffect(() => {
-    const v = remoteRef.current;
+    const v = stageRef.current;
     if (!v) return;
-    v.srcObject = s.remoteStream;
-    if (s.remoteStream) v.play().then(() => setNeedsTap(false), () => setNeedsTap(true));
-  }, [s.remoteStream]);
+    const stream = stage?.stream ?? null;
+    if (v.srcObject !== stream) {
+      v.srcObject = stream;
+      if (stream) v.play().catch(() => {});
+    }
+  }, [stage?.stream]);
 
   useEffect(() => {
     const v = selfRef.current;
@@ -53,9 +60,10 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
     else setConnectedAt(null);
   }, [s.phase]);
 
+  const stageVideoOk = !!stage?.videoOk;
   useEffect(() => {
-    setVideoLostAt(s.remoteVideoOk ? null : (v) => v ?? Date.now());
-  }, [s.remoteVideoOk]);
+    setVideoLostAt(stageVideoOk ? null : (v) => v ?? Date.now());
+  }, [stageVideoOk, stage?.id]);
 
   useEffect(() => {
     if (s.ownLine && firstOwnAt === null) setFirstOwnAt(Date.now());
@@ -76,7 +84,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
 
   // Portrait video on a landscape screen (or the reverse) is shown whole instead of cropped.
   const updateFit = () => {
-    const v = remoteRef.current;
+    const v = stageRef.current;
     if (!v || !v.videoWidth) return;
     const videoLandscape = v.videoWidth >= v.videoHeight;
     const screenLandscape = window.innerWidth >= window.innerHeight;
@@ -86,6 +94,15 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
     window.addEventListener("resize", updateFit);
     return () => window.removeEventListener("resize", updateFit);
   }, []);
+
+  const onAudioBlocked = (id: string, isBlocked: boolean) =>
+    setBlocked((prev) => {
+      if (prev.has(id) === isBlocked) return prev;
+      const next = new Set(prev);
+      if (isBlocked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
 
   if (s.phase === "ended")
     return (
@@ -100,7 +117,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
     );
   if (s.phase === "gone" || s.phase === "full" || s.phase === "replaced")
     return (
-      <Notice title={s.phase === "gone" ? t("roomGone") : s.phase === "full" ? t("roomFull") : t("replaced")}>
+      <Notice title={s.phase === "gone" ? t("roomGone") : s.phase === "full" ? (group ? t("groupFull") : t("roomFull")) : t("replaced")}>
         <Link className="btn primary" href="/">
           {t("startNew")}
         </Link>
@@ -109,25 +126,47 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
 
   const connected = s.phase === "connected";
   const status =
-    s.phase === "waiting" ? (s.peerLeft ? t("peerLeft") : t("waiting"))
-    : s.phase === "joining" || s.phase === "connecting" ? (s.reconnecting ? t("reconnecting") : t("connecting"))
-    : null;
+    s.phase === "waiting"
+      ? s.peerLeft
+        ? group
+          ? t("leftCall", { name: s.peerLeft })
+          : t("peerLeft")
+        : group
+          ? t("waitingGroup")
+          : t("waiting")
+      : s.phase === "joining" || s.phase === "connecting"
+        ? s.reconnecting
+          ? t("reconnecting")
+          : t("connecting")
+        : null;
 
-  // What to show instead of their video, if anything.
+  // What to show instead of the stage video, if anything.
   const settled = connectedAt !== null && now - connectedAt > NO_VIDEO_GRACE_MS;
-  const placeholder: string | null = !connected
-    ? null
-    : s.audioOnly || s.partnerAudioOnly
-      ? t("youAreAudioOnly")
-      : s.remoteCam === false
-        ? t("theirCameraOff")
-        : settled && !s.remoteVideoOk && videoLostAt !== null && now - videoLostAt > NO_VIDEO_GRACE_MS
-          ? t("videoNotArriving")
-          : null;
+  const stageAudioOnly = s.audioOnly || !!stage?.partnerAudioOnly;
+  const placeholder: string | null =
+    !connected || !stage
+      ? null
+      : group && !stageAudioOnly
+        ? stage.videoOk
+          ? null
+          : "" // group: their avatar and name until their video is actually arriving
+        : stageAudioOnly
+        ? t("youAreAudioOnly")
+        : stage.remoteCam === false
+          ? group
+            ? ""
+            : t("theirCameraOff")
+          : settled && !stage.videoOk && videoLostAt !== null && now - videoLostAt > NO_VIDEO_GRACE_MS
+            ? group
+              ? ""
+              : t("videoNotArriving")
+            : null;
 
-  const ccState = worst(s.captionStatus, s.myCaptionStatus);
+  const ccState = worst([s.captionStatus, s.myCaptionStatus]);
   const showOwn = connected && s.ownLine && now - s.ownLine.at < OWN_LINE_MS;
   const showOwnHint = showOwn && firstOwnAt !== null && now - firstOwnAt < 8000;
+  const names = Object.fromEntries(s.participants.map((p) => [p.id, p.name]));
+  const anySpeaking = s.participants.some((p) => p.speaking);
 
   const banners: { key: string; text: string; tone: "warn" | "info"; actions?: ReactNode }[] = [];
   if (connected) {
@@ -177,7 +216,18 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
           ),
         });
     }
-    if (s.partnerAudioOnly && s.camOn) banners.push({ key: "partner-audio", tone: "info", text: t("theyAreAudioOnly") });
+    for (const p of s.participants.filter((x) => x.failed))
+      banners.push({
+        key: `failed-${p.id}`,
+        tone: "warn",
+        text: t("couldntReach", { name: p.name }),
+        actions: (
+          <button className="btn small primary" onClick={() => call.retry()}>
+            {t("retry")}
+          </button>
+        ),
+      });
+    if (!group && stage?.partnerAudioOnly && s.camOn) banners.push({ key: "partner-audio", tone: "info", text: t("theyAreAudioOnly") });
     if (ccState !== "ok")
       banners.push({ key: "cc", tone: "warn", text: ccState === "paused" ? t("captionsPaused") : t("captionsUnavailable") });
     if (s.muted) banners.push({ key: "muted", tone: "info", text: t("muted") });
@@ -185,25 +235,37 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const showControls = controls || !connected || banners.some((b) => b.tone === "warn");
 
   return (
-    <main className={`call ${showControls ? "show-controls" : ""}`} onClick={poke} onMouseMove={poke}>
+    <main className={`call ${group ? "group" : ""} ${showControls ? "show-controls" : ""}`} onClick={poke} onMouseMove={poke}>
       <video
-        ref={remoteRef}
-        className={`remote ${placeholder ? "hidden-video" : ""}`}
+        ref={stageRef}
+        className={`remote ${placeholder !== null ? "hidden-video" : ""}`}
         style={{ objectFit: fit }}
         autoPlay
         playsInline
+        muted
         onLoadedMetadata={updateFit}
         onResize={updateFit}
       />
+      {s.participants.map((p) => (
+        <RemoteAudio key={p.id} stream={p.stream} muted={!call.audible(p)} onBlocked={(b) => onAudioBlocked(p.id, b)} />
+      ))}
 
-      {placeholder && (
+      {placeholder !== null && stage && (
         <div className="no-video">
-          <div className="no-video-icon" aria-hidden="true">
-            {s.audioOnly || s.partnerAudioOnly ? <AudioOnlyIcon size={44} /> : <CameraIcon off size={44} />}
-          </div>
-          <p>{placeholder}</p>
+          {group ? (
+            <div className={`avatar big ${stage.speaking ? "speaking" : ""}`} aria-hidden="true">
+              {initials(stage.name)}
+            </div>
+          ) : (
+            <div className="no-video-icon" aria-hidden="true">
+              {stageAudioOnly ? <AudioOnlyIcon size={44} /> : <CameraIcon off size={44} />}
+            </div>
+          )}
+          {group && <p className="stage-name">{stage.name}</p>}
+          {placeholder && <p>{placeholder}</p>}
         </div>
       )}
+      {group && connected && stage && placeholder === null && <div className="stage-label">{stage.name}</div>}
 
       {status && (
         <div className="call-status">
@@ -235,12 +297,13 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
         </div>
       )}
 
-      {needsTap && connected && (
+      {blocked.size > 0 && connected && (
         <button
           className="tap-sound"
           onClick={(e) => {
             e.stopPropagation();
-            remoteRef.current?.play().then(() => setNeedsTap(false), () => {});
+            document.querySelectorAll<HTMLAudioElement>("audio.remote-audio").forEach((a) => a.play().catch(() => {}));
+            setBlocked(new Set());
           }}
         >
           {t("tapForSound")}
@@ -248,57 +311,69 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
       )}
 
       <div className="top-stack">
-      <div className="topbar" onClick={(e) => e.stopPropagation()}>
-        <button className={`cc-pill ${ccState}`} onClick={() => setTranscript(true)} aria-label={t("showTranscript")}>
-          <span className="dot" />
-          {ccState === "ok" ? t("captionsOn") : ccState === "paused" ? t("captionsPaused") : t("captionsUnavailable")}
-        </button>
-        <div className="controls">
-          <Ctrl label={t("lblMic")} title={s.muted ? t("unmute") : t("mute")} danger={s.muted} active={s.meSpeaking && !s.muted} onClick={() => call.setMuted(!s.muted)}>
-            <MicIcon off={s.muted} />
-          </Ctrl>
-          {!s.audioOnly && (
-            <Ctrl label={t("lblCamera")} title={s.camOn ? t("cameraOff") : t("cameraOn")} danger={!s.camOn} onClick={() => call.setCamera(!s.camOn)}>
-              <CameraIcon off={!s.camOn} />
+        <div className="topbar" onClick={(e) => e.stopPropagation()}>
+          <div className="pills">
+            <button className={`cc-pill ${ccState}`} onClick={() => setTranscript(true)} aria-label={t("showTranscript")}>
+              <span className="dot" />
+              {ccState === "ok" ? t("captionsOn") : ccState === "paused" ? t("captionsPaused") : t("captionsUnavailable")}
+            </button>
+            {group && <span className="cc-pill count">{t("peopleCount", { n: String(s.participants.length + 1) })}</span>}
+          </div>
+          <div className="controls">
+            <Ctrl label={t("lblMic")} title={s.muted ? t("unmute") : t("mute")} danger={s.muted} active={s.meSpeaking && !s.muted} onClick={() => call.setMuted(!s.muted)}>
+              <MicIcon off={s.muted} />
             </Ctrl>
-          )}
-          {s.camOn && s.canSwitchCamera && (
-            <Ctrl label={t("lblFlip")} title={t("switchCamera")} onClick={() => call.switchCamera()}>
-              <FlipIcon />
+            {!s.audioOnly && (
+              <Ctrl label={t("lblCamera")} title={s.camOn ? t("cameraOff") : t("cameraOn")} danger={!s.camOn} onClick={() => call.setCamera(!s.camOn)}>
+                <CameraIcon off={!s.camOn} />
+              </Ctrl>
+            )}
+            {s.camOn && s.canSwitchCamera && (
+              <Ctrl label={t("lblFlip")} title={t("switchCamera")} onClick={() => call.switchCamera()}>
+                <FlipIcon />
+              </Ctrl>
+            )}
+            <Ctrl label={s.audioOnly ? t("lblVideo") : t("lblAudioOnly")} title={s.audioOnly ? t("goVideo") : t("goAudioOnly")} onClick={() => call.setAudioOnly(!s.audioOnly)}>
+              {s.audioOnly ? <CameraIcon off={false} /> : <AudioOnlyIcon />}
             </Ctrl>
-          )}
-          <Ctrl
-            label={s.audioOnly ? t("lblVideo") : t("lblAudioOnly")}
-            title={s.audioOnly ? t("goVideo") : t("goAudioOnly")}
-            onClick={() => call.setAudioOnly(!s.audioOnly)}
-          >
-            {s.audioOnly ? <CameraIcon off={false} /> : <AudioOnlyIcon />}
-          </Ctrl>
-          <Ctrl label={t("lblText")} title={t("showTranscript")} onClick={() => setTranscript(true)}>
-            <TextIcon />
-          </Ctrl>
-          <Ctrl label={t("lblEnd")} title={t("endCall")} danger onClick={() => call.leave()}>
-            <HangupIcon />
-          </Ctrl>
+            {group && (
+              <Ctrl label={t("lblInRoom")} title={s.inRoom ? t("inRoomOn") : t("inRoomOff")} active={s.inRoom} onClick={() => call.setInRoom(!s.inRoom)}>
+                <RoomIcon />
+              </Ctrl>
+            )}
+            <Ctrl label={t("lblText")} title={t("showTranscript")} onClick={() => setTranscript(true)}>
+              <TextIcon />
+            </Ctrl>
+            <Ctrl label={t("lblEnd")} title={t("endCall")} danger onClick={() => call.leave()}>
+              <HangupIcon />
+            </Ctrl>
+          </div>
         </div>
-      </div>
 
-      {(banners.length > 0 || showOwn) && (
-        <div className="banners" onClick={(e) => e.stopPropagation()}>
-          {banners.map((b) => (
-            <div key={b.key} className={`banner ${b.tone}`}>
-              <p>{b.text}</p>
-              {b.actions && <div className="banner-actions">{b.actions}</div>}
-            </div>
-          ))}
-          {showOwn && (
-            <div className="own-line" dir="auto">
-              <span className="who">{t("you")}</span> {s.ownLine!.text}
-              {showOwnHint && <div className="own-hint">{t("captionsCheck")}</div>}
-            </div>
-          )}
-        </div>
-      )}
+        {group && s.participants.length > 0 && (
+          <div className="people" onClick={(e) => e.stopPropagation()}>
+            {s.participants.map((p) => (
+              <PersonTile key={p.id} p={p} active={p.id === stage?.id} showVideo={!s.audioOnly && p.videoOk && s.participants.length < 4} />
+            ))}
+          </div>
+        )}
+
+        {(banners.length > 0 || showOwn) && (
+          <div className="banners" onClick={(e) => e.stopPropagation()}>
+            {banners.map((b) => (
+              <div key={b.key} className={`banner ${b.tone}`}>
+                <p>{b.text}</p>
+                {b.actions && <div className="banner-actions">{b.actions}</div>}
+              </div>
+            ))}
+            {showOwn && (
+              <div className="own-line" dir="auto">
+                <span className="who">{t("you")}</span> {s.ownLine!.text}
+                {showOwnHint && <div className="own-hint">{t("captionsCheck")}</div>}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {selfView && s.camOn && s.selfVideo && (
@@ -322,16 +397,49 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
         </button>
       )}
 
-      <Captions captions={s.captions} speaking={connected && s.partnerSpeaking} onOpen={() => setTranscript(true)} />
+      <Captions captions={s.captions} names={group ? names : null} speaking={connected && anySpeaking} onOpen={() => setTranscript(true)} />
 
-      {transcript && <Transcript lines={s.transcript} onClose={() => setTranscript(false)} />}
+      {transcript && <Transcript lines={s.transcript} names={group ? names : null} onClose={() => setTranscript(false)} />}
     </main>
   );
 }
 
-function worst(a: CallState["captionStatus"], b: CallState["captionStatus"]) {
-  const rank = { ok: 0, paused: 1, unavailable: 2 } as const;
-  return rank[a] >= rank[b] ? a : b;
+/** One person's audio. Muted (not played) when we're both in the same room. */
+function RemoteAudio({ stream, muted, onBlocked }: { stream: MediaStream | null; muted: boolean; onBlocked: (blocked: boolean) => void }) {
+  const ref = useRef<HTMLAudioElement>(null);
+  useEffect(() => {
+    const a = ref.current;
+    if (!a) return;
+    if (a.srcObject !== stream) a.srcObject = stream;
+    a.muted = muted;
+    if (stream && !muted) a.play().then(() => onBlocked(false), () => onBlocked(true));
+  }, [stream, muted]);
+  return <audio ref={ref} className="remote-audio" autoPlay />;
+}
+
+function PersonTile({ p, active, showVideo }: { p: Participant; active: boolean; showVideo: boolean }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const v = ref.current;
+    if (v && v.srcObject !== p.stream) {
+      v.srcObject = p.stream;
+      v.play().catch(() => {});
+    }
+  }, [p.stream, showVideo]);
+  return (
+    <div className={`person ${p.speaking ? "speaking" : ""} ${active ? "active" : ""} ${p.connected ? "" : "pending"}`} title={p.name}>
+      <div className="avatar">{showVideo && p.stream ? <video ref={ref} autoPlay playsInline muted /> : initials(p.name)}</div>
+      <span className="person-name" dir="auto">
+        {p.name}
+      </span>
+      <span className="person-lang">{langInfo(p.lang.speaks).native}</span>
+    </div>
+  );
+}
+
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? "?") + (parts.length > 1 ? parts.at(-1)![0] : "")).toUpperCase();
 }
 
 /** Mirror the front camera only, like a mirror; the back camera shows the world as it is. */
@@ -405,6 +513,15 @@ function TextIcon() {
     <svg viewBox="0 0 24 24" width="22" height="22" {...svg} aria-hidden="true">
       <rect x="3" y="5" width="18" height="14" rx="3" />
       <path d="M7 10h4M13 10h4M7 14h10" />
+    </svg>
+  );
+}
+function RoomIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" {...svg} aria-hidden="true">
+      <path d="M3 10l9-6 9 6v10H3z" />
+      <circle cx="9" cy="14" r="1.6" />
+      <circle cx="15" cy="14" r="1.6" />
     </svg>
   );
 }

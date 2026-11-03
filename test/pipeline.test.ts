@@ -2,7 +2,7 @@
 // Run: SONIOX_API_KEY=x SONIOX_URL=ws://localhost:3997 npx tsx test/pipeline.test.ts
 import assert from "node:assert/strict";
 import { WebSocketServer, type WebSocket } from "ws";
-import type { ServerMsg } from "../shared/protocol";
+
 import { SpeakerPipeline } from "../server/pipeline";
 import { isTrivialEdit } from "../server/text";
 
@@ -26,8 +26,8 @@ const until = async (fn: () => boolean, ms = 3000) => {
 const tok = (text: string, is_final: boolean, tr = false) => ({ text, is_final, translation_status: tr ? "translation" : "original" });
 const push = (ws: WebSocket, tokens: object[]) => ws.send(JSON.stringify({ tokens }));
 
-const reader: ServerMsg[] = [];
-const speaker: ServerMsg[] = [];
+const reader: any[] = [];
+const speaker: any[] = [];
 const p = new SpeakerPipeline({
   ref: "test-A",
   label: "A",
@@ -57,7 +57,7 @@ push(ws1, [tok(" a leg", true), tok("<end>", true)]);
 push(ws1, [tok(" bacağını kır.", false, true)]);
 push(ws1, [tok("break a leg.", true, true)]);
 await until(() => reader.some((m) => m.t === "caption" && m.stage === "final"));
-const fin = reader.find((m) => m.t === "caption" && m.stage === "final") as Extract<ServerMsg, { t: "caption" }>;
+const fin = reader.find((m) => m.t === "caption" && m.stage === "final") as { text: string };
 assert.equal(fin.text, "break a leg.", "translation tail is attributed to the closed utterance");
 assert.ok(speaker.some((m) => m.t === "own" && m.final && m.text === "break a leg"), "speaker gets own transcript");
 

@@ -45,6 +45,15 @@ Each client sends `{ speaks, reads, ui }` when it joins. The server configures A
 - A refinement is ignored if it differs from the literal by only case, punctuation or a couple of characters (`server/text.ts`).
 - Once a line is settled, the client never changes it. A line that has scrolled out of the 3-line window is frozen.
 
+### Group calls
+
+**Start a group call** creates a room for up to 12 people (`GROUP_MAX`). Each person sets their own name and language, and everyone else's speech reaches them in that language.
+
+- **Translation fan-out.** Each speaker gets one Soniox stream per language that someone else in the call reads (`server/rooms.ts` → `updatePipelines`). People who read the speaker's own language get the original words. Streams exist only while someone reads that language, and close after 10 s of silence. Silent listeners cost nothing.
+- **Transport.** Group calls are a full mesh: every phone connects directly to every other phone. Above 3 other people, only whoever spoke last sends video, to save bandwidth, and the screen switches to them. Beyond about 12 people this needs an SFU (Cloudflare Realtime); the rest of the app stays the same.
+- **In the room.** For people sitting together, such as a team meeting. Phones of in-room people don't play each other's audio, which would cause echo, and only the phone that hears the speaker loudest is captioned (`admitAudio` floor control). This avoids duplicate captions from every phone in the room. Each audio frame carries its level in byte 0 for this.
+- Captions and the transcript show the speaker's name. A strip shows everyone with a speaking ring, their language, and a mini video in small groups.
+
 ### Long sentences
 
 Soniox translates a phrase at a time, at commas and pauses. When someone talks for a while without a break, the reader would otherwise wait for the phrase to end. So when 4 or more words have gone untranslated for 0.8 s, the server sends just that stretch to Claude for a quick interim translation, shown faded like other live text. At most one request runs at a time, about every 1.2 s.
@@ -120,7 +129,20 @@ The end-to-end test uses two real Chromium instances, one `en-AU` desktop and on
 - camera off and on
 - a camera that dies mid-call and recovers on its own
 - audio only and back
-- hang-up The mock LLM is deliberately late on every 4th call to exercise the deadline. Screenshots are written to `test/out/`.
+- hang-up
+
+`npm run e2e:group` (with the mock server running) tests the team-meeting case with four browsers:
+- **Coach:** Turkish, remote.
+- **Max:** English, remote.
+- **Ivan:** Russian, in the room, audio only.
+- **Ayşe:** Turkish, in the room, audio only.
+
+It checks:
+- every caption arrives in each reader's language and carries the speaker's name;
+- in-room phones don't play each other;
+- someone leaving doesn't end the call.
+
+`npm test` also runs the room tests (per-language pipelines, in-room floor control). The mock LLM is deliberately late on every 4th call to exercise the deadline. Screenshots are written to `test/out/`.
 
 ## Deploying to Fly
 

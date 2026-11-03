@@ -1,15 +1,27 @@
 // Wire protocol between browser and server over the single /ws socket.
-// Text frames are JSON messages below; binary frames (client -> server only) are
-// 16 kHz mono PCM16LE audio from the sender's own microphone.
+// Text frames are JSON messages below. Binary frames (client -> server only) are the sender's
+// own microphone: byte 0 = the chunk's level (dBFS + 120, clamped 0..255), then 16 kHz mono PCM16LE.
 
 import type { ParticipantLang } from "./lang";
 
+/** "pair" = a 1:1 call (the default). "group" = up to `max` people, each with their own language. */
+export type RoomKind = "pair" | "group";
+
+export type PeerInfo = {
+  id: string;
+  /** Shown to others in group calls. Never empty: the server fills in a default. */
+  name: string;
+  lang: ParticipantLang;
+  /** Physically in the same room as the other in-room people: their audio isn't played to each other. */
+  inRoom: boolean;
+};
+
 /**
- * What each side tells the other every couple of seconds, so either can tell when
- * media isn't actually arriving (e.g. an iPhone camera that stopped in the background).
+ * What each side of a connection tells the other every couple of seconds, so either can tell
+ * when media isn't actually arriving (e.g. an iPhone camera that stopped in the background).
  */
 export type PeerStatus = {
-  /** I'm sending camera video right now. */
+  /** I'm sending camera video to you right now. */
   cam: boolean;
   /** I want to receive video (false = I chose audio only). */
   wantVideo: boolean;
@@ -27,10 +39,12 @@ export type SignalData =
   | ({ kind: "status" } & PeerStatus);
 
 export type ClientMsg =
-  | { t: "join"; room: string; peerId: string; lang: ParticipantLang }
-  | { t: "need-offer" }
-  | { t: "signal"; data: SignalData }
+  | { t: "join"; room: string; peerId: string; lang: ParticipantLang; name?: string; inRoom?: boolean }
+  /** Ask one peer (or every peer) to send a fresh offer: our connection to them is gone. */
+  | { t: "need-offer"; to?: string }
+  | { t: "signal"; to: string; data: SignalData }
   | { t: "speech"; on: boolean }
+  | { t: "set-in-room"; inRoom: boolean }
   | { t: "log"; event: string; detail?: Record<string, unknown> }
   | { t: "leave" };
 
@@ -43,16 +57,17 @@ export type CaptionStage =
 export type CaptionState = "ok" | "paused" | "unavailable";
 
 export type ServerMsg =
-  | { t: "joined"; selfId: string; fresh: boolean; partner: ParticipantLang | null; iceServers: RTCIceServer[] }
-  | { t: "peer-joined"; partner: ParticipantLang; offer: boolean }
-  | { t: "peer-left" }
-  | { t: "signal"; data: SignalData }
-  /** A caption of what the other person said, in this reader's language. */
-  | { t: "caption"; id: string; stage: CaptionStage; text: string }
+  | { t: "joined"; selfId: string; fresh: boolean; kind: RoomKind; max: number; peers: PeerInfo[]; iceServers: RTCIceServer[] }
+  | { t: "peer-joined"; peer: PeerInfo; offer: boolean }
+  | { t: "peer-left"; peerId: string }
+  | { t: "peer-info"; peer: PeerInfo }
+  | { t: "signal"; from: string; data: SignalData }
+  /** A caption of what `from` said, in this reader's language. */
+  | { t: "caption"; id: string; from: string; stage: CaptionStage; text: string }
   /** What this participant themself said (source language), for the transcript. */
   | { t: "own"; id: string; text: string; final: boolean }
-  /** Caption service health: "theirs" = captions of the other person, "mine" = captions of my speech. */
-  | { t: "captions"; state: CaptionState; side: "theirs" | "mine" }
-  /** The other person's microphone is picking up speech (shown as a typing indicator). */
-  | { t: "partner-speech"; on: boolean }
+  /** Caption service health: "theirs" = captions of `from` reaching me, "mine" = captions of my speech. */
+  | { t: "captions"; state: CaptionState; side: "theirs" | "mine"; from?: string }
+  /** Someone's speech is being captioned right now (sent to everyone, the speaker included). */
+  | { t: "speaking"; peer: string; on: boolean }
   | { t: "error"; code: "room-not-found" | "room-full" | "bad-request" };

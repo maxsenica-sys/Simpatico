@@ -107,8 +107,11 @@ p { margin: 0; line-height: 1.5; }
   max-height: 90px; overflow: hidden; opacity: 1; transition: opacity 0.25s ease, max-height 0.25s ease;
 }
 .call:not(.show-controls) .controls { opacity: 0; max-height: 0; pointer-events: none; }
-.ctrl { display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: 0; padding: 0; cursor: pointer; width: 54px; }
-.ctrl-label { font-size: 0.68rem; font-weight: 600; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.ctrl { display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: 0; padding: 0; cursor: pointer; width: 56px; }
+.ctrl-label {
+  font-size: 0.66rem; font-weight: 600; line-height: 1.15; text-align: center; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  max-width: 100%; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
 .round {
   width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
   border: 0; background: rgba(20, 22, 26, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -222,3 +225,48 @@ p { margin: 0; line-height: 1.5; }
 .legal a { color: var(--accent); }
 .consent { font-size: 0.8rem; }
 .consent a, .home-foot a { color: var(--accent); }
+
+/* ---------------------------------------------------------------- group calls */
+.pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.cc-pill.count { cursor: default; }
+.controls { max-height: 190px; row-gap: 8px; column-gap: 4px; }
+.people { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 4px; scrollbar-width: none; justify-content: center; }
+.people::-webkit-scrollbar { display: none; }
+.person { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 64px; flex-shrink: 0; }
+.person .avatar { width: 52px; height: 52px; font-size: 1rem; }
+.person.pending { opacity: 0.5; }
+.person-name { font-size: 0.72rem; font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); }
+.person-lang { font-size: 0.62rem; color: var(--muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.avatar {
+  border-radius: 50%; display: grid; place-items: center; overflow: hidden; font-weight: 700; letter-spacing: 0.02em;
+  background: linear-gradient(140deg, #2b3a5e, #1b2232); color: var(--text); border: 2px solid rgba(255, 255, 255, 0.12);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.avatar video { width: 100%; height: 100%; object-fit: cover; }
+.person.active .avatar { border-color: var(--accent); }
+.person.speaking .avatar, .avatar.speaking { box-shadow: 0 0 0 3px rgba(80, 220, 140, 0.9); }
+.avatar.big { width: 132px; height: 132px; font-size: 2.6rem; }
+.stage-name { font-size: 1.3rem; font-weight: 650; color: var(--text); }
+.stage-label {
+  position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(var(--safe-b) + 24px + var(--cap-size) * var(--cap-lh) * 3 + 20px);
+  padding: 4px 12px; border-radius: 999px; background: rgba(0, 0, 0, 0.45); font-weight: 600; font-size: 0.9rem;
+}
+.cap-who { font-size: 0.5em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.75; margin-inline-end: 0.5em; vertical-align: 0.25em; }
+
+/* join screen extras for group calls */
+.group-tag { margin-inline-start: 10px; align-self: center; }
+.join-head { align-items: center; gap: 6px; }
+.field { display: flex; flex-direction: column; gap: 6px; text-align: start; font-weight: 600; font-size: 0.9rem; }
+.field input {
+  font: inherit; font-weight: 500; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 14px; min-height: 48px;
+}
+.field input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.check { display: flex; gap: 10px; align-items: flex-start; text-align: start; font-weight: 600; font-size: 0.92rem; cursor: pointer; }
+.check input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--accent); flex-shrink: 0; }
+.check small { display: block; font-weight: 400; margin-top: 3px; line-height: 1.4; }
+
+/* group stage: keep the avatar clear of the controls, people strip and banners above it */
+.call.group .no-video { justify-content: flex-start; padding-top: calc(var(--safe-t) + 300px); }
+@media (max-height: 700px) { .call.group .avatar.big { width: 96px; height: 96px; font-size: 2rem; } .call.group .no-video { padding-top: calc(var(--safe-t) + 250px); } }
+@media (min-width: 760px) { .call.group .no-video { justify-content: center; padding-top: 0; } }

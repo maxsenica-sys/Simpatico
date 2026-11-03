@@ -7,7 +7,7 @@ import type { ClientMsg } from "./shared/protocol";
 import { getIceServers } from "./server/ice";
 import { log } from "./server/log";
 import { refineConfigured } from "./server/refine";
-import { createRoom, disconnect, getRoom, partnerOf, removePeer, seat, send, type Peer, type Room } from "./server/rooms";
+import { broadcast, createRoom, disconnect, getRoom, info, others, removePeer, seat, send, setInRoom, speakerAudio, stopSpeaking, type Peer, type Room } from "./server/rooms";
 import { sonioxConfigured } from "./server/soniox";
 
 const dev = process.env.NODE_ENV !== "production";
@@ -27,13 +27,14 @@ const server = createServer((req, res) => {
   const path = url.pathname ?? "/";
   if (path === "/healthz") return json(res, 200, { ok: true });
   if (path === "/api/rooms" && req.method === "POST") {
-    const room = createRoom();
-    return room ? json(res, 201, { code: room.code }) : json(res, 503, { error: "busy" });
+    const kind = url.query.kind === "group" ? "group" : "pair";
+    const room = createRoom(kind);
+    return room ? json(res, 201, { code: room.code, kind: room.kind, max: room.max }) : json(res, 503, { error: "busy" });
   }
   const m = path.match(/^\/api\/rooms\/([a-z0-9]{6})$/i);
   if (m && req.method === "GET") {
     const room = getRoom(m[1]);
-    return json(res, room ? 200 : 404, room ? { code: room.code, peers: room.peers.size } : { error: "not-found" });
+    return json(res, room ? 200 : 404, room ? { code: room.code, peers: room.peers.size, kind: room.kind, max: room.max } : { error: "not-found" });
   }
   handle(req, res, url);
 });
@@ -68,7 +69,8 @@ wss.on("connection", (ws) => {
 
   ws.on("message", async (data, isBinary) => {
     if (isBinary) {
-      if (peer && room?.peers.get(peer.id) === peer) peer.pipeline.audio(data as Buffer);
+      const buf = data as Buffer;
+      if (peer && room?.peers.get(peer.id) === peer && buf.length > 1) speakerAudio(room, peer, buf[0] - 120, buf.subarray(1));
       return;
     }
     let msg: ClientMsg;
@@ -85,32 +87,46 @@ wss.on("connection", (ws) => {
       }
       room = getRoom(msg.room);
       if (!room) return send(ws, { t: "error", code: "room-not-found" });
-      const result = seat(room, msg.peerId, lang, ws);
+      const result = seat(room, msg.peerId, lang, ws, { name: msg.name, inRoom: msg.inRoom });
       if (result === "room-full") return send(ws, { t: "error", code: "room-full" });
       peer = result.peer;
-      const partner = partnerOf(room, peer);
-      send(ws, { t: "joined", selfId: peer.id, fresh: result.fresh, partner: partner?.lang ?? null, iceServers: await getIceServers() });
+      const rest = others(room, peer);
+      send(ws, {
+        t: "joined",
+        selfId: peer.id,
+        fresh: result.fresh,
+        kind: room.kind,
+        max: room.max,
+        peers: rest.map(info),
+        iceServers: await getIceServers(),
+      });
       if (!sonioxConfigured()) {
         send(ws, { t: "captions", state: "unavailable", side: "theirs" });
         send(ws, { t: "captions", state: "unavailable", side: "mine" });
       }
-      if (result.fresh && partner) send(partner.ws, { t: "peer-joined", partner: peer.lang, offer: true });
-      log("peer_joined", { room: room.code, peer: peer.label, fresh: result.fresh, speaks: lang.speaks, reads: lang.reads, partner: !!partner });
+      // Everyone already here offers a connection to a newcomer.
+      if (result.fresh) broadcast(room, { t: "peer-joined", peer: info(peer), offer: true }, peer);
+      log("peer_joined", { room: room.code, kind: room.kind, peer: peer.label, fresh: result.fresh, speaks: lang.speaks, reads: lang.reads, inRoom: peer.inRoom, others: rest.length });
       return;
     }
 
     if (!room || !peer || room.peers.get(peer.id) !== peer || peer.ws !== ws) return;
-    const partner = partnerOf(room, peer);
     switch (msg.t) {
-      case "need-offer":
-        send(partner?.ws, { t: "peer-joined", partner: peer.lang, offer: true });
+      case "need-offer": {
+        const targets = msg.to ? others(room, peer).filter((o) => o.id === msg.to) : others(room, peer);
+        for (const o of targets) send(o.ws, { t: "peer-joined", peer: info(peer), offer: true });
         break;
-      case "signal":
-        send(partner?.ws, { t: "signal", data: msg.data });
+      }
+      case "signal": {
+        const to = typeof msg.to === "string" ? room.peers.get(msg.to) : undefined;
+        if (to && to !== peer) send(to.ws, { t: "signal", from: peer.id, data: msg.data });
         break;
+      }
       case "speech":
-        if (!msg.on) peer.pipeline.speechEnded();
-        send(partner?.ws, { t: "partner-speech", on: !!msg.on });
+        if (!msg.on) stopSpeaking(room, peer);
+        break;
+      case "set-in-room":
+        setInRoom(room, peer, !!msg.inRoom);
         break;
       case "log":
         log(`client_${String(msg.event).slice(0, 40)}`, { room: room.code, peer: peer.label, ...(msg.detail ?? {}) });

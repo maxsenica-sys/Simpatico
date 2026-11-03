@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { CallController } from "@/lib/call";
+import type { RoomKind } from "@/shared/protocol";
 import { detectEnv, systemBrowserUrl, type BrowserEnv } from "@/lib/env";
 import { useT } from "@/lib/i18n";
 import { getLocalMedia, type MediaFailure } from "@/lib/media";
@@ -12,7 +13,7 @@ import { useLang } from "./LangRoot";
 import { Notice } from "./Notice";
 import { ShareLink } from "./ShareLink";
 
-type RoomCheck = "checking" | "gone" | { peers: number };
+type RoomCheck = "checking" | "gone" | { peers: number; kind: RoomKind; max: number };
 
 export function Room({ code }: { code: string }) {
   const t = useT();
@@ -28,7 +29,7 @@ export function Room({ code }: { code: string }) {
     const e = detectEnv();
     setEnv(e);
     fetch(`/api/rooms/${code}`)
-      .then(async (r) => (r.ok ? setRoom({ peers: ((await r.json()) as { peers: number }).peers }) : setRoom("gone")))
+      .then(async (r) => (r.ok ? setRoom((await r.json()) as { peers: number; kind: RoomKind; max: number }) : setRoom("gone")))
       .catch(() => setRoom("gone"));
   }, [code]);
 
@@ -123,10 +124,11 @@ export function Room({ code }: { code: string }) {
   return (
     <JoinScreen
       stream={media instanceof MediaStream ? media : null}
-      shareUrl={room.peers === 0 ? url : null}
-      onJoin={(audioOnly) => {
+      shareUrl={room.peers === 0 || room.kind === "group" ? url : null}
+      group={room.kind === "group" ? { max: room.max } : null}
+      onJoin={({ audioOnly, name, inRoom }) => {
         if (!(media instanceof MediaStream)) return;
-        const c = new CallController(code, peerIdFor(code), lang, media, { audioOnly });
+        const c = new CallController(code, peerIdFor(code), lang, media, { audioOnly, name, inRoom });
         callRef.current = c;
         c.start();
         setCall(c);

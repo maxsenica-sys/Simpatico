@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import type { TranscriptLine } from "@/lib/call";
 import { useT } from "@/lib/i18n";
 
-export function Transcript({ lines, onClose }: { lines: TranscriptLine[]; onClose: () => void }) {
+export function Transcript({ lines, names, onClose }: { lines: TranscriptLine[]; names: Record<string, string> | null; onClose: () => void }) {
   const t = useT();
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -21,7 +21,7 @@ export function Transcript({ lines, onClose }: { lines: TranscriptLine[]; onClos
         {lines.length === 0 && <p className="muted">{t("nothingYet")}</p>}
         {lines.map((l) => (
           <div key={l.id} className={`tline ${l.who} ${l.final ? "" : "live"}`} dir="auto">
-            {l.who === "me" && <span className="who">{t("you")}</span>}
+            {l.who === "me" ? <span className="who">{t("you")}</span> : names && l.from && <span className="who">{names[l.from] ?? ""}</span>}
             <p>{l.text}</p>
           </div>
         ))}

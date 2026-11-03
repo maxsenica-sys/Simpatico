@@ -1,5 +1,5 @@
 import { baseLang, sameLanguage } from "../shared/lang";
-import type { ServerMsg } from "../shared/protocol";
+import type { CaptionStage, CaptionState } from "../shared/protocol";
 import { log } from "./log";
 import { interimTranslate, refine, type ContextLine } from "./refine";
 import { SonioxStream, sonioxConfigured, type SonioxToken } from "./soniox";
@@ -30,13 +30,27 @@ const INTERIM_EVERY_MS = 1200;
 const INTERIM_TIMEOUT_MS = 2500;
 const BACKOFF_MS = [0, 250, 1000, 2000, 5000];
 
+/** What a pipeline says to the people reading this speaker; the room adds who it is from. */
+export type ReaderMsg =
+  | { t: "caption"; id: string; stage: CaptionStage; text: string }
+  | { t: "captions"; state: CaptionState; side: "theirs" };
+export type SpeakerMsg =
+  | { t: "own"; id: string; text: string; final: boolean }
+  | { t: "captions"; state: CaptionState; side: "mine" };
+
 export interface PipelineHost {
   /** Room-unique label for logs and Soniox. */
   ref: string;
-  /** "A" or "B": how this speaker is labelled in LLM context. */
-  label: "A" | "B";
-  toReader(msg: ServerMsg): void;
-  toSpeaker(msg: ServerMsg): void;
+  /** How this speaker is labelled in LLM context ("A", "B", …). */
+  label: string;
+  /** The readers of this pipeline's target language. */
+  toReader(msg: ReaderMsg): void;
+  toSpeaker(msg: SpeakerMsg): void;
+  /**
+   * Readers who read the speaker's own language (group calls): they get the original words.
+   * Only set on the speaker's primary translating pipeline, so they get them once.
+   */
+  toOriginal?(msg: ReaderMsg): void;
   /** Last utterances of the conversation, both sides, oldest first. */
   context(): ContextLine[];
   record(line: ContextLine): void;
@@ -58,6 +72,7 @@ type Utterance = {
   sealMax?: NodeJS.Timeout;
   lastReaderText?: string;
   lastOwnText?: string;
+  lastOrigText?: string;
   /** Length of origFinal that Soniox's own translation has caught up with. */
   covered: number;
   /** When `covered` last moved (or the utterance began). */
@@ -281,6 +296,10 @@ export class SpeakerPipeline {
       u.lastOwnText = own;
       this.host.toSpeaker({ t: "own", id: u.id, text: own, final: u.state !== "open" });
     }
+    if (this.translating && this.host.toOriginal && own && own !== u.lastOrigText && u.state === "open") {
+      u.lastOrigText = own;
+      this.host.toOriginal({ t: "caption", id: `${u.id}-src`, stage: "live", text: own });
+    }
     if (u.state === "done") return;
     const text = this.literal(u);
     if (text && text !== u.lastReaderText) {
@@ -308,6 +327,7 @@ export class SpeakerPipeline {
     // Always mark the speaker's own line final, even when its text didn't change at close.
     this.host.toSpeaker({ t: "own", id: u.id, text: source, final: true });
     u.lastOwnText = source;
+    if (this.translating && this.host.toOriginal) this.host.toOriginal({ t: "caption", id: `${u.id}-src`, stage: "final", text: source });
 
     if (!this.translating) {
       u.state = "done";

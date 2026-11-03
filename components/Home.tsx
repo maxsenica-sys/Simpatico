@@ -27,10 +27,10 @@ export function Home() {
     return () => window.removeEventListener("beforeinstallprompt", onPrompt);
   }, []);
 
-  const start = async () => {
+  const start = async (kind: "pair" | "group") => {
     setBusy(true);
     try {
-      const res = await fetch("/api/rooms", { method: "POST" });
+      const res = await fetch(`/api/rooms?kind=${kind}`, { method: "POST" });
       if (!res.ok) throw new Error(String(res.status));
       const { code } = (await res.json()) as { code: string };
       router.push(`/r/${code}`);
@@ -44,9 +44,13 @@ export function Home() {
       <div className="hero">
         <Logo />
         <p className="tagline">{t("tagline")}</p>
-        <button className="btn primary big" onClick={start} disabled={busy}>
+        <button className="btn primary big" onClick={() => start("pair")} disabled={busy}>
           {busy ? t("starting") : t("startCall")}
         </button>
+        <button className="btn big secondary" onClick={() => start("group")} disabled={busy}>
+          {t("startGroup")}
+        </button>
+        <p className="muted small">{t("groupTagline", { max: "12" })}</p>
       </div>
       <footer className="home-foot">
         {install ? (

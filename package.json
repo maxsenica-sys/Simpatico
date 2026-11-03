@@ -1,0 +1,35 @@
+{
+  "name": "talk",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "tsx watch --ignore ./.next server.ts",
+    "build": "next build",
+    "start": "NODE_ENV=production tsx server.ts",
+    "typecheck": "tsc --noEmit",
+    "sync-languages": "tsx scripts/sync-languages.ts",
+    "translate-ui": "tsx scripts/translate-ui.ts",
+    "mock-soniox": "tsx test/mock-soniox.ts",
+    "e2e": "node test/e2e.mjs",
+    "test": "SONIOX_API_KEY=x SONIOX_URL=ws://localhost:3997 tsx test/pipeline.test.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.4.0",
+    "next": "^15.5.28",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tsx": "^4.23.15",
+    "ws": "^8.22.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/ws": "^8.18.2",
+    "typescript": "5.9"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  }
+}

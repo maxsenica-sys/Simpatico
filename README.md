@@ -1,0 +1,140 @@
+# Talk
+
+One-to-one browser video calls. Both people hear each other's real voice, untouched, and each reads the other in their own language as live captions on the video.
+
+- No account, no install. The guest taps one link.
+- Language is per person. It is detected from the device on first visit, stored in `localStorage`, and never asked again. There is no room-level language pair.
+- Captions come in two passes. Soniox streams a literal translation within a few hundred ms (shown at 60% opacity). When the utterance ends, an LLM rewrites the source sentence idiomatically and swaps it in at 100%.
+
+## Architecture
+
+```
+Browser A (speaks en, reads en)        Fly app (server.ts)            Browser B (speaks tr, reads tr)
+  |-- own mic, PCM16 16 kHz (ws) ---->  | -> Soniox WS (src en -> tgt tr)
+  |                                     | <- literal tokens
+  |                                     | --- caption "live" (60%) ---------> |
+  |                                     | -> Claude Haiku on utterance end
+  |                                     | --- caption "refined" (100%) -----> |
+  |  <------------------ same pipeline in reverse, tr -> en ----------------- |
+  |<=============== WebRTC audio + video, peer to peer, untouched ==========>|
+```
+
+A single Node process serves Next.js and a `ws` server on `/ws`. Each browser has one socket, which carries signalling, its own mic audio (binary frames, sent only while it detects voice), and the captions of the other person.
+
+| Path | What it does |
+|---|---|
+| `server.ts` | HTTP + Next handler, `/api/rooms`, `/healthz`, WebSocket routing |
+| `server/rooms.ts` | In-memory rooms. Seats with a 15 s reconnect grace. Expiry 2 h after creation, or 60 s after both sockets are gone |
+| `server/pipeline.ts` | Per-speaker caption pipeline: token assembly, utterance boundaries, pass 2, anti-flicker rules, Soniox restart and idle close |
+| `server/soniox.ts` | One upstream Soniox real-time session (keepalive, finalize, buffering while connecting) |
+| `server/refine.ts` | Pass 2 prompt and call (`claude-haiku-5-5`, thinking off, 1500 ms deadline) |
+| `server/ice.ts` | Public STUN. Adds Cloudflare Realtime TURN if `CF_TURN_*` is set |
+| `lib/call.ts` | Client call controller: signalling, `RTCPeerConnection`, ICE restart, connect timeout, caption state |
+| `lib/audio.ts`, `public/pcm-worklet.js` | AudioWorklet tap on the same mic track that is in the peer connection. Downsamples to 16 kHz PCM16 in 100 ms chunks, with a voice-activity gate |
+| `shared/lang.ts`, `shared/languages.ts` | `ParticipantLang` and the generated list of supported languages |
+| `i18n/*.json` | UI strings. `en` is the source; `tr` is hand-written. Any missing bundle falls back to English |
+
+### How languages are wired
+
+Each client sends `{ speaks, reads, ui }` when it joins. The server configures A's Soniox stream as `source = A.speaks, target = B.reads`, and B's the other way round. A stream only exists while both people are connected. When two people share a language, the stream transcribes without translating.
+
+### Pass 2 and anti-flicker
+
+- The LLM gets the **source-language** text, the last 6 utterances from both sides, and the room glossary.
+- The hard deadline is 1500 ms from the end of the utterance. A late result is discarded, and the literal caption settles instead.
+- A refinement is ignored if it differs from the literal by only case, punctuation or a couple of characters (`server/text.ts`).
+- Once a line is settled, the client never changes it. A line that has scrolled out of the 3-line window is frozen.
+
+### Echo
+
+The browser's echo cancellation is on. In addition, the client sends audio only while local voice is above an adaptive threshold (noise floor + 12 dB). The threshold rises by 10 dB while the other person is audibly talking, so their voice leaking from a speakerphone is less likely to be transcribed as yours.
+
+## Running locally
+
+```bash
+npm install
+```
+
+```bash
+cp .env.example .env   # then fill in SONIOX_API_KEY and ANTHROPIC_API_KEY
+```
+
+```bash
+set -a; source .env; set +a; npm run dev
+```
+
+The app runs on http://localhost:3000. For a phone on the same network you need HTTPS, because `getUserMedia` requires a secure context. Use a tunnel (for example `cloudflared tunnel --url http://localhost:3000`) or deploy.
+
+Without `SONIOX_API_KEY` the call still works, and the reader sees "captions unavailable". Without `ANTHROPIC_API_KEY`, captions stay on Soniox's literal translation.
+
+## Tests
+
+```bash
+npm test
+```
+
+Server pipeline tests run against an in-process fake Soniox. They cover live → final, translation-tail attribution, drop → paused → transparent reconnect, closing upstream immediately on leave, the same-language pair, and the edit-distance rule.
+
+```bash
+npm run mock-soniox
+```
+
+```bash
+SONIOX_API_KEY=x SONIOX_URL=ws://localhost:3999 ANTHROPIC_API_KEY=x ANTHROPIC_BASE_URL=http://localhost:3998 npm run dev
+```
+
+```bash
+npm run e2e
+```
+
+The end-to-end test uses two real Chromium instances, one `en-AU` desktop and one `tr-TR` phone, with a fake camera and synthetic speech. It checks the Turkish join screen with no settings touched, WebRTC both ways, pass-1 captions at 60% opacity, refined captions, the transcript sheet, and hang-up. The mock LLM is deliberately late on every 4th call to exercise the deadline. Screenshots are written to `test/out/`.
+
+## Deploying to Fly
+
+Rooms live in memory, so run exactly one machine.
+
+```bash
+fly launch --no-deploy --copy-config
+```
+
+```bash
+fly secrets set SONIOX_API_KEY=... ANTHROPIC_API_KEY=...
+```
+
+```bash
+fly deploy --ha=false
+```
+
+Check whether calls go direct or through a relay:
+
+```bash
+fly logs | grep client_ice_connected
+```
+
+If a call ever fails to connect (`client_connect_timeout` / `client_ice_failed` in the logs), set `CF_TURN_KEY_ID` and `CF_TURN_API_TOKEN` from Cloudflare Realtime TURN. Nothing else changes.
+
+## Adding languages and UI translations
+
+```bash
+SONIOX_API_KEY=... npm run sync-languages
+```
+
+```bash
+ANTHROPIC_API_KEY=... npm run translate-ui
+```
+
+The first command regenerates `shared/languages.ts` from Soniox's model list. The second machine-translates `i18n/en.json` into every supported language that doesn't have a bundle yet. Bundles listed as reviewed (`en`, `tr`) are never overwritten. Check the generated files in.
+
+## Departures from the brief
+
+- **`reads` is exchanged through the signalling server, not a WebRTC data channel.** The server configures Soniox, so it needs both values before media flows. A data channel would add a round trip and a second source of truth.
+- **The join screen asks for camera and mic as soon as it loads,** so the guest sees their own preview straight away and joins with one tap.
+- **The audio-only fallback:** if there is no camera, the call continues with audio and captions.
+- **Upstream Soniox sockets also close after 45 s without speech** and reopen on the next speech, with a 300 ms pre-roll buffered. Soniox bills for the time a stream is open.
+
+## Not yet verified
+
+- Not yet tested with a real Soniox key, a real Claude call, or on a real iPhone. Everything above was run against mocks and headless Chromium.
+- The Soniox token handling follows their docs. Their docs do not say exactly where translation tokens fall relative to `<end>`, so trailing translation tokens are attributed to the closed utterance using a quiet-period heuristic (`SEAL_QUIET_MS`). Check this against real traffic.
+- The voice-activity thresholds in `lib/audio.ts` are starting values. Tune them on a real phone on speaker.
+- The `tr` UI strings are mine. A native speaker should review them.

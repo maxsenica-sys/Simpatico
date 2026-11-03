@@ -1,0 +1,98 @@
+// Server-side pipeline checks against an in-process fake Soniox.
+// Run: SONIOX_API_KEY=x SONIOX_URL=ws://localhost:3997 npx tsx test/pipeline.test.ts
+import assert from "node:assert/strict";
+import { WebSocketServer, type WebSocket } from "ws";
+import type { ServerMsg } from "../shared/protocol";
+import { SpeakerPipeline } from "../server/pipeline";
+import { isTrivialEdit } from "../server/text";
+
+delete process.env.ANTHROPIC_API_KEY; // pass 2 off: utterances settle on the literal text
+const wss = new WebSocketServer({ port: 3997 });
+const sockets: WebSocket[] = [];
+let configs = 0;
+wss.on("connection", (ws) => {
+  sockets.push(ws);
+  ws.once("message", () => configs++);
+});
+const openCount = () => sockets.filter((s) => s.readyState === s.OPEN).length;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const until = async (fn: () => boolean, ms = 3000) => {
+  const t = Date.now();
+  while (!fn()) {
+    if (Date.now() - t > ms) throw new Error("timeout");
+    await sleep(10);
+  }
+};
+const tok = (text: string, is_final: boolean, tr = false) => ({ text, is_final, translation_status: tr ? "translation" : "original" });
+const push = (ws: WebSocket, tokens: object[]) => ws.send(JSON.stringify({ tokens }));
+
+const reader: ServerMsg[] = [];
+const speaker: ServerMsg[] = [];
+const p = new SpeakerPipeline({
+  ref: "test-A",
+  label: "A",
+  toReader: (m) => reader.push(m),
+  toSpeaker: (m) => speaker.push(m),
+  context: () => [],
+  record: () => {},
+  glossary: () => ({}),
+});
+const audio = Buffer.alloc(3200);
+
+// 1. No reader -> no upstream stream (never bill for an empty room)
+p.setLanguages("en-AU", null);
+p.audio(audio);
+await sleep(100);
+assert.equal(openCount(), 0, "no stream without a reader");
+
+// 2. Live captions, then an endpoint settles the utterance with the late translation tail attached
+p.setLanguages("en-AU", "tr-TR");
+p.audio(audio);
+await until(() => configs === 1);
+const ws1 = sockets[0];
+push(ws1, [tok("break", true), tok(" a leg", false)]);
+push(ws1, [tok("break", false, true)]);
+await until(() => reader.some((m) => m.t === "caption" && m.stage === "live" && m.text === "break"));
+push(ws1, [tok(" a leg", true), tok("<end>", true)]);
+push(ws1, [tok(" bacağını kır.", false, true)]);
+push(ws1, [tok("break a leg.", true, true)]);
+await until(() => reader.some((m) => m.t === "caption" && m.stage === "final"));
+const fin = reader.find((m) => m.t === "caption" && m.stage === "final") as Extract<ServerMsg, { t: "caption" }>;
+assert.equal(fin.text, "break a leg.", "translation tail is attributed to the closed utterance");
+assert.ok(speaker.some((m) => m.t === "own" && m.final && m.text === "break a leg"), "speaker gets own transcript");
+console.log("✓ live → final, translation tail attributed correctly");
+
+// 3. Upstream drop: reader told captions paused, next audio transparently reconnects
+reader.length = 0;
+ws1.terminate();
+await until(() => reader.some((m) => m.t === "captions" && m.state === "paused"));
+p.audio(audio);
+await until(() => configs === 2, 4000);
+await until(() => reader.some((m) => m.t === "captions" && m.state === "ok"));
+console.log("✓ drop → paused → reconnect → ok");
+
+// 4. Participant leaves: upstream closed immediately
+p.stop();
+await until(() => openCount() === 0, 1000);
+console.log("✓ stop closes the upstream socket immediately");
+
+// 5. Same language: transcribe only, no translation, settle straight away
+reader.length = 0;
+p.setLanguages("en-AU", "en-US");
+p.audio(audio);
+await until(() => configs === 3);
+const ws3 = sockets[2];
+push(ws3, [tok("hello there", true), tok("<fin>", true)]);
+await until(() => reader.some((m) => m.t === "caption" && m.stage === "final" && m.text === "hello there"));
+p.stop();
+console.log("✓ same-language pair transcribes without translating");
+
+// 6. Anti-flicker edit-distance rule
+assert.equal(isTrivialEdit("Bunu yarın yaparız.", "bunu yarın yaparız"), true);
+assert.equal(isTrivialEdit("I am going to the store tomorrow.", "I'm going to the store tomorrow."), true);
+assert.equal(isTrivialEdit("break your leg", "good luck"), false);
+console.log("✓ trivial-edit detection");
+
+wss.close();
+console.log("\nPIPELINE TESTS PASSED");
+process.exit(0);

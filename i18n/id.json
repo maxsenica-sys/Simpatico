@@ -81,5 +81,7 @@
   "theyAreAudioOnly": "Mereka beralih ke audio saja untuk hemat kuota. Videomu dijeda untuk mereka.",
   "videoNotArriving": "Video mereka tidak masuk. Audio dan teks tetap berfungsi.",
   "tryAudioOnly": "Coba audio saja",
-  "inviteAgain": "Kirim link lagi"
+  "inviteAgain": "Kirim link lagi",
+  "consent": "Dengan bergabung, kamu setuju ucapanmu dikirim ke penyedia teks kami untuk membuat teks. Panggilan tidak pernah direkam.",
+  "privacy": "Privasi"
 }

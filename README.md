@@ -45,6 +45,12 @@ Each client sends `{ speaks, reads, ui }` when it joins. The server configures A
 - A refinement is ignored if it differs from the literal by only case, punctuation or a couple of characters (`server/text.ts`).
 - Once a line is settled, the client never changes it. A line that has scrolled out of the 3-line window is frozen.
 
+### Long sentences
+
+Soniox translates a phrase at a time, at commas and pauses. When someone talks for a while without a break, the reader would otherwise wait for the phrase to end. So when 4 or more words have gone untranslated for 0.8 s, the server sends just that stretch to Claude for a quick interim translation, shown faded like other live text. At most one request runs at a time, about every 1.2 s.
+
+Soniox's own translation replaces the interim as soon as it arrives, and the full-sentence rewrite replaces that. On a 31-second recording, interim translations cut the wait for the first caption from 2.4 s to 1.8 s after the first recognised words. They also raised the number of caption updates while speaking from 11 to 19, typically arriving 0.9 s after each request. Soniox endpoints are also set to arrive a little sooner (`endpoint_latency_adjustment_level: 1`).
+
 ### Echo
 
 The browser's echo cancellation is on. In addition, the client sends audio only while local voice is above an adaptive threshold (noise floor + 12 dB). The threshold rises by 10 dB while the other person is audibly talking, so their voice leaking from a speakerphone is less likely to be transcribed as yours.
@@ -80,6 +86,10 @@ set -a; source .env; set +a; npm run dev
 The app runs on http://localhost:3000. For a phone on the same network you need HTTPS, because `getUserMedia` requires a secure context. Use a tunnel (for example `cloudflared tunnel --url http://localhost:3000`) or deploy.
 
 Without `SONIOX_API_KEY` the call still works, and the reader sees "captions unavailable". Without `ANTHROPIC_API_KEY`, captions stay on Soniox's literal translation.
+
+## Privacy
+
+`/privacy` describes exactly what the app does with data. Fill in the operator's name and contact email in `shared/brand.ts` before charging money, and have a lawyer review the policy. The join screen links to it with a one-line consent notice.
 
 ## Tests
 
@@ -153,7 +163,7 @@ The first command regenerates `shared/languages.ts` from Soniox's model list. Th
 - **`reads` is exchanged through the signalling server, not a WebRTC data channel.** The server configures Soniox, so it needs both values before media flows. A data channel would add a round trip and a second source of truth.
 - **The join screen asks for camera and mic as soon as it loads,** so the guest sees their own preview straight away and joins with one tap.
 - **The audio-only fallback:** if there is no camera, the call continues with audio and captions.
-- **Upstream Soniox sockets also close after 45 s without speech** and reopen on the next speech, with a 300 ms pre-roll buffered. Soniox bills for the time a stream is open.
+- **Upstream Soniox sockets also close after 10 s without speech** and reopen on the next speech, with a 300 ms pre-roll buffered. Soniox bills for the time a stream is open.
 
 ## Not yet verified
 

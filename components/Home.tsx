@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { detectEnv } from "@/lib/env";
@@ -61,6 +62,9 @@ export function Home() {
         ) : iosHint ? (
           <span className="muted small">{t("installIos")}</span>
         ) : null}
+        <div className="small" style={{ marginTop: 10 }}>
+          <Link href="/privacy">{t("privacy")}</Link>
+        </div>
       </footer>
     </main>
   );

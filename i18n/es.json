@@ -81,5 +81,7 @@
   "theyAreAudioOnly": "La otra persona cambió a solo audio para ahorrar datos. Tu video está en pausa para ella.",
   "videoNotArriving": "Su video no está llegando. El audio y los subtítulos siguen funcionando.",
   "tryAudioOnly": "Probar solo audio",
-  "inviteAgain": "Enviar el enlace otra vez"
+  "inviteAgain": "Enviar el enlace otra vez",
+  "consent": "Al unirte, aceptas que lo que digas se envíe a nuestros proveedores de subtítulos para generarlos. Las llamadas nunca se graban.",
+  "privacy": "Privacidad"
 }

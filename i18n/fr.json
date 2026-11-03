@@ -81,5 +81,7 @@
   "theyAreAudioOnly": "L’autre personne est passée en audio seul pour économiser des données. Ta vidéo est en pause de son côté.",
   "videoNotArriving": "Sa vidéo ne passe pas. L’audio et les sous-titres fonctionnent toujours.",
   "tryAudioOnly": "Essayer l’audio seul",
-  "inviteAgain": "Renvoyer le lien"
+  "inviteAgain": "Renvoyer le lien",
+  "consent": "En rejoignant l’appel, tu acceptes que ce que tu dis soit envoyé à nos prestataires de sous-titrage pour créer les sous-titres. Les appels ne sont jamais enregistrés.",
+  "privacy": "Confidentialité"
 }

@@ -1,7 +1,7 @@
 import { baseLang, sameLanguage } from "../shared/lang";
 import type { ServerMsg } from "../shared/protocol";
 import { log } from "./log";
-import { refine, type ContextLine } from "./refine";
+import { interimTranslate, refine, type ContextLine } from "./refine";
 import { SonioxStream, sonioxConfigured, type SonioxToken } from "./soniox";
 import { isTrivialEdit } from "./text";
 
@@ -14,8 +14,20 @@ export const REFINE_DEADLINE_MS = 2000;
 /** Translation tokens trail the source tokens; stop attributing them to a closed utterance after this. */
 const SEAL_QUIET_MS = 700;
 const SEAL_MAX_MS = 2500;
-/** Close the upstream socket after this long without speech; it bills for as long as it is open. */
-const IDLE_CLOSE_MS = 45_000;
+/**
+ * Close the upstream socket after this long without speech; Soniox bills for as long as it is open.
+ * 10 s keeps it open through normal back-and-forth; reopening costs ~0.3 s at the start of the next
+ * utterance, and no audio is lost (it is buffered while the socket connects).
+ */
+const IDLE_CLOSE_MS = 10_000;
+/**
+ * Interim translations: when a long utterance has an untranslated tail this many words long, for
+ * this long, translate the tail with the LLM so the reader isn't waiting for the speaker to pause.
+ */
+const INTERIM_MIN_WORDS = 4;
+const INTERIM_WAIT_MS = 800;
+const INTERIM_EVERY_MS = 1200;
+const INTERIM_TIMEOUT_MS = 2500;
 const BACKOFF_MS = [0, 250, 1000, 2000, 5000];
 
 export interface PipelineHost {
@@ -46,6 +58,14 @@ type Utterance = {
   sealMax?: NodeJS.Timeout;
   lastReaderText?: string;
   lastOwnText?: string;
+  /** Length of origFinal that Soniox's own translation has caught up with. */
+  covered: number;
+  /** When `covered` last moved (or the utterance began). */
+  coveredAt: number;
+  /** An LLM translation of the source after `covered`, valid while `covered` hasn't moved. */
+  interim: { covered: number; tail: string; text: string } | null;
+  interimBusy: boolean;
+  interimAt: number;
 };
 
 const END_TOKENS = new Set(["<end>", "<fin>"]);
@@ -165,6 +185,11 @@ export class SpeakerPipeline {
       sealed: false,
       refineDone: false,
       refined: null,
+      covered: 0,
+      coveredAt: Date.now(),
+      interim: null,
+      interimBusy: false,
+      interimAt: 0,
     };
   }
 
@@ -201,14 +226,53 @@ export class SpeakerPipeline {
         if (tok.is_final) u.trFinal += tok.text;
         else u.trLive += tok.text;
         touched.add(u);
+        // Soniox translates a chunk right after finalising its source, so its translation now
+        // covers the source finalised so far; any interim for that stretch is superseded.
+        if (u.state === "open" && u.origFinal.length > u.covered) {
+          u.covered = u.origFinal.length;
+          u.coveredAt = Date.now();
+          u.interim = null;
+        }
         if (u.state === "closing") this.armSeal(u);
       }
     }
     for (const u of touched) this.emit(u);
+    if (this.open) this.maybeInterim(this.open);
   }
 
   private literal(u: Utterance): string {
-    return (this.translating ? u.trFinal + u.trLive : u.origFinal + u.origLive).trim();
+    if (!this.translating) return (u.origFinal + u.origLive).trim();
+    const base = (u.trFinal + u.trLive).trim();
+    if (u.state === "open" && u.interim && u.interim.covered === u.covered) return `${base} ${u.interim.text}`.trim();
+    return base;
+  }
+
+  /** Long utterance, nothing translated for a while: translate the untranslated tail now. */
+  private maybeInterim(u: Utterance) {
+    if (!this.translating || u.state !== "open" || u.interimBusy) return;
+    const now = Date.now();
+    if (now - u.coveredAt < INTERIM_WAIT_MS || now - u.interimAt < INTERIM_EVERY_MS) return;
+    const source = u.origFinal + u.origLive;
+    const tail = source.slice(u.covered).trim();
+    // Words, or for scripts written without spaces (Chinese, Japanese, Thai), characters / 2.
+    const words = Math.max(tail.split(/\s+/).filter(Boolean).length, Math.floor(tail.length / 2) * (/\s/.test(tail) ? 0 : 1));
+    if (words < INTERIM_MIN_WORDS || tail === u.interim?.tail) return;
+    u.interimBusy = true;
+    u.interimAt = now;
+    const covered = u.covered;
+    interimTranslate({
+      fragment: tail,
+      before: source.slice(0, covered).trim(),
+      sourceLang: this.speaks!,
+      targetLang: this.reads!,
+      signal: AbortSignal.timeout(INTERIM_TIMEOUT_MS),
+    }).then((text) => {
+      u.interimBusy = false;
+      // Only useful if Soniox hasn't caught up meanwhile and the utterance is still being spoken.
+      if (!text || u.state !== "open" || u.covered !== covered) return;
+      u.interim = { covered, tail, text };
+      this.emit(u);
+    });
   }
 
   private emit(u: Utterance) {

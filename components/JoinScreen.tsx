@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { useT } from "@/lib/i18n";
 import { LanguageLine } from "./LanguageLine";
@@ -50,6 +51,12 @@ export function JoinScreen({
           </button>
         )}
         <p className="muted small">{t("permissionNote")}</p>
+        <p className="muted consent">
+          {t("consent")}{" "}
+          <Link href="/privacy" target="_blank">
+            {t("privacy")}
+          </Link>
+        </p>
         {shareUrl && <ShareLink url={shareUrl} />}
       </section>
     </main>

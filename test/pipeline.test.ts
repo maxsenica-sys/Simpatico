@@ -99,7 +99,45 @@ await until(() => reader.some((m) => m.t === "caption" && m.stage === "final" &&
 p.stop();
 console.log("✓ same-language pair transcribes without translating");
 
-// 6. Anti-flicker edit-distance rule
+// 6. Long utterance: an interim LLM translation of the untranslated tail shows while the
+//    speaker is still talking, and Soniox's own translation supersedes it.
+const { createServer } = await import("node:http");
+let interimCalls = 0;
+const llm = createServer((req, res) => {
+  let body = "";
+  req.on("data", (c) => (body += c));
+  req.on("end", () => {
+    const j = JSON.parse(body);
+    const interim = String(j.system).includes("still talking");
+    if (interim) interimCalls++;
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ id: "m", type: "message", role: "assistant", model: j.model, stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 }, content: [{ type: "text", text: interim ? "ARA-CEVIRI" : "TAM-CEVIRI" }] }));
+  });
+}).listen(3996);
+process.env.ANTHROPIC_API_KEY = "x";
+process.env.ANTHROPIC_BASE_URL = "http://localhost:3996";
+reader.length = 0;
+p.setLanguages("en-AU", "tr-TR");
+p.audio(audio);
+await until(() => configs === 4);
+const ws4 = sockets[3];
+const longLive = "so yesterday I went down to the market near the harbour and";
+push(ws4, [tok(longLive, false)]);
+await sleep(1300); // nothing translated for > 1.2 s
+push(ws4, [tok(longLive + " bought", false)]);
+await until(() => reader.some((m) => m.t === "caption" && m.stage === "live" && m.text.includes("ARA-CEVIRI")), 4000);
+console.log("✓ interim translation shown while a long sentence is still being spoken");
+push(ws4, [tok(longLive + " bought fish", true)]);
+push(ws4, [tok("dün limana yakın pazara gittim ve balık aldım", true, true)]);
+await until(() => reader.some((m) => m.t === "caption" && m.stage === "live" && m.text.includes("balık") && !m.text.includes("ARA-CEVIRI")));
+console.log("✓ Soniox's translation supersedes the interim");
+push(ws4, [tok("<end>", true)]);
+await until(() => reader.some((m) => m.t === "caption" && m.stage === "refined" && m.text === "TAM-CEVIRI"), 4000);
+p.stop();
+llm.close();
+assert.ok(interimCalls >= 1);
+
+// 7. Anti-flicker edit-distance rule
 assert.equal(isTrivialEdit("Bunu yarın yaparız.", "bunu yarın yaparız"), true);
 assert.equal(isTrivialEdit("I am going to the store tomorrow.", "I'm going to the store tomorrow."), true);
 assert.equal(isTrivialEdit("break your leg", "good luck"), false);

@@ -81,5 +81,7 @@
   "theyAreAudioOnly": "对方已切换到仅语音以节省流量。对方暂时看不到你的画面。",
   "videoNotArriving": "对方的画面传不过来。语音和字幕仍可正常使用。",
   "tryAudioOnly": "试试仅语音",
-  "inviteAgain": "重新发送链接"
+  "inviteAgain": "重新发送链接",
+  "consent": "加入通话即表示你同意将你的语音发送给我们的字幕服务提供商，用于生成字幕。我们绝不会录制通话。",
+  "privacy": "隐私"
 }

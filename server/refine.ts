@@ -89,3 +89,62 @@ export async function refine(input: RefineInput): Promise<string | null> {
     return null;
   }
 }
+
+const INTERIM_SYSTEM = `You write live subtitles for a video call between two people who don't share a language. The speaker is still talking. You get the newest stretch of their speech, transcribed as it is spoken, and you translate just that stretch so the listener can follow along before the sentence is finished.
+
+- Translate only the fragment you are given. It may stop mid-sentence: do not complete it, guess what comes next, or add final punctuation.
+- Use the earlier part of the same sentence only to understand the fragment; do not translate it again.
+- Natural spoken wording, same register and tone. Idioms and slang by meaning, not word for word.
+- Reply with the translation only.`;
+
+export type InterimInput = {
+  /** The newest untranslated stretch of the utterance. */
+  fragment: string;
+  /** What the speaker said earlier in the same utterance (already captioned). */
+  before: string;
+  sourceLang: string;
+  targetLang: string;
+  signal: AbortSignal;
+};
+
+/**
+ * A quick translation of the untranslated tail of a long utterance that is still being spoken,
+ * so the reader isn't left waiting for the speaker to pause. Null on any failure.
+ */
+export async function interimTranslate(input: InterimInput): Promise<string | null> {
+  if (!refineConfigured()) return null;
+  client ??= new Anthropic();
+  const src = langInfo(input.sourceLang).name;
+  const tgt = langInfo(input.targetLang).name;
+  const user = [
+    `<languages>${src} to ${tgt}</languages>`,
+    input.before ? `<earlier_in_sentence>${input.before}</earlier_in_sentence>` : "",
+    `<fragment>${input.fragment}</fragment>`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  const started = Date.now();
+  try {
+    const res = await client.messages.create(
+      {
+        model: MODEL,
+        max_tokens: 200,
+        thinking: { type: "disabled" },
+        output_config: { effort: "low" },
+        system: INTERIM_SYSTEM,
+        messages: [{ role: "user", content: user }],
+      },
+      { signal: input.signal, maxRetries: 0 },
+    );
+    if (res.stop_reason === "refusal") return null;
+    const text = res.content
+      .flatMap((b) => (b.type === "text" ? [b.text] : []))
+      .join("")
+      .trim();
+    log("interim_ok", { ms: Date.now() - started, chars: input.fragment.length });
+    return text || null;
+  } catch (err) {
+    if (!input.signal.aborted) log("interim_error", { ms: Date.now() - started, error: String(err) });
+    return null;
+  }
+}

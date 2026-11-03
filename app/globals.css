@@ -211,3 +211,14 @@ p { margin: 0; line-height: 1.5; }
   .join-head { grid-column: 1 / -1; justify-content: flex-start; }
   .preview { aspect-ratio: 4 / 3; max-height: none; }
 }
+
+/* ---------------------------------------------------------------- legal pages */
+.legal article { max-width: 680px; margin: 0 auto; padding-bottom: 48px; }
+.legal h1 { font-size: 1.8rem; margin-top: 8px; }
+.legal h2 { font-size: 1.2rem; margin: 28px 0 8px; }
+.legal h3 { font-size: 1rem; margin: 18px 0 6px; }
+.legal p, .legal li { line-height: 1.6; color: rgba(244, 245, 247, 0.88); }
+.legal ul { padding-inline-start: 22px; display: flex; flex-direction: column; gap: 6px; }
+.legal a { color: var(--accent); }
+.consent { font-size: 0.8rem; }
+.consent a, .home-foot a { color: var(--accent); }

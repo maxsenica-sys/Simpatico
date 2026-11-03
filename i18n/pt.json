@@ -81,5 +81,7 @@
   "theyAreAudioOnly": "A outra pessoa mudou para só áudio para economizar dados. Seu vídeo está pausado para ela.",
   "videoNotArriving": "O vídeo da outra pessoa não está chegando. O áudio e as legendas continuam funcionando.",
   "tryAudioOnly": "Tentar só áudio",
-  "inviteAgain": "Enviar o link de novo"
+  "inviteAgain": "Enviar o link de novo",
+  "consent": "Ao entrar, você concorda que o que você fala seja enviado aos nossos provedores de legendas para gerar as legendas. As chamadas nunca são gravadas.",
+  "privacy": "Privacidade"
 }

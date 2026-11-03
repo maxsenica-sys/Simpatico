@@ -81,6 +81,8 @@ export class SonioxStream extends EventEmitter {
           language_hints_strict: true,
           enable_endpoint_detection: true,
           max_endpoint_delay_ms: 1200,
+          // Endpoints a little sooner (0-3, higher = sooner, slightly lower accuracy). v5/v6 models.
+          endpoint_latency_adjustment_level: Number(process.env.SONIOX_ENDPOINT_LEVEL ?? 1),
           client_reference_id: ref,
           ...(target ? { translation: { type: "one_way", target_language: target } } : {}),
         }),

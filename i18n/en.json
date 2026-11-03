@@ -81,5 +81,7 @@
   "theyAreAudioOnly": "They switched to audio only to save data. Your video is paused for them.",
   "videoNotArriving": "Their video isn't coming through. Audio and captions still work.",
   "tryAudioOnly": "Try audio only",
-  "inviteAgain": "Send the link again"
+  "inviteAgain": "Send the link again",
+  "consent": "By joining, you agree that what you say is sent to our caption providers to make captions. Calls are never recorded.",
+  "privacy": "Privacy"
 }

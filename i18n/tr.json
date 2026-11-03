@@ -81,5 +81,7 @@
   "theyAreAudioOnly": "Karşı taraf veri tasarrufu için sadece sese geçti. Görüntün onun için duraklatıldı.",
   "videoNotArriving": "Karşı tarafın görüntüsü gelmiyor. Ses ve altyazılar yine çalışıyor.",
   "tryAudioOnly": "Sadece sesle dene",
-  "inviteAgain": "Bağlantıyı yeniden gönder"
+  "inviteAgain": "Bağlantıyı yeniden gönder",
+  "consent": "Katılarak, altyazı oluşturmak için söylediklerinin altyazı sağlayıcılarımıza gönderilmesini kabul etmiş olursun. Aramalar asla kaydedilmez.",
+  "privacy": "Gizlilik"
 }

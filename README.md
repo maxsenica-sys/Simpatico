@@ -32,7 +32,7 @@ A single Node process serves Next.js and a `ws` server on `/ws`. Each browser ha
 | `lib/call.ts` | Client call controller: signalling, `RTCPeerConnection`, ICE restart, connect timeout, caption state |
 | `lib/audio.ts`, `public/pcm-worklet.js` | AudioWorklet tap on the same mic track that is in the peer connection. Downsamples to 16 kHz PCM16 in 100 ms chunks, with a voice-activity gate |
 | `shared/lang.ts`, `shared/languages.ts` | `ParticipantLang` and the generated list of supported languages |
-| `i18n/*.json` | UI strings. `en` is the source; `tr` is hand-written. Any missing bundle falls back to English |
+| `i18n/*.json` | UI strings. `en` is the source; `tr` is hand-written; `ar bn es fr hi id pt ru ur zh` are machine-translated by `scripts/translate-ui.ts`. Any other language falls back to English |
 
 ### How languages are wired
 
@@ -137,4 +137,4 @@ The first command regenerates `shared/languages.ts` from Soniox's model list. Th
 - Not yet tested with a real Soniox key, a real Claude call, or on a real iPhone. Everything above was run against mocks and headless Chromium.
 - The Soniox token handling follows their docs. Their docs do not say exactly where translation tokens fall relative to `<end>`, so trailing translation tokens are attributed to the closed utterance using a quiet-period heuristic (`SEAL_QUIET_MS`). Check this against real traffic.
 - The voice-activity thresholds in `lib/audio.ts` are starting values. Tune them on a real phone on speaker.
-- The `tr` UI strings are mine. A native speaker should review them.
+- The `tr` UI strings are mine, and the other ten are machine-translated. A native speaker should review any language you rely on, then add it to `REVIEWED` in `scripts/translate-ui.ts` so it is never regenerated.

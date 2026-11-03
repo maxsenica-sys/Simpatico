@@ -1,4 +1,4 @@
-FROM node:22-slim AS build
+FROM mirror.gcr.io/library/node:22-slim AS build
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY package.json package-lock.json ./
@@ -6,7 +6,7 @@ RUN npm ci
 COPY . .
 RUN npm run build && npm prune --omit=dev
 
-FROM node:22-slim
+FROM mirror.gcr.io/library/node:22-slim
 WORKDIR /app
 ENV NODE_ENV=production PORT=8080 NEXT_TELEMETRY_DISABLED=1
 COPY --from=build /app/node_modules ./node_modules

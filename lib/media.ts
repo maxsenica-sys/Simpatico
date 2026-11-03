@@ -2,18 +2,21 @@
 
 export type MediaFailure = "denied" | "no-device" | "maybe-in-app" | "other";
 
-const AUDIO: MediaTrackConstraints = {
+export const AUDIO: MediaTrackConstraints = {
   echoCancellation: true,
   noiseSuppression: true,
   autoGainControl: true,
   channelCount: 1,
 };
-const VIDEO: MediaTrackConstraints = {
-  facingMode: "user",
-  width: { ideal: 1280 },
-  height: { ideal: 720 },
-  frameRate: { ideal: 30, max: 30 },
-};
+
+export function videoConstraints(facing: "user" | "environment" = "user"): MediaTrackConstraints {
+  return {
+    facingMode: { ideal: facing },
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+    frameRate: { ideal: 30, max: 30 },
+  };
+}
 
 /**
  * One getUserMedia for the whole call: this stream's audio track feeds both the
@@ -21,7 +24,7 @@ const VIDEO: MediaTrackConstraints = {
  */
 export async function getLocalMedia(ios: boolean): Promise<MediaStream | MediaFailure> {
   try {
-    return await navigator.mediaDevices.getUserMedia({ audio: AUDIO, video: VIDEO });
+    return await navigator.mediaDevices.getUserMedia({ audio: AUDIO, video: videoConstraints() });
   } catch (err) {
     const name = (err as DOMException)?.name;
     if (name === "NotAllowedError" || name === "SecurityError") return "denied";
@@ -36,5 +39,26 @@ export async function getLocalMedia(ios: boolean): Promise<MediaStream | MediaFa
     }
     // Embedded iOS browsers fail in odd ways (TypeError, AbortError) rather than asking.
     return ios ? "maybe-in-app" : "other";
+  }
+}
+
+/** A fresh camera track: turning the camera back on, switching cameras, or recovering one iOS ended. */
+export async function getCameraTrack(facing: "user" | "environment"): Promise<MediaStreamTrack> {
+  const s = await navigator.mediaDevices.getUserMedia({ video: videoConstraints(facing) });
+  return s.getVideoTracks()[0];
+}
+
+/** Only used when the original mic track has ended (e.g. iOS ended it in the background). */
+export async function getMicTrack(): Promise<MediaStreamTrack> {
+  const s = await navigator.mediaDevices.getUserMedia({ audio: AUDIO });
+  return s.getAudioTracks()[0];
+}
+
+export async function hasMultipleCameras(): Promise<boolean> {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices.filter((d) => d.kind === "videoinput").length > 1;
+  } catch {
+    return false;
   }
 }

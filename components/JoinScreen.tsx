@@ -5,7 +5,15 @@ import { LanguageLine } from "./LanguageLine";
 import { Logo } from "./Logo";
 import { ShareLink } from "./ShareLink";
 
-export function JoinScreen({ stream, shareUrl, onJoin }: { stream: MediaStream | null; shareUrl: string | null; onJoin: () => void }) {
+export function JoinScreen({
+  stream,
+  shareUrl,
+  onJoin,
+}: {
+  stream: MediaStream | null;
+  shareUrl: string | null;
+  onJoin: (audioOnly: boolean) => void;
+}) {
   const t = useT();
   const video = useRef<HTMLVideoElement>(null);
   useEffect(() => {
@@ -26,9 +34,21 @@ export function JoinScreen({ stream, shareUrl, onJoin }: { stream: MediaStream |
       </div>
       <section className="join-panel">
         <LanguageLine />
-        <button className="btn primary big" disabled={!stream} onClick={onJoin}>
-          {t("join")}
-        </button>
+        {hasVideo ? (
+          <>
+            <button className="btn primary big" disabled={!stream} onClick={() => onJoin(false)}>
+              {t("joinVideo")}
+            </button>
+            <button className="btn big secondary" disabled={!stream} onClick={() => onJoin(true)}>
+              {t("joinAudio")}
+            </button>
+            <p className="muted small">{t("audioOnlyHint")}</p>
+          </>
+        ) : (
+          <button className="btn primary big" disabled={!stream} onClick={() => onJoin(true)}>
+            {t("join")}
+          </button>
+        )}
         <p className="muted small">{t("permissionNote")}</p>
         {shareUrl && <ShareLink url={shareUrl} />}
       </section>

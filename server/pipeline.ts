@@ -5,8 +5,12 @@ import { refine, type ContextLine } from "./refine";
 import { SonioxStream, sonioxConfigured, type SonioxToken } from "./soniox";
 import { isTrivialEdit } from "./text";
 
-/** Hard deadline for pass 2, measured from the moment the utterance is finalised. */
-export const REFINE_DEADLINE_MS = 1500;
+/**
+ * Hard deadline for pass 2, measured from the moment the utterance is finalised.
+ * The brief started at 1500 ms; real calls showed Claude Haiku at 0.75–1.5 s, so 1500 dropped
+ * ~40% of rewrites. 2000 keeps nearly all of them while still landing before the reader moves on.
+ */
+export const REFINE_DEADLINE_MS = 2000;
 /** Translation tokens trail the source tokens; stop attributing them to a closed utterance after this. */
 const SEAL_QUIET_MS = 700;
 const SEAL_MAX_MS = 2500;
@@ -60,6 +64,8 @@ export class SpeakerPipeline {
   private fatalUntil = 0;
   private idleTimer: NodeJS.Timeout | null = null;
   private seq = 0;
+  /** Makes utterance ids unique across re-seats, so a rejoin never overwrites old transcript lines. */
+  private readonly epoch = Date.now().toString(36);
   private open: Utterance | null = null;
   /** Closed utterances whose translation may still be streaming in, oldest first. */
   private closing: Utterance[] = [];
@@ -104,7 +110,7 @@ export class SpeakerPipeline {
     const target = this.translating ? baseLang(this.reads)! : null;
     const stream = new SonioxStream({ source, target, ref: this.host.ref });
     this.stream = stream;
-    stream.on("ready", () => this.host.toReader({ t: "captions", state: "ok" }));
+    stream.on("ready", () => this.status("ok"));
     stream.on("tokens", (tokens: SonioxToken[]) => {
       this.failures = 0;
       this.onTokens(tokens);
@@ -117,16 +123,22 @@ export class SpeakerPipeline {
       if (fatal) {
         // Bad key / out of credit: stop hammering, tell the reader captions are unavailable.
         this.fatalUntil = Date.now() + 60_000;
-        this.host.toReader({ t: "captions", state: "unavailable" });
+        this.status("unavailable");
       } else {
         // Video is unaffected; captions resume on the next audio chunk.
         this.failures++;
-        this.host.toReader({ t: "captions", state: "paused" });
+        this.status("paused");
       }
     });
     const delay = BACKOFF_MS[Math.min(this.failures, BACKOFF_MS.length - 1)];
     if (delay) setTimeout(() => this.stream === stream && stream.start(), delay);
     else stream.start();
+  }
+
+  /** Both people see caption health: the reader for "theirs", the speaker for "mine". */
+  private status(state: "ok" | "paused" | "unavailable") {
+    this.host.toReader({ t: "captions", state, side: "theirs" });
+    this.host.toSpeaker({ t: "captions", state, side: "mine" });
   }
 
   private stopStream(why: string) {
@@ -144,7 +156,7 @@ export class SpeakerPipeline {
 
   private newUtterance(): Utterance {
     return {
-      id: `${this.host.ref}-${++this.seq}`,
+      id: `${this.host.ref}-${this.epoch}-${++this.seq}`,
       origFinal: "",
       origLive: "",
       trFinal: "",

@@ -118,15 +118,15 @@ export function Room({ code }: { code: string }) {
       </Notice>
     );
 
-  if (call) return <CallScreen call={call} local={media as MediaStream} shareUrl={url} onRejoin={() => location.reload()} />;
+  if (call) return <CallScreen call={call} shareUrl={url} onRejoin={() => location.reload()} />;
 
   return (
     <JoinScreen
       stream={media instanceof MediaStream ? media : null}
       shareUrl={room.peers === 0 ? url : null}
-      onJoin={() => {
+      onJoin={(audioOnly) => {
         if (!(media instanceof MediaStream)) return;
-        const c = new CallController(code, peerIdFor(code), lang, media);
+        const c = new CallController(code, peerIdFor(code), lang, media, { audioOnly });
         callRef.current = c;
         c.start();
         setCall(c);

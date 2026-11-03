@@ -23,41 +23,70 @@ const en = JSON.parse(readFileSync(new URL("en.json", dir), "utf8")) as Record<s
 const keys = Object.keys(en);
 const client = new Anthropic();
 
-const schema = {
+const SYSTEM =
+  "You localise the interface of a consumer video-calling app. Translate each English string into natural, friendly, concise interface copy a native speaker would expect on their phone, using the informal register where the language has one. Keep {placeholders} exactly as they are. Keep typographic quotes and symbols such as ••• and ⋮. For iOS and Android menu paths and button names, use the names those systems show in that language. Keys starting with lbl are labels under small icon buttons: keep them to one or two short words.";
+
+const schemaFor = (ks: string[]) => ({
   type: "object",
-  properties: Object.fromEntries(keys.map((k) => [k, { type: "string" }])),
-  required: keys,
+  properties: Object.fromEntries(ks.map((k) => [k, { type: "string" }])),
+  required: ks,
   additionalProperties: false,
+});
+
+const load = (code: string): Record<string, string> | null => {
+  const url = new URL(`${code}.json`, dir);
+  return existsSync(url) ? (JSON.parse(readFileSync(url, "utf8")) as Record<string, string>) : null;
 };
 
-// --only=ru,es limits the run to those languages.
+// --only=ru,es limits the run to those languages. Existing bundles only get their missing keys
+// translated (with the existing strings as context, for consistent wording), unless --force.
 const only = process.argv.find((a) => a.startsWith("--only="))?.slice(7).split(",");
-const todo = LANGUAGES.filter(
-  (l) => !REVIEWED.has(l.code) && (!only || only.includes(l.code)) && (force || !existsSync(new URL(`${l.code}.json`, dir))),
-);
-console.log(`Translating UI into ${todo.length} languages…`);
+const plan = LANGUAGES.filter((l) => !REVIEWED.has(l.code) && (!only || only.includes(l.code)))
+  .map((l) => {
+    const existing = force ? null : load(l.code);
+    const want = existing ? keys.filter((k) => !existing[k]) : keys;
+    return { lang: l, existing, want };
+  })
+  .filter((p) => p.want.length);
+console.log(`Translating UI: ${plan.map((p) => `${p.lang.code}(${p.want.length})`).join(" ") || "nothing to do"}`);
 
-for (const lang of todo) {
+/** Structured output compiles the schema into a grammar; keep each request to a modest number of keys. */
+const BATCH = 40;
+
+async function translate(langLabel: string, want: string[], existing: Record<string, string> | null) {
+  const source = Object.fromEntries(want.map((k) => [k, en[k]]));
+  const context = existing
+    ? `\n\nFor consistency, these strings are already translated in this app:\n${JSON.stringify(existing, null, 2)}`
+    : "";
   const res = await client.messages.create({
     model: process.env.TRANSLATE_MODEL ?? "claude-opus-5-5",
     max_tokens: 16000,
-    output_config: { format: { type: "json_schema", schema } },
-    system:
-      "You localise the interface of a consumer video-calling app. Translate each English string into natural, friendly, concise interface copy a native speaker would expect on their phone, using the informal register where the language has one. Keep {placeholders} exactly as they are. Keep typographic quotes and symbols such as ••• and ⋮. For iOS and Android menu paths and button names, use the names those systems show in that language.",
-    messages: [{ role: "user", content: `Target language: ${VARIANT[lang.code] ?? `${lang.name} (${lang.code})`}.\n\n${JSON.stringify(en, null, 2)}` }],
+    output_config: { format: { type: "json_schema", schema: schemaFor(want) } },
+    system: SYSTEM,
+    messages: [{ role: "user", content: `Target language: ${langLabel}.${context}\n\nTranslate these:\n${JSON.stringify(source, null, 2)}` }],
   });
-  if (res.stop_reason === "refusal") {
-    console.log(`  ${lang.code}: refused, skipped`);
+  if (res.stop_reason === "refusal") throw new Error("refused");
+  return JSON.parse(res.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("")) as Record<string, string>;
+}
+
+for (const { lang, existing, want } of plan) {
+  const label = VARIANT[lang.code] ?? `${lang.name} (${lang.code})`;
+  const out: Record<string, string> = {};
+  try {
+    for (let i = 0; i < want.length; i += BATCH) {
+      Object.assign(out, await translate(label, want.slice(i, i + BATCH), { ...(existing ?? {}), ...out }));
+    }
+  } catch (err) {
+    console.log(`  ${lang.code}: failed (${String(err).slice(0, 120)}), skipped`);
     continue;
   }
-  const text = res.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
-  const out = JSON.parse(text) as Record<string, string>;
-  const missing = keys.filter((k) => typeof out[k] !== "string" || !out[k].trim());
-  const badVars = keys.filter((k) => (en[k].match(/\{\w+\}/g) ?? []).some((v) => !out[k]?.includes(v)));
+  const missing = want.filter((k) => typeof out[k] !== "string" || !out[k].trim());
+  const badVars = want.filter((k) => (en[k].match(/\{\w+\}/g) ?? []).some((v) => !out[k]?.includes(v)));
   if (missing.length || badVars.length) {
     console.log(`  ${lang.code}: invalid (missing ${missing.join(",")} vars ${badVars.join(",")}), skipped`);
     continue;
   }
-  writeFileSync(new URL(`${lang.code}.json`, dir), JSON.stringify(out, null, 2) + "\n");
-  console.log(`  ${lang.code}: ok`);
+  const merged = Object.fromEntries(keys.map((k) => [k, out[k] ?? existing?.[k]]));
+  writeFileSync(new URL(`${lang.code}.json`, dir), JSON.stringify(merged, null, 2) + "\n");
+  console.log(`  ${lang.code}: ok (${want.length})`);
 }

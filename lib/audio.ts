@@ -6,7 +6,7 @@ const ABOVE_FLOOR_DB = 12;
 /** Extra margin while the other person is audibly talking, so leaked speaker output isn't transcribed as ours. */
 const DOUBLE_TALK_PENALTY_DB = 10;
 const OPEN_CHUNKS = 2; // 200 ms above threshold to open
-const HANGOVER_CHUNKS = 9; // 900 ms below threshold to close
+const HANGOVER_CHUNKS = 6; // 600 ms below threshold to close (captions finalize sooner; Soniox wants >= 200 ms)
 const PREROLL_CHUNKS = 3;
 
 type Level = { floor: number };

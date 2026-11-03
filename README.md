@@ -41,13 +41,27 @@ Each client sends `{ speaks, reads, ui }` when it joins. The server configures A
 ### Pass 2 and anti-flicker
 
 - The LLM gets the **source-language** text, the last 6 utterances from both sides, and the room glossary.
-- The hard deadline is 1500 ms from the end of the utterance. A late result is discarded, and the literal caption settles instead.
+- The hard deadline is 2000 ms from the end of the utterance (the brief said 1500; real calls showed Claude Haiku at 0.75–1.5 s, which dropped about 40% of rewrites). A late result is discarded, and the literal caption settles instead.
 - A refinement is ignored if it differs from the literal by only case, punctuation or a couple of characters (`server/text.ts`).
 - Once a line is settled, the client never changes it. A line that has scrolled out of the 3-line window is frozen.
 
 ### Echo
 
 The browser's echo cancellation is on. In addition, the client sends audio only while local voice is above an adaptive threshold (noise floor + 12 dB). The threshold rises by 10 dB while the other person is audibly talking, so their voice leaking from a speakerphone is less likely to be transcribed as yours.
+
+### Video, audio only and call health
+
+- **Join with video** or **Join audio only**. During the call, anyone can turn the camera off and on, flip between front and back cameras, or switch to audio only and back. Audio only stops video in both directions and saves the most data. Captions and the transcript keep working in every mode.
+- The video slot is always negotiated (`sendrecv`, even with the camera off), so every camera change is a `replaceTrack` with no renegotiation.
+- **Health check.** Every 2 s each side measures what is actually arriving (`getStats`) and tells the other side (`status` signal). The phone sending the video acts on it:
+  - its camera track is dead or not sending frames → it restarts the camera itself;
+  - the other side reports no video or audio for 6 s → it restarts the camera or mic; if that doesn't help, it restarts the connection (ICE restart);
+  - this happens automatically, and a banner explains it ("They can't see your video…"), with a manual **Restart video** button.
+
+  This fixes a real bug: iOS stops the camera while Safari is in the background (for example, the host switching to WhatsApp to send the link), and the host's video never came back.
+- **Weak connection.** Packet loss above 8%, a round trip over 700 ms, or upload below 200 kbit/s first lowers the video quality without asking. If the connection stays weak, a banner offers **Switch to audio only**. Audio is sent at high priority, so the browser drops video quality before voice.
+- **Captions check.** The top-left badge shows whether captions are working in both directions (green, amber or red). Your own recognised words appear briefly at the top, so you can see what the other person is reading. Three dots show when the other person is speaking before their words arrive.
+- Host and guest get exactly the same controls: Mic, Camera, Flip, Audio only, Text and End.
 
 ## Running locally
 
@@ -87,7 +101,16 @@ SONIOX_API_KEY=x SONIOX_URL=ws://localhost:3999 ANTHROPIC_API_KEY=x ANTHROPIC_BA
 npm run e2e
 ```
 
-The end-to-end test uses two real Chromium instances, one `en-AU` desktop and one `tr-TR` phone, with a fake camera and synthetic speech. It checks the Turkish join screen with no settings touched, WebRTC both ways, pass-1 captions at 60% opacity, refined captions, the transcript sheet, and hang-up. The mock LLM is deliberately late on every 4th call to exercise the deadline. Screenshots are written to `test/out/`.
+The end-to-end test uses two real Chromium instances, one `en-AU` desktop and one `tr-TR` phone, with a fake camera and synthetic speech. It checks:
+- the Turkish join screen with no settings touched
+- WebRTC both ways
+- pass-1 captions at 60% opacity, then refined captions
+- the transcript sheet and the captions-working check
+- the same controls for host and guest
+- camera off and on
+- a camera that dies mid-call and recovers on its own
+- audio only and back
+- hang-up The mock LLM is deliberately late on every 4th call to exercise the deadline. Screenshots are written to `test/out/`.
 
 ## Deploying to Fly
 

@@ -12,7 +12,7 @@ const MAX_UTTERANCES = 3;
  * text 100%. A line that has already scrolled out of view is frozen: a late refinement can't
  * pull it back or reflow what the reader is looking at.
  */
-export function Captions({ captions, onOpen }: { captions: Caption[]; onOpen: () => void }) {
+export function Captions({ captions, speaking, onOpen }: { captions: Caption[]; speaking: boolean; onOpen: () => void }) {
   const box = useRef<HTMLDivElement>(null);
   const frozen = useRef(new Map<string, string>());
   const [now, setNow] = useState(() => Date.now());
@@ -35,7 +35,8 @@ export function Captions({ captions, onOpen }: { captions: Caption[]; onOpen: ()
     const top = el.getBoundingClientRect().top;
     const children = Array.from(el.children) as HTMLElement[];
     children.slice(0, -1).forEach((child) => {
-      const id = child.dataset.id!;
+      const id = child.dataset.id;
+      if (!id) return;
       if (child.getBoundingClientRect().top < top - 2 && !frozen.current.has(id)) {
         const c = shown.find((x) => x.id === id);
         if (c) frozen.current.set(id, c.text);
@@ -62,6 +63,15 @@ export function Captions({ captions, onOpen }: { captions: Caption[]; onOpen: ()
           );
         })}
       </div>
+      {/* They're talking but no words have arrived yet: show that something is coming.
+          Kept outside the 3-line box so it never pushes a caption line out of view. */}
+      {speaking && !shown.some((c) => c.doneAt === null) && (
+        <div className="typing" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
+      )}
     </div>
   );
 }

@@ -52,14 +52,14 @@ try {
   await a.getByText("Send this link").waitFor();
   await a.getByText("You speak English").waitFor();
   await a.screenshot({ path: OUT + "1-host-join.png" });
-  await a.getByRole("button", { name: "Join call" }).click();
+  await a.getByRole("button", { name: "Join with video" }).click();
   await a.getByText("Waiting for the other person").waitFor();
 
   step("B (Turkish phone) opens the link: UI must be Turkish with no settings touched");
   await b.goto(url);
   await b.getByText("Konuştuğun dil: Türkçe").waitFor();
   await b.screenshot({ path: OUT + "2-guest-join-tr.png" });
-  await b.getByRole("button", { name: "Aramaya katıl" }).click();
+  await b.getByRole("button", { name: "Görüntülü katıl" }).click();
 
   step("WebRTC connects both ways");
   const videoUp = (p) => p.waitForFunction(() => { const v = document.querySelector("video.remote"); return v && v.videoWidth > 0 && !v.paused; }, null, { timeout: 25000 });
@@ -86,11 +86,74 @@ try {
   console.log("  B transcript lines:", await b.$$eval(".tline", (els) => els.length));
   await b.getByRole("button", { name: "Kapat", exact: true }).click({ timeout: 5000 });
 
-  step("Captions fade ~6 s after settling");
-  await b.waitForTimeout(500);
+  // Helpers for the media checks below.
+  const framesOn = (p) => p.evaluate(() => document.querySelector("video.remote")?.getVideoPlaybackQuality?.().totalVideoFrames ?? 0);
+  const videoFlowing = async (p, ms = 20000) => {
+    const t = Date.now();
+    let prev = await framesOn(p);
+    while (Date.now() - t < ms) {
+      await p.waitForTimeout(1000);
+      const now = await framesOn(p);
+      if (now > prev + 5) return true;
+      prev = now;
+    }
+    return false;
+  };
+  const show = (p) => p.evaluate(() => document.querySelector(".call")?.dispatchEvent(new MouseEvent("mousemove", { bubbles: true })));
+  const placeholderText = (p) => p.evaluate(() => document.querySelector(".no-video p")?.textContent ?? null);
+
+  step("Captions-working check: A sees its own recognised words and a green captions badge");
+  await a.waitForFunction(() => document.querySelector(".own-line")?.textContent?.length > 4, null, { timeout: 15000 });
+  console.log("  A badge:", await a.locator(".cc-pill").textContent(), "| own line:", await a.locator(".own-line").textContent());
+
+  step("Host and guest have the same controls");
+  await show(a);
+  await show(b);
+  const labels = (p) => p.$$eval(".ctrl .ctrl-label", (els) => els.map((e) => e.textContent));
+  const la = await labels(a), lb = await labels(b);
+  console.log("  host:", la.join(" | "), "\n  guest:", lb.join(" | "));
+  if (la.length < 5 || Math.abs(la.length - lb.length) > 1) throw new Error("host and guest controls differ"); // Flip only shows with 2 cameras
+
+  step("A turns the camera off: B sees 'camera off', captions keep working; then back on");
+  await show(a);
+  await a.getByRole("button", { name: "Turn camera off" }).click();
+  await b.waitForFunction(() => document.querySelector(".no-video p")?.textContent?.includes("kamerası kapalı"), null, { timeout: 10000 });
+  console.log("  B placeholder:", await placeholderText(b));
+  await b.screenshot({ path: OUT + "7-guest-sees-camera-off.png" });
+  await show(a);
+  await a.getByRole("button", { name: "Turn camera on" }).click();
+  await b.waitForFunction(() => !document.querySelector(".no-video"), null, { timeout: 10000 });
+  if (!(await videoFlowing(b))) throw new Error("A's video did not come back on B");
+  console.log("  A's video back on B");
+
+  step("Reported bug: A's camera dies mid-call (as iOS does in the background) -> auto-recovers");
+  await a.evaluate(() => {
+    const v = document.querySelector(".self video");
+    v.srcObject.getVideoTracks().forEach((t) => t.stop()); // stop() fires no 'ended': only the health check can notice
+  });
+  const t0 = Date.now();
+  await b.waitForTimeout(3000);
+  const recovered = await videoFlowing(b, 25000);
+  console.log(`  B receiving A's video again: ${recovered} after ${Math.round((Date.now() - t0) / 1000)} s`);
+  if (!recovered) throw new Error("video did not self-heal");
+
+  step("B switches to audio only: no video either way, A is told, captions still arrive at B");
+  await show(b);
+  await b.getByRole("button", { name: "Sadece sese geç" }).click();
+  await b.waitForFunction(() => document.querySelector(".no-video p")?.textContent?.includes("Sadece ses"), null, { timeout: 10000 });
+  await a.getByText("They switched to audio only").waitFor({ timeout: 10000 });
+  await b.waitForFunction(() => document.querySelectorAll(".cap").length > 0, null, { timeout: 15000 });
+  await b.screenshot({ path: OUT + "8-guest-audio-only.png" });
+  await a.screenshot({ path: OUT + "9-host-partner-audio-only.png" });
+  await show(b);
+  await b.getByRole("button", { name: "Görüntüye geri dön" }).click();
+  await a.waitForFunction(() => !document.querySelector(".no-video"), null, { timeout: 15000 });
+  if (!(await videoFlowing(a))) throw new Error("B's video did not resume on A");
+  if (!(await videoFlowing(b))) throw new Error("A's video did not resume on B");
+  console.log("  video resumed both ways");
 
   step("A hangs up: B is told, upstream streams close");
-  await a.locator(".topbar").evaluate((el) => el.closest(".call").click());
+  await show(a);
   await a.getByRole("button", { name: "End call" }).click();
   await a.getByText("Call ended").waitFor();
   await b.getByText("Karşı taraf aramadan ayrıldı.").waitFor({ timeout: 10000 });

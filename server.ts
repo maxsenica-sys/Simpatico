@@ -90,7 +90,10 @@ wss.on("connection", (ws) => {
       peer = result.peer;
       const partner = partnerOf(room, peer);
       send(ws, { t: "joined", selfId: peer.id, fresh: result.fresh, partner: partner?.lang ?? null, iceServers: await getIceServers() });
-      if (!sonioxConfigured()) send(ws, { t: "captions", state: "unavailable" });
+      if (!sonioxConfigured()) {
+        send(ws, { t: "captions", state: "unavailable", side: "theirs" });
+        send(ws, { t: "captions", state: "unavailable", side: "mine" });
+      }
       if (result.fresh && partner) send(partner.ws, { t: "peer-joined", partner: peer.lang, offer: true });
       log("peer_joined", { room: room.code, peer: peer.label, fresh: result.fresh, speaks: lang.speaks, reads: lang.reads, partner: !!partner });
       return;
@@ -107,6 +110,7 @@ wss.on("connection", (ws) => {
         break;
       case "speech":
         if (!msg.on) peer.pipeline.speechEnded();
+        send(partner?.ws, { t: "partner-speech", on: !!msg.on });
         break;
       case "log":
         log(`client_${String(msg.event).slice(0, 40)}`, { room: room.code, peer: peer.label, ...(msg.detail ?? {}) });

@@ -26,6 +26,8 @@ const SYSTEM = `You write the subtitles for a live, face-to-face video call betw
 - The transcript comes from speech recognition and can contain mistakes, fillers and false starts. Use the recent conversation to work out what was meant. Drop fillers that carry no meaning.
 - Keep it as short as the natural spoken version. It is read as a subtitle while watching the speaker's face.
 - Glossary entries are names, nicknames and in-jokes between these two people. Use them as given.
+- You don't know the speaker's or listener's gender. Where the target language marks gender (verb endings, adjectives, pronouns), prefer natural phrasing that avoids committing to one; if that isn't possible, use the grammatical default.
+- Render interjections and backchannels ("mm-hmm", "uh-huh", "wow", "oh no") with the target language's own spoken equivalent, never the source-language sound.
 - Reply with the translation only: no quotes, notes, alternatives, transliteration or explanations. If the utterance has no translatable content, reply with it unchanged.`;
 
 let client: Anthropic | null = null;

@@ -60,6 +60,18 @@ await until(() => reader.some((m) => m.t === "caption" && m.stage === "final"));
 const fin = reader.find((m) => m.t === "caption" && m.stage === "final") as Extract<ServerMsg, { t: "caption" }>;
 assert.equal(fin.text, "break a leg.", "translation tail is attributed to the closed utterance");
 assert.ok(speaker.some((m) => m.t === "own" && m.final && m.text === "break a leg"), "speaker gets own transcript");
+
+// 2b. Real Soniox order (verified live): final originals, final translation, THEN <end>.
+// The speaker's line must still be marked final even though its text didn't change at <end>.
+speaker.length = 0;
+reader.length = 0;
+push(ws1, [tok("Really?", true)]);
+push(ws1, [tok("Gerçekten mi?", true, true)]);
+await until(() => speaker.some((m) => m.t === "own" && m.text === "Really?"));
+push(ws1, [tok("<end>", true)]);
+await until(() => speaker.some((m) => m.t === "own" && m.final && m.text === "Really?"));
+await until(() => reader.some((m) => m.t === "caption" && m.stage === "final" && m.text === "Gerçekten mi?"));
+console.log("✓ real token order: translation before <end>, own line finalised");
 console.log("✓ live → final, translation tail attributed correctly");
 
 // 3. Upstream drop: reader told captions paused, next audio transparently reconnects

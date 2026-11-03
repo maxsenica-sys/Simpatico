@@ -229,7 +229,8 @@ export class SpeakerPipeline {
     }
     const context = this.host.context();
     this.host.record({ who: this.host.label, lang: this.speaks!, text: source });
-    if (u.lastOwnText !== source) this.host.toSpeaker({ t: "own", id: u.id, text: source, final: true });
+    // Always mark the speaker's own line final, even when its text didn't change at close.
+    this.host.toSpeaker({ t: "own", id: u.id, text: source, final: true });
     u.lastOwnText = source;
 
     if (!this.translating) {

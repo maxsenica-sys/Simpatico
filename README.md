@@ -1,4 +1,4 @@
-# Talk
+# Simpatico
 
 One-to-one browser video calls. Both people hear each other's real voice, untouched, and each reads the other in their own language as live captions on the video.
 

@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
+import { BRAND } from "@/shared/brand";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Talk",
-    short_name: "Talk",
+    name: BRAND.appName,
+    short_name: BRAND.appName,
     description: "Video calls with live translated captions.",
     start_url: "/",
     scope: "/",

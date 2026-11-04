@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { timingSafeEqual } from "node:crypto";
+import { BRAND } from "../shared/brand";
 import { append, device, recent } from "./store";
 
 /** Read a small JSON body (rejects anything over `limit` bytes). */
@@ -96,14 +97,14 @@ export function dashboard(token: string | undefined, res: ServerResponse) {
     }</tbody></table>`;
 
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
-<title>Talk · dashboard</title><style>
+<title>${BRAND.appName} · dashboard</title><style>
 :root{color-scheme:dark}body{margin:0;font:15px/1.45 system-ui,-apple-system,sans-serif;background:#0b0d10;color:#f4f5f7;padding:20px 16px 48px}
 main{max-width:1100px;margin:0 auto}h1{font-size:1.4rem;margin:0 0 4px}h2{font-size:1.1rem;margin:32px 0 10px}.muted{color:#9aa0a8}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:16px}.kpi{background:#15181d;border:1px solid #262a31;border-radius:12px;padding:12px 14px}
 .kpi b{display:block;font-size:1.5rem}table{width:100%;border-collapse:collapse;font-size:.88rem}th,td{text-align:left;padding:7px 8px;border-bottom:1px solid #22262c;vertical-align:top}
 th{color:#9aa0a8;font-weight:600}.wrap{overflow-x:auto}.great{color:#3ddc84}.bad{color:#ff6b6b}.ok{color:#ffc24b}code{font-size:.8rem;white-space:pre-wrap;word-break:break-word;color:#c9ced6}
 </style></head><body><main>
-<h1>Talk · development dashboard</h1><p class="muted">Calls are recorded when their room closes. No audio, video or words of conversations are stored.</p>
+<h1>${BRAND.appName} · development dashboard</h1><p class="muted">Calls are recorded when their room closes. No audio, video or words of conversations are stored.</p>
 <div class="kpis">
 <div class="kpi"><span class="muted">Calls</span><b>${calls.length}</b><span class="muted">${groups} group</span></div>
 <div class="kpi"><span class="muted">Call minutes</span><b>${Math.round(minutes)}</b><span class="muted">avg ${calls.length ? Math.round(minutes / calls.length) : 0} min</span></div>

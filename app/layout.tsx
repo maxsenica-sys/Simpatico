@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { BRAND } from "@/shared/brand";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Talk",
+  title: BRAND.appName,
   description: "Video calls with live, idiomatic translated captions. Hear their real voice, read them in your language.",
-  applicationName: "Talk",
-  appleWebApp: { capable: true, title: "Talk", statusBarStyle: "black-translucent" },
+  applicationName: BRAND.appName,
+  appleWebApp: { capable: true, title: BRAND.appName, statusBarStyle: "black-translucent" },
   formatDetection: { telephone: false },
 };
 

@@ -51,12 +51,12 @@ const waitCaption = (page, from, test, what) =>
 try {
   step("Coach starts a group call from the home page (Turkish UI)");
   await coach.goto(BASE);
-  await coach.getByRole("button", { name: "Grup araması başlat" }).click();
+  await coach.getByRole("button", { name: "Grup araması" }).click();
   await coach.waitForURL(/\/r\/[a-z0-9]{6}$/);
   const url = coach.url();
   await coach.getByText("Grup araması").first().waitFor();
   await join(coach, people[0], url);
-  await coach.getByText("Katılımcılar bekleniyor").waitFor();
+  await coach.getByText("Diğerlerinin katılması bekleniyor").waitFor();
 
   step("Max (English, remote), Ivan (Russian, in the room) and Ayşe (Turkish, in the room) join");
   await join(max, people[1], url);

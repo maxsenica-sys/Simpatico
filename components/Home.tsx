@@ -50,15 +50,6 @@ export function Home() {
         <button className="btn big secondary" onClick={() => start("group")} disabled={busy}>
           {t("startGroup")}
         </button>
-        <p className="muted small">{t("groupTagline", { max: "12" })}</p>
-        <section className="how" aria-labelledby="how-title">
-          <h2 id="how-title">{t("howItWorks")}</h2>
-          <ol>
-            <li>{t("step1")}</li>
-            <li>{t("step2")}</li>
-            <li>{t("step3")}</li>
-          </ol>
-        </section>
       </div>
       <footer className="home-foot">
         {install ? (

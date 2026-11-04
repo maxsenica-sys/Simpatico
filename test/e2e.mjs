@@ -49,11 +49,11 @@ try {
   await a.getByRole("button", { name: "Start a call" }).click();
   await a.waitForURL(/\/r\/[a-z0-9]{6}$/);
   const url = a.url();
-  await a.getByText("Send this link").waitFor();
   await a.getByText("You speak English").waitFor();
   await a.screenshot({ path: OUT + "1-host-join.png" });
   await a.getByRole("button", { name: "Join with video" }).click();
-  await a.getByText("Waiting for the other person").waitFor();
+  await a.getByText("Waiting for them to join").waitFor();
+  await a.getByText("Send this link").waitFor();
 
   step("B (Turkish phone) opens the link: UI must be Turkish with no settings touched");
   await b.goto(url);
@@ -141,7 +141,7 @@ try {
   await show(b);
   await b.getByRole("button", { name: "Sadece sese geç" }).click();
   await b.waitForFunction(() => document.querySelector(".no-video p")?.textContent?.includes("Sadece ses"), null, { timeout: 10000 });
-  await a.getByText("They switched to audio only").waitFor({ timeout: 10000 });
+  await a.getByText("They're on audio only").waitFor({ timeout: 10000 });
   await b.waitForFunction(() => document.querySelectorAll(".cap").length > 0, null, { timeout: 15000 });
   await b.screenshot({ path: OUT + "8-guest-audio-only.png" });
   await a.screenshot({ path: OUT + "9-host-partner-audio-only.png" });

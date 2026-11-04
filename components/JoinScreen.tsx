@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { useT } from "@/lib/i18n";
 import { LanguageLine } from "./LanguageLine";
 import { Logo } from "./Logo";
-import { ShareLink } from "./ShareLink";
 
 const NAME_KEY = "talk.name";
 const readName = () => {
@@ -19,12 +18,10 @@ export type JoinChoice = { audioOnly: boolean; name?: string; inRoom?: boolean }
 
 export function JoinScreen({
   stream,
-  shareUrl,
   group,
   onJoin,
 }: {
   stream: MediaStream | null;
-  shareUrl: string | null;
   /** Set for group calls: asks for a name and whether you're in the same room. */
   group: { max: number } | null;
   onJoin: (choice: JoinChoice) => void;
@@ -67,7 +64,7 @@ export function JoinScreen({
           <>
             <label className="field">
               <span>{t("yourName")}</span>
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("namePlaceholder")} maxLength={40} autoComplete="given-name" />
+              <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} autoComplete="given-name" />
             </label>
             <label className="check">
               <input type="checkbox" checked={inRoom} onChange={(e) => setInRoom(e.target.checked)} />
@@ -86,21 +83,18 @@ export function JoinScreen({
             <button className="btn big secondary" disabled={!stream} onClick={() => join(true)}>
               {t("joinAudio")}
             </button>
-            <p className="muted small">{t("audioOnlyHint")}</p>
           </>
         ) : (
           <button className="btn primary big" disabled={!stream} onClick={() => join(true)}>
             {t("join")}
           </button>
         )}
-        <p className="muted small">{t("permissionNote")}</p>
         <p className="muted consent">
           {t("consent")}{" "}
           <Link href="/privacy" target="_blank">
             {t("privacy")}
           </Link>
         </p>
-        {shareUrl && <ShareLink url={shareUrl} />}
       </section>
     </main>
   );

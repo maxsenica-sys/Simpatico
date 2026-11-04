@@ -415,7 +415,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
       </div>
 
       {selfView && s.camOn && s.selfVideo && (
-        <div className="self" onClick={(e) => e.stopPropagation()}>
+        <div className={`self ${s.phase === "waiting" ? "low" : ""}`} onClick={(e) => e.stopPropagation()}>
           <video ref={selfRef} className={facingMirror(s)} autoPlay playsInline muted />
           <button className="self-x" aria-label={t("hideSelf")} onClick={() => setSelfView(false)}>
             ×

@@ -124,7 +124,6 @@ export function Room({ code }: { code: string }) {
   return (
     <JoinScreen
       stream={media instanceof MediaStream ? media : null}
-      shareUrl={room.peers === 0 || room.kind === "group" ? url : null}
       group={room.kind === "group" ? { max: room.max } : null}
       onJoin={({ audioOnly, name, inRoom }) => {
         if (!(media instanceof MediaStream)) return;

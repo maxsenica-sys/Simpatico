@@ -71,6 +71,13 @@ export type CallState = {
   problems: Problem[];
   /** What my own self-view shows (a fresh stream whenever the camera track changes). */
   selfVideo: MediaStream | null;
+  /** Everyone who has been in the call, by id (kept after they leave, for the transcript). */
+  names: Record<string, string>;
+  /** Most other people connected at once. */
+  peak: number;
+  /** When we first connected to someone, and when we hung up. */
+  startedAt: number | null;
+  endedAt: number | null;
 };
 
 const CONNECT_TIMEOUT_MS = 20_000;
@@ -163,6 +170,10 @@ export class CallController {
       ownLine: null,
       problems: [],
       selfVideo: null,
+      names: {},
+      peak: 0,
+      startedAt: null,
+      endedAt: null,
     };
     this.state.selfVideo = this.makeSelfStream();
     // Support aid: open the call with ?debug to inspect it from the browser console as window.__call.
@@ -206,7 +217,12 @@ export class CallController {
     this.send({ t: "leave" });
     this.shutdown();
     this.releaseDevices();
-    this.set({ phase: "ended", participants: [], selfVideo: null });
+    this.set({ phase: "ended", participants: [], selfVideo: null, endedAt: Date.now() });
+  }
+
+  /** Room code and my languages, for the end-of-call feedback. */
+  get info() {
+    return { room: this.room, lang: this.lang };
   }
 
   setMuted(muted: boolean) {
@@ -537,6 +553,7 @@ export class CallController {
     const existing = this.participant(info.id);
     if (existing) this.patchParticipant(info.id, { name: info.name, lang: info.lang, inRoom: info.inRoom });
     else this.set({ participants: [...this.state.participants, this.newParticipant(info)], peerLeft: null });
+    this.set({ names: { ...this.state.names, [info.id]: info.name }, peak: Math.max(this.state.peak, this.state.participants.length) });
     if (!this.state.activeId) this.set({ activeId: info.id });
     this.updateMicRemote();
   }
@@ -570,7 +587,7 @@ export class CallController {
         : ps.every((p) => p.failed)
           ? "failed"
           : "connecting";
-    if (phase !== this.state.phase) this.set({ phase });
+    if (phase !== this.state.phase) this.set({ phase, startedAt: phase === "connected" ? (this.state.startedAt ?? Date.now()) : this.state.startedAt });
   }
 
   private onServer(msg: ServerMsg) {

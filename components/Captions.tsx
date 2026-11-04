@@ -15,12 +15,15 @@ const MAX_UTTERANCES = 3;
 export function Captions({
   captions,
   names,
+  lang,
   speaking,
   onOpen,
 }: {
   captions: Caption[];
   /** Group calls: speaker names by id, shown before each line. */
   names: Record<string, string> | null;
+  /** The reader's language, so screen readers pronounce the captions correctly. */
+  lang?: string;
   speaking: boolean;
   onOpen: () => void;
 }) {
@@ -64,7 +67,7 @@ export function Captions({
         onOpen();
       }}
     >
-      <div className="captions" ref={box} aria-live="polite">
+      <div className="captions" ref={box} aria-live="polite" lang={lang}>
         {shown.map((c) => {
           const fading = c.doneAt !== null && now - c.doneAt > LINGER_MS;
           return (

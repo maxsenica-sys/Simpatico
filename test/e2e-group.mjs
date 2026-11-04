@@ -63,12 +63,12 @@ try {
   await join(ivan, people[2], url);
   await join(ayse, people[3], url);
   for (const [k, page] of Object.entries(pages)) {
-    await page.waitForFunction(() => document.querySelectorAll(".person:not(.pending)").length === 3, null, { timeout: 30000 }).catch(() => {
+    await page.waitForFunction(() => document.querySelectorAll(".person:not(.pending):not(.invite-tile)").length === 3, null, { timeout: 30000 }).catch(() => {
       throw new Error(`${k} did not connect to all three others`);
     });
   }
   console.log("  everyone connected to everyone (mesh of 6 connections)");
-  console.log("  Max's people strip:", await max.$$eval(".person", (els) => els.map((e) => `${e.querySelector(".person-name").textContent} (${e.querySelector(".person-lang").textContent})`).join(", ")));
+  console.log("  Max's people strip:", await max.$$eval(".person:not(.invite-tile)", (els) => els.map((e) => `${e.querySelector(".person-name").textContent} (${e.querySelector(".person-lang").textContent})`).join(", ")));
 
   step("Coach's Turkish reaches each person in their own language, labelled with his name");
   await waitCaption(max, "Coach", /en:/, "Max reads English");
@@ -108,7 +108,7 @@ try {
   step("Ivan leaves: everyone is told, the call carries on");
   await ivan.evaluate(() => document.querySelector(".call")?.dispatchEvent(new MouseEvent("mousemove", { bubbles: true })));
   await ivan.locator(".ctrl.danger").last().click();
-  await max.waitForFunction(() => document.querySelectorAll(".person").length === 2, null, { timeout: 15000 });
+  await max.waitForFunction(() => document.querySelectorAll(".person:not(.invite-tile)").length === 2, null, { timeout: 15000 });
   console.log("  Max now sees:", await max.$$eval(".person-name", (els) => els.map((e) => e.textContent).join(", ")));
 
   console.log("\nGROUP E2E PASSED");

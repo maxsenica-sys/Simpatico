@@ -96,6 +96,25 @@ The app runs on http://localhost:3000. For a phone on the same network you need 
 
 Without `SONIOX_API_KEY` the call still works, and the reader sees "captions unavailable". Without `ANTHROPIC_API_KEY`, captions stay on Soniox's literal translation.
 
+## Development dashboard and tester feedback
+
+- **Dashboard** at `/admin?token=<ADMIN_TOKEN>` (a Fly secret; anything else returns 404). It shows:
+  - every call: length, number of people, languages, devices, billed caption minutes and estimated cost;
+  - every feedback rating and comment;
+  - every uncaught error from testers' browsers.
+- **Storage.** Records are JSON lines on the `talk_data` Fly volume, mounted at `/data`, written by `server/store.ts`. Each file rotates at 5 MB. No audio, video or words of conversations are stored.
+- **Feedback.** The end-of-call screen asks "How was the call?" (Great / OK / Not good) with an optional comment. A chosen rating is sent even if the page is closed.
+- **Error reports.** `lib/errors.ts` reports uncaught errors and promise rejections, at most 5 per page.
+
+## Ease of use and accessibility
+
+- **QR invites.** The waiting screen shows the call link as a QR code: always for group calls and on wide screens, otherwise behind a "Show QR code" toggle. In group calls the "+ Invite" tile does the same mid-call. The code is generated on the device.
+- **Save transcript.** Available in the transcript sheet and after the call. It produces a text file with times and names, through the phone's share sheet or as a download.
+- **Captions.** Four text sizes (up to about 70 px) and an optional solid dark box behind them, remembered per device in the transcript sheet. The caption area is an `aria-live` region marked with the reader's language.
+- **Keyboard.** M toggles mute, V the camera, T the transcript, and Esc closes sheets. Sheets are proper dialogs that take focus.
+- **Focus and motion.** Keyboard focus is always visible, and `prefers-reduced-motion` turns off animations.
+- **Captions for deaf and hard-of-hearing people.** Two people who speak the same language get captions too, transcribed rather than translated, which makes the app a live-caption phone call.
+
 ## Privacy
 
 `/privacy` describes exactly what the app does with data. Fill in the operator's name and contact email in `shared/brand.ts` before charging money, and have a lawyer review the policy. The join screen links to it with a one-line consent notice.

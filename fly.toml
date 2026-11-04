@@ -25,6 +25,11 @@ primary_region = "fra"      # Frankfurt: Fly's closest region to Turkey
     path = "/healthz"
     timeout = "5s"
 
+# Development-phase store: tester feedback, client errors, one line per call (server/store.ts).
+[mounts]
+  source = "talk_data"
+  destination = "/data"
+
 [[vm]]
   memory = "512mb"
   cpu_kind = "shared"

@@ -4,6 +4,7 @@ import { baseLang, type ParticipantLang } from "../shared/lang";
 import type { PeerInfo, RoomKind, ServerMsg } from "../shared/protocol";
 import { log } from "./log";
 import { SpeakerPipeline } from "./pipeline";
+import { append } from "./store";
 import type { ContextLine } from "./refine";
 
 export const ROOM_TTL_MS = 2 * 60 * 60 * 1000;
@@ -56,6 +57,8 @@ export type Room = {
   emptySince: number | null;
   floor: { peerId: string; level: number; at: number } | null;
   lastFloor: { level: number; at: number } | null;
+  /** For the development dashboard: one summary line per call, written when the room closes. */
+  stats: { startedAt: number | null; peak: number; people: Set<string>; langs: Set<string>; captionSeconds: number; devices: Set<string> };
 };
 
 const rooms = new Map<string, Room>();
@@ -85,6 +88,7 @@ export function createRoom(kind: RoomKind = "pair"): Room | null {
     emptySince: null,
     floor: null,
     lastFloor: null,
+    stats: { startedAt: null, peak: 0, people: new Set(), langs: new Set(), captionSeconds: 0, devices: new Set() },
   };
   rooms.set(code, room);
   log("room_created", { room: code, kind });
@@ -124,7 +128,7 @@ export function seat(
   peerId: string,
   lang: ParticipantLang,
   ws: WebSocket,
-  opts: { name?: string; inRoom?: boolean } = {},
+  opts: { name?: string; inRoom?: boolean; device?: string } = {},
 ): { peer: Peer; fresh: boolean } | "room-full" {
   let peer = room.peers.get(peerId);
   let fresh = false;
@@ -149,6 +153,12 @@ export function seat(
   peer.name = cleanName(opts.name, peer.label);
   peer.inRoom = room.kind === "group" && !!opts.inRoom;
   room.emptySince = null;
+  const connected = [...room.peers.values()].filter((p) => p.ws).length;
+  room.stats.people.add(peerId);
+  room.stats.langs.add(baseLang(lang.speaks) ?? lang.speaks);
+  if (opts.device) room.stats.devices.add(opts.device);
+  room.stats.peak = Math.max(room.stats.peak, connected);
+  if (connected >= 2) room.stats.startedAt ??= Date.now();
   updatePipelines(room);
   if (!fresh) broadcast(room, { t: "peer-info", peer: info(peer) }, peer);
   return { peer, fresh };
@@ -262,6 +272,9 @@ function makePipeline(room: Room, p: Peer, key: string): SpeakerPipeline {
       if (room.history.length > 50) room.history.splice(0, room.history.length - 50);
     },
     glossary: () => room.glossary,
+    billed: (seconds) => {
+      room.stats.captionSeconds += seconds;
+    },
   });
 }
 
@@ -320,6 +333,23 @@ function destroyRoom(room: Room, why: string) {
   }
   rooms.delete(room.code);
   log("room_closed", { room: room.code, why, minutes: Math.round((Date.now() - room.createdAt) / 60000) });
+  const st = room.stats;
+  if (st.startedAt) {
+    const end = room.emptySince ?? Date.now();
+    const captionMinutes = st.captionSeconds / 60;
+    append("calls", {
+      room: room.code,
+      kind: room.kind,
+      minutes: Math.round(((end - st.startedAt) / 60000) * 10) / 10,
+      people: st.people.size,
+      peak: st.peak,
+      langs: [...st.langs],
+      devices: [...st.devices],
+      captionMinutes: Math.round(captionMinutes * 10) / 10,
+      // Soniox real-time translation is about $0.18 per stream-hour; Claude adds a few cents.
+      estCostUsd: Math.round((captionMinutes / 60) * 0.18 * 1000) / 1000,
+    });
+  }
 }
 
 setInterval(() => {

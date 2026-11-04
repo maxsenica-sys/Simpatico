@@ -55,6 +55,8 @@ export interface PipelineHost {
   context(): ContextLine[];
   record(line: ContextLine): void;
   glossary(): Record<string, string>;
+  /** Seconds an upstream stream was open (Soniox bills by open time), reported when it closes. */
+  billed?(seconds: number): void;
 }
 
 type Utterance = {
@@ -153,6 +155,7 @@ export class SpeakerPipeline {
     stream.on("drop", ({ fatal, reason }: { fatal: boolean; reason: string }) => {
       if (this.stream !== stream) return;
       this.stream = null;
+      this.host.billed?.((Date.now() - stream.startedAt) / 1000);
       this.flushOpen();
       log("soniox_drop", { ref: this.host.ref, fatal, reason, failures: this.failures });
       if (fatal) {
@@ -181,6 +184,7 @@ export class SpeakerPipeline {
     this.idleTimer = null;
     if (this.stream) {
       log("soniox_stop", { ref: this.host.ref, why });
+      this.host.billed?.((Date.now() - this.stream.startedAt) / 1000);
       this.stream.close();
       this.stream = null;
     }

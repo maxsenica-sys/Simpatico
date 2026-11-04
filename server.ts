@@ -4,7 +4,9 @@ import next from "next";
 import { WebSocketServer, type WebSocket } from "ws";
 import { sanitizeLang } from "./shared/lang";
 import type { ClientMsg } from "./shared/protocol";
+import { clientError, dashboard, feedback } from "./server/admin";
 import { getIceServers } from "./server/ice";
+import { device } from "./server/store";
 import { log } from "./server/log";
 import { refineConfigured } from "./server/refine";
 import { broadcast, createRoom, disconnect, getRoom, info, others, removePeer, seat, send, setInRoom, speakerAudio, stopSpeaking, type Peer, type Room } from "./server/rooms";
@@ -26,6 +28,9 @@ const server = createServer((req, res) => {
   const url = parse(req.url ?? "/", true);
   const path = url.pathname ?? "/";
   if (path === "/healthz") return json(res, 200, { ok: true });
+  if (path === "/api/feedback" && req.method === "POST") return void feedback(req, res);
+  if (path === "/api/client-error" && req.method === "POST") return void clientError(req, res);
+  if (path === "/admin" && req.method === "GET") return dashboard(typeof url.query.token === "string" ? url.query.token : undefined, res);
   if (path === "/api/rooms" && req.method === "POST") {
     const kind = url.query.kind === "group" ? "group" : "pair";
     const room = createRoom(kind);
@@ -61,8 +66,9 @@ setInterval(() => {
   }
 }, 20_000).unref();
 
-wss.on("connection", (ws) => {
+wss.on("connection", (ws, req) => {
   alive.add(ws);
+  const devName = device(req.headers["user-agent"]);
   ws.on("pong", () => alive.add(ws));
   let room: Room | undefined;
   let peer: Peer | undefined;
@@ -87,7 +93,7 @@ wss.on("connection", (ws) => {
       }
       room = getRoom(msg.room);
       if (!room) return send(ws, { t: "error", code: "room-not-found" });
-      const result = seat(room, msg.peerId, lang, ws, { name: msg.name, inRoom: msg.inRoom });
+      const result = seat(room, msg.peerId, lang, ws, { name: msg.name, inRoom: msg.inRoom, device: devName });
       if (result === "room-full") return send(ws, { t: "error", code: "room-full" });
       peer = result.peer;
       const rest = others(room, peer);

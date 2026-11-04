@@ -80,7 +80,7 @@ try {
 
   step("Tap caption area opens the transcript");
   await b.locator(".captions-zone").click();
-  await b.getByText("Konuşma dökümü").waitFor();
+  await b.getByRole("heading", { name: "Konuşma dökümü" }).waitFor();
   await b.waitForTimeout(500);
   await b.screenshot({ path: OUT + "5-guest-transcript.png" });
   console.log("  B transcript lines:", await b.$$eval(".tline", (els) => els.length));

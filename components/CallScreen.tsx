@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { worst, type CallController, type CallState, type Participant } from "@/lib/call";
+import { CAPTION_SIZES, loadCaptionPrefs, saveCaptionPrefs, type CaptionPrefs } from "@/lib/captionPrefs";
+import { saveTranscript, transcriptText } from "@/lib/transcriptFile";
 import { langInfo } from "@/shared/lang";
 import { useT } from "@/lib/i18n";
 import { Captions } from "./Captions";
@@ -26,9 +28,44 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const [connectedAt, setConnectedAt] = useState<number | null>(null);
   const [videoLostAt, setVideoLostAt] = useState<number | null>(null);
   const [firstOwnAt, setFirstOwnAt] = useState<number | null>(null);
+  const [prefs, setPrefs] = useState<CaptionPrefs>({ size: "m", box: false });
+  const [invite, setInvite] = useState(false);
+  const [wide, setWide] = useState(false);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const group = s.kind === "group";
+  useEffect(() => {
+    setPrefs(loadCaptionPrefs());
+    setWide(window.matchMedia?.("(min-width: 760px)").matches ?? false);
+  }, []);
+  const changePrefs = (p: CaptionPrefs) => {
+    setPrefs(p);
+    saveCaptionPrefs(p);
+  };
+  const save = () => {
+    const names = { ...s.names };
+    const text = transcriptText(s.transcript, names, t("you"), t("transcriptTitle"));
+    saveTranscript(text, `transcript-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-")}.txt`);
+  };
+
+  // Keyboard shortcuts (laptops): M mute, V camera, T transcript, Esc close.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (e.metaKey || e.ctrlKey || e.altKey || el?.closest("input, textarea, select")) return;
+      const k = e.key.toLowerCase();
+      if (k === "escape") {
+        setTranscript(false);
+        setInvite(false);
+      } else if (k === "m") call.setMuted(!call.getState().muted);
+      else if (k === "v" && !call.getState().audioOnly) call.setCamera(!call.getState().camOn);
+      else if (k === "t") setTranscript((v) => !v);
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [call]);
   const stage: Participant | undefined = s.participants.find((p) => p.id === s.activeId) ?? s.participants[0];
 
   useEffect(() => {
@@ -104,17 +141,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
       return next;
     });
 
-  if (s.phase === "ended")
-    return (
-      <Notice title={t("callEnded")}>
-        <button className="btn primary" onClick={onRejoin}>
-          {t("rejoin")}
-        </button>
-        <Link className="btn" href="/">
-          {t("startNew")}
-        </Link>
-      </Notice>
-    );
+  if (s.phase === "ended") return <EndScreen call={call} s={s} onSave={save} onRejoin={onRejoin} />;
   if (s.phase === "gone" || s.phase === "full" || s.phase === "replaced")
     return (
       <Notice title={s.phase === "gone" ? t("roomGone") : s.phase === "full" ? (group ? t("groupFull") : t("roomFull")) : t("replaced")}>
@@ -235,7 +262,12 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const showControls = controls || !connected || banners.some((b) => b.tone === "warn");
 
   return (
-    <main className={`call ${group ? "group" : ""} ${showControls ? "show-controls" : ""}`} onClick={poke} onMouseMove={poke}>
+    <main
+      className={`call ${group ? "group" : ""} ${showControls ? "show-controls" : ""} ${prefs.box ? "cap-box" : ""}`}
+      style={{ ["--cap-size" as string]: CAPTION_SIZES[prefs.size] }}
+      onClick={poke}
+      onMouseMove={poke}
+    >
       <video
         ref={stageRef}
         className={`remote ${placeholder !== null ? "hidden-video" : ""}`}
@@ -271,7 +303,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
         <div className="call-status">
           <div className="spinner" aria-hidden="true" />
           <p>{status}</p>
-          {s.phase === "waiting" && <ShareLink url={shareUrl} />}
+          {s.phase === "waiting" && <ShareLink url={shareUrl} qr={group || wide} />}
         </div>
       )}
 
@@ -355,6 +387,12 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
             {s.participants.map((p) => (
               <PersonTile key={p.id} p={p} active={p.id === stage?.id} showVideo={!s.audioOnly && p.videoOk && s.participants.length < 4} />
             ))}
+            {s.participants.length + 1 < s.max && (
+              <button className="person invite-tile" onClick={() => setInvite(true)} aria-label={t("inviteMore")}>
+                <span className="avatar">+</span>
+                <span className="person-name">{t("lblInvite")}</span>
+              </button>
+            )}
           </div>
         )}
 
@@ -397,9 +435,24 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
         </button>
       )}
 
-      <Captions captions={s.captions} names={group ? names : null} speaking={connected && anySpeaking} onOpen={() => setTranscript(true)} />
+      <Captions captions={s.captions} names={group ? names : null} lang={call.info.lang.reads} speaking={connected && anySpeaking} onOpen={() => setTranscript(true)} />
 
-      {transcript && <Transcript lines={s.transcript} names={group ? names : null} onClose={() => setTranscript(false)} />}
+      {transcript && (
+        <Transcript lines={s.transcript} names={group ? s.names : null} prefs={prefs} onPrefs={changePrefs} onSave={save} onClose={() => setTranscript(false)} />
+      )}
+      {invite && (
+        <div className="sheet invite-sheet" role="dialog" aria-modal="true" aria-label={t("inviteMore")} onClick={(e) => e.stopPropagation()}>
+          <header className="sheet-head">
+            <h2>{t("inviteMore")}</h2>
+            <button className="btn small" autoFocus onClick={() => setInvite(false)}>
+              {t("close")}
+            </button>
+          </header>
+          <div className="sheet-body center-body">
+            <ShareLink url={shareUrl} qr />
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -440,6 +493,95 @@ function PersonTile({ p, active, showVideo }: { p: Participant; active: boolean;
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   return ((parts[0]?.[0] ?? "?") + (parts.length > 1 ? parts.at(-1)![0] : "")).toUpperCase();
+}
+
+/** After hanging up: rate the call (development feedback), save the transcript, rejoin. */
+function EndScreen({ call, s, onSave, onRejoin }: { call: CallController; s: CallState; onSave: () => void; onRejoin: () => void }) {
+  const t = useT();
+  const [rating, setRating] = useState<"great" | "ok" | "bad" | null>(null);
+  const [comment, setComment] = useState("");
+  const [sent, setSent] = useState(false);
+  const pending = useRef<string | null>(null);
+
+  const body = (r: string, c: string) =>
+    JSON.stringify({
+      rating: r,
+      comment: c.trim() || undefined,
+      room: call.info.room,
+      kind: s.kind,
+      people: s.peak + 1,
+      minutes: s.startedAt && s.endedAt ? Math.round(((s.endedAt - s.startedAt) / 60000) * 10) / 10 : undefined,
+      speaks: call.info.lang.speaks,
+      reads: call.info.lang.reads,
+      audioOnly: s.audioOnly || undefined,
+    });
+  const post = (b: string) => {
+    try {
+      if (!navigator.sendBeacon?.("/api/feedback", new Blob([b], { type: "application/json" })))
+        fetch("/api/feedback", { method: "POST", body: b, headers: { "Content-Type": "application/json" }, keepalive: true }).catch(() => {});
+    } catch {}
+  };
+  // A rating chosen but never sent (they closed the page) still counts.
+  useEffect(() => {
+    pending.current = rating && !sent ? body(rating, comment) : null;
+  });
+  useEffect(() => {
+    const flush = () => pending.current && post(pending.current);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
+  }, []);
+
+  const hadCall = s.startedAt !== null;
+  return (
+    <main className="screen center">
+      <div className="card notice end">
+        <h1>{t("callEnded")}</h1>
+        {hadCall && !sent && (
+          <section className="feedback" aria-label={t("howWasCall")}>
+            <p>{t("howWasCall")}</p>
+            <div className="rate" role="radiogroup" aria-label={t("howWasCall")}>
+              {(["great", "ok", "bad"] as const).map((r) => (
+                <button key={r} role="radio" aria-checked={rating === r} className={`btn rate-${r} ${rating === r ? "on" : ""}`} onClick={() => setRating(r)}>
+                  {r === "great" ? t("rateGreat") : r === "ok" ? t("rateOk") : t("rateBad")}
+                </button>
+              ))}
+            </div>
+            {rating && (
+              <>
+                <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder={t("commentPlaceholder")} maxLength={1000} rows={3} />
+                <button
+                  className="btn primary"
+                  onClick={() => {
+                    post(body(rating, comment));
+                    setSent(true);
+                  }}
+                >
+                  {t("sendFeedback")}
+                </button>
+              </>
+            )}
+          </section>
+        )}
+        {sent && <p className="muted" role="status">{t("thanks")}</p>}
+        <div className="actions">
+          {s.transcript.some((l) => l.final) && (
+            <button className="btn" onClick={onSave}>
+              {t("saveTranscript")}
+            </button>
+          )}
+          <button className="btn primary" onClick={onRejoin}>
+            {t("rejoin")}
+          </button>
+          <Link className="btn" href="/">
+            {t("startNew")}
+          </Link>
+        </div>
+      </div>
+    </main>
+  );
 }
 
 /** Mirror the front camera only, like a mirror; the back camera shows the world as it is. */

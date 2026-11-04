@@ -43,6 +43,7 @@ export function Home() {
     <main className="screen center home">
       <div className="hero">
         <Logo />
+        <h1 className="slogan">{t("slogan")}</h1>
         <p className="tagline">{t("tagline")}</p>
         <button className="btn primary big" onClick={() => start("pair")} disabled={busy}>
           {busy ? t("starting") : t("startCall")}

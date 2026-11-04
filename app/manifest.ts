@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: BRAND.appName,
     short_name: BRAND.appName,
-    description: "Video calls with live translated captions.",
+    description: BRAND.tagline,
     start_url: "/",
     scope: "/",
     display: "standalone",

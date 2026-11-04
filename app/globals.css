@@ -62,8 +62,11 @@ p { margin: 0; line-height: 1.5; }
 .wordmark { line-height: 1; padding-bottom: 0.06em; }
 
 .home .hero { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center; }
-.tagline { color: var(--muted); font-size: 1.1rem; max-width: 34ch; }
-.home-foot { position: fixed; bottom: calc(16px + var(--safe-b)); left: 16px; right: 16px; text-align: center; }
+.slogan { font-size: clamp(1.9rem, 7.5vw, 2.6rem); line-height: 1.12; letter-spacing: -0.025em; font-weight: 750; margin: 6px 0 0; max-width: 16ch; text-wrap: balance; }
+.tagline { color: var(--muted); font-size: 1.05rem; max-width: 34ch; text-wrap: balance; }
+.home { justify-content: space-between; gap: 28px; }
+.home .hero { margin: auto 0; }
+.home-foot { text-align: center; }
 
 /* ---------------------------------------------------------------- join */
 .join { display: flex; flex-direction: column; gap: 16px; max-width: 520px; margin: 0 auto; }

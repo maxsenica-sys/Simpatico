@@ -1,7 +1,8 @@
 /** Product and operator details used on public pages. Fill in before charging money. */
 export const BRAND = {
   appName: "Simpatico",
-  tagline: "Video calls in any language",
+  /** The slogan (English); the app shows each user the version in their own language. */
+  tagline: "Different languages. Same conversation.",
   /** Brand colours: the app's blue and the mint of the second speech bubble. */
   blue: "#5b8cff",
   mint: "#5fe0bd",

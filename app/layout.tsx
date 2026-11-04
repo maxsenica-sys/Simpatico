@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: BRAND.appName,
-  description: `${BRAND.tagline} Video calls where you hear their real voice and read them in your language.`,
+  description: `${BRAND.tagline} Live translated captions on video calls. No app, no account.`,
   applicationName: BRAND.appName,
   appleWebApp: { capable: true, title: BRAND.appName, statusBarStyle: "black-translucent" },
   formatDetection: { telephone: false },

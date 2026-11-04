@@ -109,7 +109,6 @@ p { margin: 0; line-height: 1.5; }
   display: flex; gap: 6px; justify-content: center; align-self: stretch; flex-wrap: wrap;
   max-height: 90px; overflow: hidden; opacity: 1; transition: opacity 0.25s ease, max-height 0.25s ease;
 }
-.call:not(.show-controls) .controls { opacity: 0; max-height: 0; pointer-events: none; }
 .ctrl { display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: 0; padding: 0; cursor: pointer; width: 56px; }
 .ctrl-label {
   font-size: 0.66rem; font-weight: 600; line-height: 1.15; text-align: center; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
@@ -178,7 +177,7 @@ p { margin: 0; line-height: 1.5; }
 
 /* captions: no box, a soft scrim plus heavy text shadow */
 .captions-zone {
-  position: absolute; left: 0; right: 0; bottom: 0; cursor: pointer;
+  position: absolute; left: 0; right: 0; bottom: 0; pointer-events: none;
   padding: 48px 16px calc(var(--safe-b) + 24px);
   background: linear-gradient(to top, rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.32) 55%, rgba(0, 0, 0, 0));
   min-height: calc(var(--cap-size) * var(--cap-lh) * 3 + 72px + var(--safe-b));
@@ -291,7 +290,12 @@ p { margin: 0; line-height: 1.5; }
 .seg .muted { margin-inline-end: 6px; }
 .seg-btn { min-width: 40px; min-height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); font-weight: 700; cursor: pointer; }
 .seg-btn.on { background: var(--accent); border-color: transparent; color: var(--accent-ink); }
-.small-check { font-weight: 500; align-items: center; }
+.seg-btn.wide { padding: 0 14px; font-weight: 600; }
+.round-btn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-2); font-weight: 800; font-size: 1rem; cursor: pointer; display: grid; place-items: center; }
+.round-btn:last-child { font-size: 1.5rem; font-weight: 500; }
+.round-btn.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.sheet-foot { padding: 10px 16px calc(12px + var(--safe-b)); border-top: 1px solid var(--line); display: flex; }
+.sheet-foot .btn { flex: 1; }
 .kbd-hint { width: 100%; margin: 0; }
 @media (hover: none) { .kbd-hint { display: none; } }
 

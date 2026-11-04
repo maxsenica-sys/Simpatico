@@ -113,5 +113,6 @@
   "captionSize": "Caption size",
   "captionBox": "Caption background",
   "shortcuts": "Keyboard: M mute · V camera · T transcript · Esc close",
-  "slogan": "Different languages. Same conversation."
+  "slogan": "Different languages. Same conversation.",
+  "captionSettings": "Text size"
 }

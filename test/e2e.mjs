@@ -54,6 +54,14 @@ try {
   await a.getByRole("button", { name: "Join with video" }).click();
   await a.getByText("Waiting for them to join").waitFor();
   await a.getByText("Send this link").waitFor();
+  // Regression: the QR toggle sits where captions show; tapping it must not open the transcript.
+  for (let i = 0; i < 2; i++) {
+    const before = await a.locator(".qr-code").count();
+    await a.locator(".call-status .qr-toggle").click();
+    await a.waitForFunction((n) => document.querySelectorAll(".qr-code").length !== n, before);
+    if (await a.getByRole("dialog").count()) throw new Error("the QR toggle opened the transcript");
+  }
+  if (!(await a.locator(".controls").isVisible())) throw new Error("call controls should always be visible");
 
   step("B (Turkish phone) opens the link: UI must be Turkish with no settings touched");
   await b.goto(url);
@@ -78,9 +86,12 @@ try {
   await a.screenshot({ path: OUT + "4-host-call.png" });
   console.log("  B captions:", await b.$$eval(".cap", (els) => els.map((e) => `[${e.className}] ${e.textContent}`)));
 
-  step("Tap caption area opens the transcript");
-  await b.locator(".captions-zone").click();
+  step("The Text button opens the transcript; caption settings sit behind their own button");
+  await b.locator(".controls").getByRole("button", { name: "Konuşma dökümünü göster" }).click();
   await b.getByRole("heading", { name: "Konuşma dökümü" }).waitFor();
+  if (await b.getByRole("radiogroup", { name: "Altyazı boyutu" }).count()) throw new Error("caption settings should start hidden");
+  await b.getByRole("button", { name: "Yazı boyutu" }).click();
+  await b.getByRole("radiogroup", { name: "Altyazı boyutu" }).waitFor();
   await b.waitForTimeout(500);
   await b.screenshot({ path: OUT + "5-guest-transcript.png" });
   console.log("  B transcript lines:", await b.$$eval(".tline", (els) => els.length));

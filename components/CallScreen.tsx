@@ -21,7 +21,6 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const selfRef = useRef<HTMLVideoElement>(null);
   const [blocked, setBlocked] = useState<Set<string>>(new Set());
   const [selfView, setSelfView] = useState(true);
-  const [controls, setControls] = useState(true);
   const [transcript, setTranscript] = useState(false);
   const [fit, setFit] = useState<"cover" | "contain">("cover");
   const [now, setNow] = useState(() => Date.now());
@@ -31,7 +30,6 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const [prefs, setPrefs] = useState<CaptionPrefs>({ size: "m", box: false });
   const [invite, setInvite] = useState(false);
   const [wide, setWide] = useState(false);
-  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const group = s.kind === "group";
   useEffect(() => {
@@ -106,18 +104,6 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
     if (s.ownLine && firstOwnAt === null) setFirstOwnAt(Date.now());
   }, [s.ownLine, firstOwnAt]);
 
-  const poke = () => {
-    setControls(true);
-    if (hideTimer.current) clearTimeout(hideTimer.current);
-    hideTimer.current = setTimeout(() => setControls(false), 5000);
-  };
-  useEffect(() => {
-    if (s.phase === "connected") poke();
-    else setControls(true);
-    return () => {
-      if (hideTimer.current) clearTimeout(hideTimer.current);
-    };
-  }, [s.phase]);
 
   // Portrait video on a landscape screen (or the reverse) is shown whole instead of cropped.
   const updateFit = () => {
@@ -259,14 +245,11 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
       banners.push({ key: "cc", tone: "warn", text: ccState === "paused" ? t("captionsPaused") : t("captionsUnavailable") });
     if (s.muted) banners.push({ key: "muted", tone: "info", text: t("muted") });
   }
-  const showControls = controls || !connected || banners.some((b) => b.tone === "warn");
 
   return (
     <main
-      className={`call ${group ? "group" : ""} ${showControls ? "show-controls" : ""} ${prefs.box ? "cap-box" : ""}`}
+      className={`call ${group ? "group" : ""} ${prefs.box ? "cap-box" : ""}`}
       style={{ ["--cap-size" as string]: CAPTION_SIZES[prefs.size] }}
-      onClick={poke}
-      onMouseMove={poke}
     >
       <video
         ref={stageRef}
@@ -435,7 +418,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
         </button>
       )}
 
-      <Captions captions={s.captions} names={group ? names : null} lang={call.info.lang.reads} speaking={connected && anySpeaking} onOpen={() => setTranscript(true)} />
+      <Captions captions={s.captions} names={group ? names : null} lang={call.info.lang.reads} speaking={connected && anySpeaking} />
 
       {transcript && (
         <Transcript lines={s.transcript} names={group ? s.names : null} prefs={prefs} onPrefs={changePrefs} onSave={save} onClose={() => setTranscript(false)} />

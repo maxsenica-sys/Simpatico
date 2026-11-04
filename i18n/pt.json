@@ -113,5 +113,6 @@
   "captionSize": "Tamanho das legendas",
   "captionBox": "Fundo das legendas",
   "shortcuts": "Teclado: M microfone · V câmera · T transcrição · Esc fechar",
-  "slogan": "Idiomas diferentes. A mesma conversa."
+  "slogan": "Idiomas diferentes. A mesma conversa.",
+  "captionSettings": "Tamanho do texto"
 }

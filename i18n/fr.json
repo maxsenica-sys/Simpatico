@@ -113,5 +113,6 @@
   "captionSize": "Taille des sous-titres",
   "captionBox": "Fond des sous-titres",
   "shortcuts": "Clavier : M micro · V caméra · T transcription · Échap fermer",
-  "slogan": "Des langues différentes. Une seule conversation."
+  "slogan": "Des langues différentes. Une seule conversation.",
+  "captionSettings": "Taille du texte"
 }

@@ -17,7 +17,6 @@ export function Captions({
   names,
   lang,
   speaking,
-  onOpen,
 }: {
   captions: Caption[];
   /** Group calls: speaker names by id, shown before each line. */
@@ -25,7 +24,6 @@ export function Captions({
   /** The reader's language, so screen readers pronounce the captions correctly. */
   lang?: string;
   speaking: boolean;
-  onOpen: () => void;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const frozen = useRef(new Map<string, string>());
@@ -60,13 +58,7 @@ export function Captions({
   });
 
   return (
-    <div
-      className="captions-zone"
-      onClick={(e) => {
-        e.stopPropagation();
-        onOpen();
-      }}
-    >
+    <div className="captions-zone">
       <div className="captions" ref={box} aria-live="polite" lang={lang}>
         {shown.map((c) => {
           const fading = c.doneAt !== null && now - c.doneAt > LINGER_MS;

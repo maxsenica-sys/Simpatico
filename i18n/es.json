@@ -113,5 +113,6 @@
   "captionSize": "Tamaño de los subtítulos",
   "captionBox": "Fondo de los subtítulos",
   "shortcuts": "Teclado: M silenciar · V cámara · T transcripción · Esc cerrar",
-  "slogan": "Distintos idiomas. Una misma conversación."
+  "slogan": "Distintos idiomas. Una misma conversación.",
+  "captionSettings": "Tamaño del texto"
 }

@@ -28,7 +28,44 @@ const SYSTEM = `You write the subtitles for a live, face-to-face video call betw
 - Glossary entries are names, nicknames and in-jokes between these two people. Use them as given.
 - You don't know the speaker's or listener's gender. Where the target language marks gender (verb endings, adjectives, pronouns), prefer natural phrasing that avoids committing to one; if that isn't possible, use the grammatical default.
 - Render interjections and backchannels ("mm-hmm", "uh-huh", "wow", "oh no") with the target language's own spoken equivalent, never the source-language sound.
-- Reply with the translation only: no quotes, notes, alternatives, transliteration or explanations. If the utterance has no translatable content, reply with it unchanged.`;
+- Your whole reply appears on screen as the subtitle, so reply with the translation only, written in the target language and its usual script: no quotes, notes, alternatives, transliteration, second attempts or explanations. If the utterance has no translatable content, reply with it unchanged.`;
+
+/**
+ * Shared reference for both prompts: everyday slang and spoken particles in the app's main languages.
+ * Static text placed last in the system prompt and marked for caching, so it adds no per-call latency
+ * once warm (Haiku 5.5 caches prompts of 512+ tokens; this keeps both prompts above that).
+ */
+const SLANG = `<spoken_language_reference>
+People on these calls talk casually: friends, families, teammates. Below are common slang words, particles and set phrases by language. They are examples, not a complete list. They are written in Latin letters here, but the transcript uses each language's own script, and speech recognition may spell them oddly. Read them by meaning, and when the target language has its own casual equivalent at the same register, use it.
+
+English: "no cap" = honestly; "lowkey" = a bit, quietly; "bet" = OK, deal; "deadass" = seriously; "slaps" = is great; "sus" = suspicious; "my bad" = sorry; "mate", "bro", "dude" = friend; "innit" = isn't it, right; "gonna/wanna" = going to/want to; "it's giving…" = it looks/feels like…
+Turkish: "kanka", "kanki" = buddy; "abi", "abla" = bro, sis (also polite for an older person); "lan" = dude (rough, between friends); "valla" = honestly; "aynen" = exactly; "eyvallah" = thanks, cheers; "hadi ya", "yok artık" = no way; "kolay gelsin" = greeting to someone working; "eline sağlık" = thanks for the food, nice work; "geçmiş olsun" = sorry that happened, get well; "afiyet olsun" = enjoy your meal; "kafayı yemek" = to go crazy; "boş yapma" = stop talking nonsense; "efsane" = legendary; "çok fena" = awesome or awful, by context.
+Russian: "блин" = damn; "короче" = anyway, long story short; "ну" = well; "давай" = come on, OK, bye; "чё" = what; "прикол" = funny thing, joke; "кайф" = bliss; "норм" = fine; "жесть", "капец" = insane, crazy; "забей" = forget it; "ваще" = totally.
+Spanish: "tío/tía" (Spain), "güey/wey" (Mexico), "che" (Argentina), "pana" (Venezuela, Caribbean) = dude; "vale" = OK; "guay", "chévere", "padre", "bacán" = cool; "neta" = really; "ni modo" = oh well; "me vale" = I don't care.
+Portuguese (Brazil): "cara", "mano" = dude; "beleza" = cool, OK; "valeu" = thanks; "né" = right?; "tipo" = like; "nossa" = wow; "tô de boa" = I'm chill; "saudade" = missing someone; "gambiarra" = makeshift fix.
+Arabic: "yalla" = come on, let's go; "wallah" = I swear, really; "inshallah" = hopefully (often a polite maybe); "mashallah" = wonderful; "habibi/habibti" = dear, buddy; "khalas" = enough, done; "ya'ni" = I mean, like; "tamam" = OK; "mafi mushkila", "ma fi mushkila" = no problem; "shlonak", "ezayak" = how are you (Gulf, Egyptian).
+Hindi and Urdu: "yaar" = buddy; "accha" = OK, really?; "arre" = hey, oh; "bas" = enough, that's it; "chalo" = OK, let's go; "theek hai" = OK; "pakka" = for sure; "jugaad" = clever hack; "bindaas" = carefree, cool; "timepass" = killing time; "kya scene hai" = what's up.
+Bengali: "dada", "didi" = older brother, sister (also friendly address); "ki obostha" = what's up; "jhamela" = hassle; "adda" = long chat with friends; "bhalo" = good.
+Indonesian: "gue/gw", "lo/lu" = I, you (casual); "anjir", "anjay" = damn, wow; "santai" = relax; "gokil" = crazy, awesome; "mager" = too lazy to move; "baper" = taking it personally; "otw" = on the way; "wkwk" = haha; the particles "sih", "dong", "deh", "kok" soften or stress and rarely need words of their own.
+French: "wesh" = hey, yo; "frérot", "frère" = bro; "grave" = totally; "ouf" = crazy; "kiffer" = to love; "chelou" = weird; "relou" = annoying; "bof" = meh; "du coup" = so; "genre" = like; "c'est chaud" = it's intense, tough.
+Chinese: "牛", "牛逼" = awesome; "绝了" = amazing; "666" = nice one; "yyds", "永远的神" = the greatest; "躺平" = giving up on the rat race; "内卷" = rat race; "靠谱" = reliable; "加油" = come on, you've got this; "没事" = no worries; "随便" = whatever.
+Terms of address (yaar, abi, habibi, dada, güey, kanka, frérot) become the target language's own (mate, bro, dear), not the original word, unless the listener's language uses it too.
+Sports talk (volleyball and others): keep the terms players of the target language really use; many are borrowed from English ("spike", "set", "libero", "timeout"), so use those rather than a literal translation.
+</spoken_language_reference>`;
+
+/**
+ * Last line of defence for what reaches the screen: with thinking off, a model can occasionally
+ * second-guess itself in the visible reply ("Wait, the target is English…"). Keep the final
+ * subtitle line and drop anything that reads as a note to itself.
+ */
+export function subtitleOnly(text: string): string {
+  const lines = text
+    .split(/\n+/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .filter((l) => !/^(wait|note|actually|hmm|let me|i should|i need|translation\s*:|subtitle\s*:)/i.test(l));
+  return (lines.length > 1 ? lines[lines.length - 1] : (lines[0] ?? "")).trim();
+}
 
 let client: Anthropic | null = null;
 let warned = false;
@@ -68,7 +105,7 @@ export async function refine(input: RefineInput): Promise<string | null> {
         // Latency matters more than depth here: a subtitle rewrite needs no reasoning pass.
         thinking: { type: "disabled" },
         output_config: { effort: "low" },
-        system: SYSTEM,
+        system: [{ type: "text", text: SYSTEM }, { type: "text", text: SLANG, cache_control: { type: "ephemeral" } }],
         messages: [{ role: "user", content: user }],
       },
       { signal: input.signal, maxRetries: 0 },
@@ -77,11 +114,11 @@ export async function refine(input: RefineInput): Promise<string | null> {
       log("refine_refused", { ms: Date.now() - started });
       return null;
     }
-    const text = res.content
+    const raw = res.content
       .flatMap((b) => (b.type === "text" ? [b.text] : []))
-      .join("")
-      .trim();
-    log("refine_ok", { ms: Date.now() - started, src: input.sourceLang, tgt: input.targetLang });
+      .join("");
+    const text = subtitleOnly(raw);
+    log("refine_ok", { ms: Date.now() - started, src: input.sourceLang, tgt: input.targetLang, cached: res.usage.cache_read_input_tokens ?? 0 });
     return text || null;
   } catch (err) {
     const aborted = input.signal.aborted;
@@ -95,7 +132,7 @@ const INTERIM_SYSTEM = `You write live subtitles for a video call between two pe
 - Translate only the fragment you are given. It may stop mid-sentence: do not complete it, guess what comes next, or add final punctuation.
 - Use the earlier part of the same sentence only to understand the fragment; do not translate it again.
 - Natural spoken wording, same register and tone. Idioms and slang by meaning, not word for word.
-- Reply with the translation only.`;
+- Your whole reply appears on screen as the subtitle: the translation only, in the target language and its usual script.`;
 
 export type InterimInput = {
   /** The newest untranslated stretch of the utterance. */
@@ -131,17 +168,17 @@ export async function interimTranslate(input: InterimInput): Promise<string | nu
         max_tokens: 200,
         thinking: { type: "disabled" },
         output_config: { effort: "low" },
-        system: INTERIM_SYSTEM,
+        system: [{ type: "text", text: INTERIM_SYSTEM }, { type: "text", text: SLANG, cache_control: { type: "ephemeral" } }],
         messages: [{ role: "user", content: user }],
       },
       { signal: input.signal, maxRetries: 0 },
     );
     if (res.stop_reason === "refusal") return null;
-    const text = res.content
+    const raw = res.content
       .flatMap((b) => (b.type === "text" ? [b.text] : []))
-      .join("")
-      .trim();
-    log("interim_ok", { ms: Date.now() - started, chars: input.fragment.length });
+      .join("");
+    const text = subtitleOnly(raw);
+    log("interim_ok", { ms: Date.now() - started, chars: input.fragment.length, cached: res.usage.cache_read_input_tokens ?? 0 });
     return text || null;
   } catch (err) {
     if (!input.signal.aborted) log("interim_error", { ms: Date.now() - started, error: String(err) });

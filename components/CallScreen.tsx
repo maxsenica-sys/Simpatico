@@ -141,9 +141,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const status =
     s.phase === "waiting"
       ? s.peerLeft
-        ? group
-          ? t("leftCall", { name: s.peerLeft })
-          : t("peerLeft")
+        ? t("leftCall", { name: s.peerLeft })
         : group
           ? t("waitingGroup")
           : t("waiting")
@@ -276,11 +274,11 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
               {stageAudioOnly ? <AudioOnlyIcon size={44} /> : <CameraIcon off size={44} />}
             </div>
           )}
-          {group && <p className="stage-name">{stage.name}</p>}
+          {stage.name && <p className="stage-name">{stage.name}</p>}
           {placeholder && <p>{placeholder}</p>}
         </div>
       )}
-      {group && connected && stage && placeholder === null && <div className="stage-label">{stage.name}</div>}
+      {connected && stage?.name && placeholder === null && <div className="stage-label">{stage.name}</div>}
 
       {status && (
         <div className="call-status">
@@ -418,10 +416,10 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
         </button>
       )}
 
-      <Captions captions={s.captions} names={group ? names : null} lang={call.info.lang.reads} speaking={connected && anySpeaking} />
+      <Captions captions={s.captions} names={names} lang={call.info.lang.reads} speaking={connected && anySpeaking} />
 
       {transcript && (
-        <Transcript lines={s.transcript} names={group ? s.names : null} prefs={prefs} onPrefs={changePrefs} onSave={save} onClose={() => setTranscript(false)} />
+        <Transcript lines={s.transcript} names={s.names} prefs={prefs} onPrefs={changePrefs} onSave={save} onClose={() => setTranscript(false)} />
       )}
       {invite && (
         <div className="sheet invite-sheet" role="dialog" aria-modal="true" aria-label={t("inviteMore")} onClick={(e) => e.stopPropagation()}>

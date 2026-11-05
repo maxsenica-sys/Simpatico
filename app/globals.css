@@ -266,6 +266,8 @@ p { margin: 0; line-height: 1.5; }
   padding: 12px 14px; min-height: 48px;
 }
 .field input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.field.invalid input { outline: 2px solid var(--danger, #ff5d5d); outline-offset: 1px; }
+.field-error { color: var(--danger, #ff8080); font-weight: 600; font-size: 0.88rem; }
 .check { display: flex; gap: 10px; align-items: flex-start; text-align: start; font-weight: 600; font-size: 0.92rem; cursor: pointer; }
 .check input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--accent); flex-shrink: 0; }
 .check small { display: block; font-weight: 400; margin-top: 3px; line-height: 1.4; }

@@ -5,6 +5,7 @@ import { WebSocketServer, type WebSocket } from "ws";
 
 import { SpeakerPipeline } from "../server/pipeline";
 import { isTrivialEdit } from "../server/text";
+import { subtitleOnly } from "../server/refine";
 
 delete process.env.ANTHROPIC_API_KEY; // pass 2 off: utterances settle on the literal text
 const wss = new WebSocketServer({ port: 3997 });
@@ -108,7 +109,7 @@ const llm = createServer((req, res) => {
   req.on("data", (c) => (body += c));
   req.on("end", () => {
     const j = JSON.parse(body);
-    const interim = String(j.system).includes("still talking");
+    const interim = JSON.stringify(j.system).includes("still talking");
     if (interim) interimCalls++;
     res.writeHead(200, { "content-type": "application/json" });
     res.end(JSON.stringify({ id: "m", type: "message", role: "assistant", model: j.model, stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 }, content: [{ type: "text", text: interim ? "ARA-CEVIRI" : "TAM-CEVIRI" }] }));
@@ -142,6 +143,12 @@ assert.equal(isTrivialEdit("Bunu yarın yaparız.", "bunu yarın yaparız"), tru
 assert.equal(isTrivialEdit("I am going to the store tomorrow.", "I'm going to the store tomorrow."), true);
 assert.equal(isTrivialEdit("break your leg", "good luck"), false);
 console.log("✓ trivial-edit detection");
+
+// A model second-guessing itself in the visible reply never reaches the screen.
+assert.equal(subtitleOnly("Arre yaar, bas karo.\nWait, I should check: the target is English.\nHey, come on, enough already."), "Hey, come on, enough already.");
+assert.equal(subtitleOnly("  Dude, that was legendary  "), "Dude, that was legendary");
+assert.equal(subtitleOnly("Note: casual register\nSee you tomorrow!"), "See you tomorrow!");
+console.log("✓ subtitle-only cleanup");
 
 wss.close();
 console.log("\nPIPELINE TESTS PASSED");

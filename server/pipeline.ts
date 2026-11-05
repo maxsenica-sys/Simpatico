@@ -24,9 +24,16 @@ const IDLE_CLOSE_MS = 10_000;
  * Interim translations: when a long utterance has an untranslated tail this many words long, for
  * this long, translate the tail with the LLM so the reader isn't waiting for the speaker to pause.
  */
-const INTERIM_MIN_WORDS = 4;
-const INTERIM_WAIT_MS = 800;
-const INTERIM_EVERY_MS = 1200;
+const tuned = (key: string, fallback: number) => {
+  const v = Number(process.env[key]);
+  return Number.isFinite(v) && v > 0 ? v : fallback;
+};
+// Live A/B on Fly (31.6 s of continuous speech, en -> tr, 3 runs each): 4 words / 800 / 1200 ms left
+// 5-7 gaps over 2 s per run (longest ~3.4 s); 2 / 300 / 700 with the stale-retry below left 0-1
+// (longest ~2.2 s). The idiomatic pass still rewrites the whole sentence when it ends.
+const INTERIM_MIN_WORDS = tuned("INTERIM_MIN_WORDS", 2);
+const INTERIM_WAIT_MS = tuned("INTERIM_WAIT_MS", 300);
+const INTERIM_EVERY_MS = tuned("INTERIM_EVERY_MS", 700);
 const INTERIM_TIMEOUT_MS = 2500;
 const BACKOFF_MS = [0, 250, 1000, 2000, 5000];
 
@@ -266,11 +273,15 @@ export class SpeakerPipeline {
     return base;
   }
 
-  /** Long utterance, nothing translated for a while: translate the untranslated tail now. */
-  private maybeInterim(u: Utterance) {
+  /**
+   * Long utterance, nothing translated for a while: translate the untranslated tail now.
+   * `retry` skips the waits: an interim that came back stale (Soniox covered part of it meanwhile)
+   * is followed at once by one for the new tail, instead of leaving the reader on a gap.
+   */
+  private maybeInterim(u: Utterance, retry = false) {
     if (!this.translating || u.state !== "open" || u.interimBusy) return;
     const now = Date.now();
-    if (now - u.coveredAt < INTERIM_WAIT_MS || now - u.interimAt < INTERIM_EVERY_MS) return;
+    if (!retry && (now - u.coveredAt < INTERIM_WAIT_MS || now - u.interimAt < INTERIM_EVERY_MS)) return;
     const source = u.origFinal + u.origLive;
     const tail = source.slice(u.covered).trim();
     // Words, or for scripts written without spaces (Chinese, Japanese, Thai), characters / 2.
@@ -288,7 +299,9 @@ export class SpeakerPipeline {
     }).then((text) => {
       u.interimBusy = false;
       // Only useful if Soniox hasn't caught up meanwhile and the utterance is still being spoken.
-      if (!text || u.state !== "open" || u.covered !== covered) return;
+      if (u.state !== "open") return;
+      if (u.covered !== covered) return this.maybeInterim(u, true);
+      if (!text) return;
       u.interim = { covered, tail, text };
       this.emit(u);
     });

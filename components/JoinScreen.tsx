@@ -14,7 +14,7 @@ const readName = () => {
   }
 };
 
-export type JoinChoice = { audioOnly: boolean; name?: string; inRoom?: boolean };
+export type JoinChoice = { audioOnly: boolean; name: string; inRoom?: boolean };
 
 export function JoinScreen({
   stream,
@@ -30,6 +30,8 @@ export function JoinScreen({
   const video = useRef<HTMLVideoElement>(null);
   const [name, setName] = useState("");
   const [inRoom, setInRoom] = useState(false);
+  const [missing, setMissing] = useState(false);
+  const nameRef = useRef<HTMLInputElement>(null);
   useEffect(() => setName(readName()), []);
   useEffect(() => {
     if (video.current && stream) {
@@ -39,14 +41,18 @@ export function JoinScreen({
   }, [stream]);
   const hasVideo = !!stream?.getVideoTracks().length;
 
+  // Everyone gives a name before joining, host included: captions and the transcript say who is talking.
   const join = (audioOnly: boolean) => {
     const n = name.trim();
-    if (group) {
-      try {
-        localStorage.setItem(NAME_KEY, n);
-      } catch {}
+    if (!n) {
+      setMissing(true);
+      nameRef.current?.focus();
+      return;
     }
-    onJoin({ audioOnly, name: group ? n : undefined, inRoom: group ? inRoom : undefined });
+    try {
+      localStorage.setItem(NAME_KEY, n);
+    } catch {}
+    onJoin({ audioOnly, name: n, inRoom: group ? inRoom : undefined });
   };
 
   return (
@@ -60,12 +66,31 @@ export function JoinScreen({
       </div>
       <section className="join-panel">
         <LanguageLine />
+        <label className={`field ${missing ? "invalid" : ""}`}>
+          <span>{t("yourName")}</span>
+          <input
+            ref={nameRef}
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              if (e.target.value.trim()) setMissing(false);
+            }}
+            onKeyDown={(e) => e.key === "Enter" && join(!hasVideo)}
+            maxLength={40}
+            autoComplete="given-name"
+            enterKeyHint="go"
+            required
+            aria-invalid={missing}
+            aria-describedby={missing ? "name-error" : undefined}
+          />
+          {missing && (
+            <span id="name-error" className="field-error" role="alert">
+              {t("nameRequired")}
+            </span>
+          )}
+        </label>
         {group && (
           <>
-            <label className="field">
-              <span>{t("yourName")}</span>
-              <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} autoComplete="given-name" />
-            </label>
             <label className="check">
               <input type="checkbox" checked={inRoom} onChange={(e) => setInRoom(e.target.checked)} />
               <span>

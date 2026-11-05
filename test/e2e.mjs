@@ -51,6 +51,11 @@ try {
   const url = a.url();
   await a.getByText("You speak English").waitFor();
   await a.screenshot({ path: OUT + "1-host-join.png" });
+  step("A name is required before joining, for the host too");
+  await a.getByRole("button", { name: "Join with video" }).click();
+  await a.getByText("Add your name").waitFor();
+  if (await a.locator(".call").count()) throw new Error("joined without a name");
+  await a.locator(".field input").fill("Max");
   await a.getByRole("button", { name: "Join with video" }).click();
   await a.getByText("Waiting for them to join").waitFor();
   await a.getByText("Send this link").waitFor();
@@ -67,6 +72,7 @@ try {
   await b.goto(url);
   await b.getByText("Konuştuğun dil: Türkçe").waitFor();
   await b.screenshot({ path: OUT + "2-guest-join-tr.png" });
+  await b.locator(".field input").fill("Ayşe");
   await b.getByRole("button", { name: "Görüntülü katıl" }).click();
 
   step("WebRTC connects both ways");
@@ -78,6 +84,10 @@ try {
   await a.waitForFunction(() => [...document.querySelectorAll(".cap")].some((e) => e.textContent.includes("en:")), null, { timeout: 20000 });
   const liveOpacity = await b.evaluate(() => { const e = document.querySelector(".cap.live"); return e ? getComputedStyle(e).opacity : null; });
   console.log("  live caption opacity on B:", liveOpacity);
+
+  step("One-to-one captions say who is talking");
+  await b.waitForFunction(() => [...document.querySelectorAll(".cap-who")].some((e) => e.textContent === "Max"), null, { timeout: 10000 });
+  await a.waitForFunction(() => [...document.querySelectorAll(".cap-who")].some((e) => e.textContent === "Ayşe"), null, { timeout: 10000 });
 
   step("Pass-2 refinement swaps in");
   await b.waitForFunction(() => [...document.querySelectorAll(".cap.done")].some((e) => e.textContent.includes("✨ (Turkish)")), null, { timeout: 20000 });
@@ -111,7 +121,7 @@ try {
     return false;
   };
   const show = (p) => p.evaluate(() => document.querySelector(".call")?.dispatchEvent(new MouseEvent("mousemove", { bubbles: true })));
-  const placeholderText = (p) => p.evaluate(() => document.querySelector(".no-video p")?.textContent ?? null);
+  const placeholderText = (p) => p.evaluate(() => document.querySelector(".no-video p:not(.stage-name)")?.textContent ?? null);
 
   step("Captions-working check: A sees its own recognised words and a green captions badge");
   await a.waitForFunction(() => document.querySelector(".own-line")?.textContent?.length > 4, null, { timeout: 15000 });
@@ -128,7 +138,7 @@ try {
   step("A turns the camera off: B sees 'camera off', captions keep working; then back on");
   await show(a);
   await a.getByRole("button", { name: "Turn camera off" }).click();
-  await b.waitForFunction(() => document.querySelector(".no-video p")?.textContent?.includes("kamerası kapalı"), null, { timeout: 10000 });
+  await b.waitForFunction(() => document.querySelector(".no-video p:not(.stage-name)")?.textContent?.includes("kamerası kapalı"), null, { timeout: 10000 });
   console.log("  B placeholder:", await placeholderText(b));
   await b.screenshot({ path: OUT + "7-guest-sees-camera-off.png" });
   await show(a);
@@ -151,7 +161,7 @@ try {
   step("B switches to audio only: no video either way, A is told, captions still arrive at B");
   await show(b);
   await b.getByRole("button", { name: "Sadece sese geç" }).click();
-  await b.waitForFunction(() => document.querySelector(".no-video p")?.textContent?.includes("Sadece ses"), null, { timeout: 10000 });
+  await b.waitForFunction(() => document.querySelector(".no-video p:not(.stage-name)")?.textContent?.includes("Sadece ses"), null, { timeout: 10000 });
   await a.getByText("They're on audio only").waitFor({ timeout: 10000 });
   await b.waitForFunction(() => document.querySelectorAll(".cap").length > 0, null, { timeout: 15000 });
   await b.screenshot({ path: OUT + "8-guest-audio-only.png" });
@@ -167,7 +177,7 @@ try {
   await show(a);
   await a.getByRole("button", { name: "End call" }).click();
   await a.getByText("Call ended").waitFor();
-  await b.getByText("Karşı taraf aramadan ayrıldı.").waitFor({ timeout: 10000 });
+  await b.getByText("Max aramadan ayrıldı.").waitFor({ timeout: 10000 });
   await b.screenshot({ path: OUT + "6-guest-peer-left.png" });
 
   console.log("\nE2E PASSED");

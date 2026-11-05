@@ -54,6 +54,6 @@ export function device(ua: string | undefined): string {
   if (!ua) return "?";
   const os = /iPhone|iPad/.test(ua) ? "iOS" : /Android/.test(ua) ? "Android" : /Mac OS X/.test(ua) ? "macOS" : /Windows/.test(ua) ? "Windows" : /Linux/.test(ua) ? "Linux" : "other";
   const br = /CriOS|Chrome\//.test(ua) && !/Edg\//.test(ua) ? "Chrome" : /Edg\//.test(ua) ? "Edge" : /Firefox\//.test(ua) ? "Firefox" : /Safari\//.test(ua) ? "Safari" : "other";
-  const app = /Instagram|FBAN|FBAV|WhatsApp|Line\//.test(ua) ? " (in-app)" : "";
+  const app = /SimpaticoApp\//.test(ua) ? " (Simpatico app)" : /Instagram|FBAN|FBAV|WhatsApp|Line\//.test(ua) ? " (in-app)" : "";
   return `${os} ${br}${app}`;
 }

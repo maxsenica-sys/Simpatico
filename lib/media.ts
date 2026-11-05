@@ -1,4 +1,5 @@
 "use client";
+import { isNativeApp } from "./env";
 
 export type MediaFailure = "denied" | "no-device" | "maybe-in-app" | "other";
 
@@ -7,6 +8,9 @@ export const AUDIO: MediaTrackConstraints = {
   noiseSuppression: true,
   autoGainControl: true,
   channelCount: 1,
+  // Browsers with built-in voice isolation (recent Chrome on some platforms) keep the nearest
+  // voice and drop the room; others ignore this.
+  ...({ voiceIsolation: true } as MediaTrackConstraints),
 };
 
 export function videoConstraints(facing: "user" | "environment" = "user"): MediaTrackConstraints {
@@ -38,7 +42,7 @@ export async function getLocalMedia(ios: boolean): Promise<MediaStream | MediaFa
       }
     }
     // Embedded iOS browsers fail in odd ways (TypeError, AbortError) rather than asking.
-    return ios ? "maybe-in-app" : "other";
+    return ios && !isNativeApp() ? "maybe-in-app" : "other";
   }
 }
 

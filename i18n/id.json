@@ -114,5 +114,15 @@
   "captionBox": "Latar teks",
   "shortcuts": "Keyboard: M bisukan · V kamera · T transkrip · Esc tutup",
   "slogan": "Beda bahasa, tetap satu obrolan.",
-  "captionSettings": "Ukuran teks"
+  "captionSettings": "Pengaturan teks",
+  "captionStyle": "Teks",
+  "styleSteady": "Stabil",
+  "styleInstant": "Kata per kata",
+  "styleSteadyHint": "Kalimat utuh yang tidak berubah. Paling mudah dibaca.",
+  "styleInstantHint": "Paling cepat, tapi kata bisa berubah saat mereka bicara.",
+  "backHome": "Kembali ke beranda",
+  "voiceFocus": "Fokus suara",
+  "voiceFocusHint": "Hanya suaraku yang dibuat teks, bukan suara orang yang lebih jauh.",
+  "deniedApp": "Buka Pengaturan › Simpatico, izinkan Kamera dan Mikrofon, lalu kembali ke sini.",
+  "micModes": "Isolasi Suara iPhone"
 }

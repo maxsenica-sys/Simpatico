@@ -114,5 +114,15 @@
   "captionBox": "Fond des sous-titres",
   "shortcuts": "Clavier : M micro · V caméra · T transcription · Échap fermer",
   "slogan": "Des langues différentes. Une seule conversation.",
-  "captionSettings": "Taille du texte"
+  "captionSettings": "Réglages des sous-titres",
+  "captionStyle": "Sous-titres",
+  "styleSteady": "Stables",
+  "styleInstant": "Mot à mot",
+  "styleSteadyHint": "Des phrases complètes qui ne changent pas. Plus faciles à lire.",
+  "styleInstantHint": "Plus rapides, mais les mots peuvent changer pendant que l’autre parle.",
+  "backHome": "Retour à l’accueil",
+  "voiceFocus": "Isolation de la voix",
+  "voiceFocusHint": "Seule ma voix est sous-titrée, pas celle des personnes plus éloignées.",
+  "deniedApp": "Ouvre Réglages › Simpatico et autorise Appareil photo et Micro, puis reviens ici.",
+  "micModes": "Isolation de la voix de l’iPhone"
 }

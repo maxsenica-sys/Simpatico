@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { CallController } from "@/lib/call";
+import { loadCaptionPrefs } from "@/lib/captionPrefs";
 import type { RoomKind } from "@/shared/protocol";
 import { detectEnv, systemBrowserUrl, type BrowserEnv } from "@/lib/env";
 import { useT } from "@/lib/i18n";
@@ -88,7 +89,7 @@ export function Room({ code }: { code: string }) {
     );
 
   if (media === "denied") {
-    const steps = env.ios ? t("deniedIos") : env.android ? t("deniedAndroid") : t("deniedDesktop");
+    const steps = env.nativeApp ? t("deniedApp") : env.ios ? t("deniedIos") : env.android ? t("deniedAndroid") : t("deniedDesktop");
     return (
       <Notice tone="warn" title={t("deniedTitle")} body={<p>{steps}</p>}>
         <button className="btn primary" onClick={() => location.reload()}>
@@ -127,7 +128,7 @@ export function Room({ code }: { code: string }) {
       group={room.kind === "group" ? { max: room.max } : null}
       onJoin={({ audioOnly, name, inRoom }) => {
         if (!(media instanceof MediaStream)) return;
-        const c = new CallController(code, peerIdFor(code), lang, media, { audioOnly, name, inRoom });
+        const c = new CallController(code, peerIdFor(code), lang, media, { audioOnly, name, inRoom, captionStyle: loadCaptionPrefs().style, voiceFocus: loadCaptionPrefs().focus });
         callRef.current = c;
         c.start();
         setCall(c);

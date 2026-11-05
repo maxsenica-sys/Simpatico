@@ -1,9 +1,9 @@
 import { randomInt } from "node:crypto";
 import type { WebSocket } from "ws";
 import { baseLang, type ParticipantLang } from "../shared/lang";
-import type { PeerInfo, RoomKind, ServerMsg } from "../shared/protocol";
+import type { CaptionStyle, PeerInfo, RoomKind, ServerMsg } from "../shared/protocol";
 import { log } from "./log";
-import { SpeakerPipeline } from "./pipeline";
+import { SpeakerPipeline, type ReaderMsg } from "./pipeline";
 import { append } from "./store";
 import type { ContextLine } from "./refine";
 
@@ -42,6 +42,8 @@ export type Peer = {
   primaryKey: string | null;
   /** We've told everyone this person is speaking (their audio is being captioned). */
   speaking: boolean;
+  /** How this person reads captions of others. */
+  captionStyle: CaptionStyle;
 };
 
 export type Room = {
@@ -128,7 +130,7 @@ export function seat(
   peerId: string,
   lang: ParticipantLang,
   ws: WebSocket,
-  opts: { name?: string; inRoom?: boolean; device?: string } = {},
+  opts: { name?: string; inRoom?: boolean; device?: string; captionStyle?: unknown } = {},
 ): { peer: Peer; fresh: boolean } | "room-full" {
   let peer = room.peers.get(peerId);
   let fresh = false;
@@ -141,7 +143,7 @@ export function seat(
     }
     const used = new Set([...room.peers.values()].map((p) => p.label));
     const label = [...LABELS].find((l) => !used.has(l)) ?? `P${room.peers.size + 1}`;
-    peer = { id: peerId, label, name: "", lang, inRoom: false, ws: null, graceTimer: null, pipelines: new Map(), primaryKey: null, speaking: false };
+    peer = { id: peerId, label, name: "", lang, inRoom: false, ws: null, graceTimer: null, pipelines: new Map(), primaryKey: null, speaking: false, captionStyle: "steady" };
     room.peers.set(peerId, peer);
     fresh = true;
   }
@@ -152,6 +154,7 @@ export function seat(
   peer.lang = lang;
   peer.name = cleanName(opts.name, peer.label);
   peer.inRoom = room.kind === "group" && !!opts.inRoom;
+  peer.captionStyle = opts.captionStyle === "instant" ? "instant" : "steady";
   room.emptySince = null;
   const connected = [...room.peers.values()].filter((p) => p.ws).length;
   room.stats.people.add(peerId);
@@ -162,6 +165,24 @@ export function seat(
   updatePipelines(room);
   if (!fresh) broadcast(room, { t: "peer-info", peer: info(peer) }, peer);
   return { peer, fresh };
+}
+
+export function setCaptionStyle(peer: Peer, style: unknown) {
+  peer.captionStyle = style === "instant" ? "instant" : "steady";
+}
+
+/** Does this reader get this caption message? Each reading style gets only its own version. */
+function forReader(msg: ReaderMsg, r: Peer): boolean {
+  if (msg.t !== "caption" || !msg.style || msg.style === "all") return true;
+  return msg.style === r.captionStyle;
+}
+
+function toClient(msg: ReaderMsg, from: string): ServerMsg {
+  if (msg.t === "caption") {
+    const { style: _style, ...rest } = msg;
+    return { ...rest, from };
+  }
+  return { ...msg, from };
 }
 
 export function setInRoom(room: Room, peer: Peer, inRoom: boolean) {
@@ -256,14 +277,14 @@ function makePipeline(room: Room, p: Peer, key: string): SpeakerPipeline {
     ref: `${room.code}-${p.label}-${key}`,
     label: p.label,
     toReader: (msg) => {
-      for (const r of readersOf(room, p, key)) send(r.ws, { ...msg, from: p.id });
+      for (const r of readersOf(room, p, key)) if (forReader(msg, r)) send(r.ws, toClient(msg, p.id));
     },
     toSpeaker: (msg) => {
       if (isPrimary()) send(p.ws, msg);
     },
     toOriginal: (msg) => {
       if (!isPrimary() || key === "same") return;
-      for (const r of readersOf(room, p, "same")) send(r.ws, { ...msg, from: p.id });
+      for (const r of readersOf(room, p, "same")) send(r.ws, toClient(msg, p.id));
     },
     context: () => room.history.slice(-CONTEXT_LINES),
     record: (line) => {
@@ -274,6 +295,10 @@ function makePipeline(room: Room, p: Peer, key: string): SpeakerPipeline {
     glossary: () => room.glossary,
     billed: (seconds) => {
       room.stats.captionSeconds += seconds;
+    },
+    styles: () => {
+      const readers = readersOf(room, p, key);
+      return { steady: readers.some((r) => r.captionStyle === "steady"), instant: readers.some((r) => r.captionStyle === "instant") };
     },
   });
 }

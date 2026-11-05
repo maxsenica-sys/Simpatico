@@ -17,7 +17,7 @@
   "retry": "Reintentar",
   "peerLeft": "Salió de la llamada.",
   "callEnded": "Llamada finalizada",
-  "rejoin": "Volver a unirse",
+  "rejoin": "Volver a la llamada",
   "endCall": "Colgar",
   "mute": "Silenciar micrófono",
   "unmute": "Activar micrófono",
@@ -114,5 +114,15 @@
   "captionBox": "Fondo de los subtítulos",
   "shortcuts": "Teclado: M silenciar · V cámara · T transcripción · Esc cerrar",
   "slogan": "Distintos idiomas. Una misma conversación.",
-  "captionSettings": "Tamaño del texto"
+  "captionSettings": "Configuración de subtítulos",
+  "captionStyle": "Subtítulos",
+  "styleSteady": "Estable",
+  "styleInstant": "Palabra por palabra",
+  "styleSteadyHint": "Frases completas que no cambian. Más fáciles de leer.",
+  "styleInstantHint": "Más rápido, pero las palabras pueden cambiar mientras hablan.",
+  "backHome": "Volver al inicio",
+  "voiceFocus": "Enfoque de voz",
+  "voiceFocusHint": "Solo se subtitula mi voz, no la de personas que hablan más lejos.",
+  "deniedApp": "Abre Configuración › Simpatico, permite Cámara y Micrófono y luego vuelve aquí.",
+  "micModes": "Aislamiento de voz del iPhone"
 }

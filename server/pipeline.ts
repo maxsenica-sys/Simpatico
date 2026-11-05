@@ -1,7 +1,7 @@
 import { baseLang, sameLanguage } from "../shared/lang";
 import type { CaptionStage, CaptionState } from "../shared/protocol";
 import { log } from "./log";
-import { interimTranslate, refine, type ContextLine } from "./refine";
+import { interimTranslate, phraseTranslate, refine, refineConfigured, type ContextLine } from "./refine";
 import { SonioxStream, sonioxConfigured, type SonioxToken } from "./soniox";
 import { isTrivialEdit } from "./text";
 
@@ -35,11 +35,29 @@ const INTERIM_MIN_WORDS = tuned("INTERIM_MIN_WORDS", 2);
 const INTERIM_WAIT_MS = tuned("INTERIM_WAIT_MS", 300);
 const INTERIM_EVERY_MS = tuned("INTERIM_EVERY_MS", 700);
 const INTERIM_TIMEOUT_MS = 2500;
+/**
+ * Steady captions (the default reading style): a long utterance is subtitled phrase by phrase from
+ * Soniox's finalised words, each phrase translated once and appended, never rewritten. A phrase is
+ * ready at a clause boundary with enough words, at a length cap, or when the speaker pauses briefly.
+ */
+const STEADY_MIN_WORDS = tuned("STEADY_MIN_WORDS", 4);
+const STEADY_MAX_WORDS = tuned("STEADY_MAX_WORDS", 8);
+const STEADY_PAUSE_MS = tuned("STEADY_PAUSE_MS", 900);
+const STEADY_TIMEOUT_MS = 3000;
+/** Short joining words a phrase shouldn't end on (the main Latin-script app languages). */
+const JOINING = /^(and|or|but|so|when|if|that|which|who|where|while|because|the|a|an|of|to|in|on|at|for|with|from|by|as|than|then|ve|ama|ile|için|gibi|de|da|ki|и|а|но|что|когда|в|на|с|y|o|pero|que|cuando|el|la|los|las|de|en|con|para|e|ou|mas|quando|o|os|as|do|da|em|com|et|ou|mais|quand|le|les|du|des|dans|avec|pour|dan|atau|tapi|yang|di|ke|dari|untuk)$/i;
+const CLAUSE_END = /[.!?;:,…。！？，、；：؟،।]["'”’)\]]*\s*$/u;
 const BACKOFF_MS = [0, 250, 1000, 2000, 5000];
+
+/**
+ * Which readers a caption is for: "instant" (word by word, may be revised), "steady" (phrase by
+ * phrase, append-only), or "all" when there is only one version.
+ */
+export type CaptionStyleTag = "instant" | "steady" | "all";
 
 /** What a pipeline says to the people reading this speaker; the room adds who it is from. */
 export type ReaderMsg =
-  | { t: "caption"; id: string; stage: CaptionStage; text: string }
+  | { t: "caption"; id: string; stage: CaptionStage; text: string; style?: CaptionStyleTag }
   | { t: "captions"; state: CaptionState; side: "theirs" };
 export type SpeakerMsg =
   | { t: "own"; id: string; text: string; final: boolean }
@@ -64,6 +82,8 @@ export interface PipelineHost {
   glossary(): Record<string, string>;
   /** Seconds an upstream stream was open (Soniox bills by open time), reported when it closes. */
   billed?(seconds: number): void;
+  /** Reading styles wanted by this pipeline's readers right now. Both when not given. */
+  styles?(): { steady: boolean; instant: boolean };
 }
 
 type Utterance = {
@@ -90,6 +110,14 @@ type Utterance = {
   interim: { covered: number; tail: string; text: string } | null;
   interimBusy: boolean;
   interimAt: number;
+  /** Steady captions: words of the utterance already translated and shown. */
+  steadyWords: number;
+  /** Steady captions: the subtitle shown so far for this utterance (only ever appended to). */
+  steadyText: string;
+  steadyBusy: boolean;
+  steadyDone: boolean;
+  steadyFails: number;
+  steadyTimer?: NodeJS.Timeout;
 };
 
 const END_TOKENS = new Set(["<end>", "<fin>"]);
@@ -216,6 +244,11 @@ export class SpeakerPipeline {
       interim: null,
       interimBusy: false,
       interimAt: 0,
+      steadyWords: 0,
+      steadyText: "",
+      steadyBusy: false,
+      steadyDone: false,
+      steadyFails: 0,
     };
   }
 
@@ -263,7 +296,120 @@ export class SpeakerPipeline {
       }
     }
     for (const u of touched) this.emit(u);
-    if (this.open) this.maybeInterim(this.open);
+    if (this.open) {
+      this.maybeInterim(this.open);
+      this.maybeSteady(this.open);
+    }
+  }
+
+  private get wants() {
+    return this.host.styles?.() ?? { steady: true, instant: true };
+  }
+
+  /** Steady captions need the LLM; without it everyone gets the one (instant) version. */
+  private get steadyOn() {
+    return this.translating && this.wants.steady && refineConfigured();
+  }
+
+  private get instantTag(): CaptionStyleTag {
+    return this.steadyOn ? "instant" : "all";
+  }
+
+  // ------------------------------------------------------- steady captions
+
+  /**
+   * The utterance as words (characters for scripts written without spaces), and how many of them
+   * are settled: everything except the last couple of words Soniox is still recognising.
+   * Waiting for Soniox to mark words final costs 5+ s on continuous speech; its earlier words
+   * almost never change once a couple more have been heard.
+   */
+  private steadyUnits(u: Utterance) {
+    const full = u.origFinal + u.origLive;
+    const spaced = /\s/.test(full.trim()) || !/[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af\u0e00-\u0e7f]/u.test(full);
+    const units = spaced ? full.trim().split(/\s+/).filter(Boolean) : Array.from(full.replace(/\s+/g, ""));
+    const guard = u.origLive.trim() ? (spaced ? 2 : 3) : /\s$/.test(full) || CLAUSE_END.test(full) ? 0 : 1;
+    return { units, sep: spaced ? " " : "", stable: Math.max(0, units.length - guard), scale: spaced ? 1 : 2 };
+  }
+
+  /** While they speak: send the next finished phrase for translation when one is ready. */
+  private maybeSteady(u: Utterance) {
+    if (!this.steadyOn || u.state !== "open" || u.steadyBusy || u.steadyDone) return;
+    if (u.steadyTimer) clearTimeout(u.steadyTimer);
+    const { units, stable, scale } = this.steadyUnits(u);
+    const pending = units.slice(u.steadyWords, stable);
+    // End the phrase at the last clause boundary (comma, full stop…) once it has enough words.
+    for (let i = pending.length - 1; i + 1 >= STEADY_MIN_WORDS * scale; i--) {
+      if (CLAUSE_END.test(pending[i])) return this.steadyPhrase(u, false, i + 1);
+    }
+    if (pending.length >= STEADY_MAX_WORDS * scale) {
+      // Don't end a phrase on a joining word ("when", "and", "the"): it belongs with what follows.
+      let n = pending.length;
+      while (n > STEADY_MIN_WORDS * scale && n > pending.length - 3 && JOINING.test(pending[n - 1])) n--;
+      return this.steadyPhrase(u, false, n);
+    }
+    // A short pause mid-sentence also ends a phrase, so the reader isn't kept waiting.
+    if (units.length - u.steadyWords >= STEADY_MIN_WORDS * scale) {
+      u.steadyTimer = setTimeout(() => this.open === u && !u.steadyBusy && this.steadyPhrase(u, false), STEADY_PAUSE_MS);
+    }
+  }
+
+  /** Translate the next `count` words (default: everything not yet shown) and append them. */
+  private steadyPhrase(u: Utterance, final: boolean, count?: number) {
+    const { units, sep } = this.steadyUnits(u);
+    const n = final || count === undefined ? units.length - u.steadyWords : count;
+    const phrase = units.slice(u.steadyWords, u.steadyWords + Math.max(0, n)).join(sep).trim();
+    if (!phrase) return final ? this.steadyEmit(u, true) : undefined;
+    u.steadyBusy = true;
+    const upTo = u.steadyWords + n;
+    phraseTranslate({
+      phrase,
+      before: units.slice(0, u.steadyWords).join(sep).trim(),
+      shown: u.steadyText,
+      final,
+      sourceLang: this.speaks!,
+      targetLang: this.reads!,
+      context: this.host.context(),
+      signal: AbortSignal.timeout(STEADY_TIMEOUT_MS),
+    }).then((text) => {
+      u.steadyBusy = false;
+      if (u.steadyDone) return;
+      // An empty reply for a real phrase (3+ words) is a miss, not "nothing to say": retry it.
+      if (text === "" && phrase.split(/\s+/).length >= 3) text = null;
+      if (text === null) {
+        // Words are never skipped: they go out again with the next phrase. Only a sentence
+        // whose closing phrase keeps failing is settled on what is already shown.
+        if (++u.steadyFails >= 3 && u.state !== "open") return this.steadyEmit(u, true);
+      } else {
+        u.steadyFails = 0;
+        u.steadyWords = upTo;
+        if (text) u.steadyText = joinText(u.steadyText, text);
+        this.steadyEmit(u, false);
+      }
+      if (u.state === "open") this.maybeSteady(u);
+      else this.steadyClose(u);
+    });
+  }
+
+  /** The utterance ended: translate what's left as the closing phrase, or use the full rewrite. */
+  private steadyClose(u: Utterance) {
+    if (!this.steadyOn || u.steadyDone || u.steadyBusy) return;
+    if (u.steadyTimer) clearTimeout(u.steadyTimer);
+    if (!u.steadyText && u.steadyWords === 0) {
+      // Short utterance, nothing shown yet: the idiomatic rewrite of the whole thing is the subtitle.
+      if (!u.refineDone) return; // called again when it lands
+      const text = u.refined ?? (u.sealed ? this.literal(u) : null);
+      if (text === null) return; // called again from seal()
+      u.steadyText = text.trim();
+      return this.steadyEmit(u, true);
+    }
+    if (this.steadyUnits(u).units.length > u.steadyWords) return this.steadyPhrase(u, true);
+    this.steadyEmit(u, true);
+  }
+
+  private steadyEmit(u: Utterance, final: boolean) {
+    if (final) u.steadyDone = true;
+    if (!u.steadyText && !final) return;
+    this.host.toReader({ t: "caption", id: `${u.id}~s`, stage: final ? "final" : "steady", text: u.steadyText, style: "steady" });
   }
 
   private literal(u: Utterance): string {
@@ -279,7 +425,7 @@ export class SpeakerPipeline {
    * is followed at once by one for the new tail, instead of leaving the reader on a gap.
    */
   private maybeInterim(u: Utterance, retry = false) {
-    if (!this.translating || u.state !== "open" || u.interimBusy) return;
+    if (!this.translating || u.state !== "open" || u.interimBusy || !this.wants.instant) return;
     const now = Date.now();
     if (!retry && (now - u.coveredAt < INTERIM_WAIT_MS || now - u.interimAt < INTERIM_EVERY_MS)) return;
     const source = u.origFinal + u.origLive;
@@ -321,7 +467,7 @@ export class SpeakerPipeline {
     const text = this.literal(u);
     if (text && text !== u.lastReaderText) {
       u.lastReaderText = text;
-      this.host.toReader({ t: "caption", id: u.id, stage: "live", text });
+      this.host.toReader({ t: "caption", id: u.id, stage: "live", text, style: this.instantTag });
     }
   }
 
@@ -336,7 +482,8 @@ export class SpeakerPipeline {
     const source = u.origFinal.trim();
     if (!source) {
       u.state = "done";
-      if (u.lastReaderText) this.host.toReader({ t: "caption", id: u.id, stage: "final", text: "" });
+      if (u.lastReaderText) this.host.toReader({ t: "caption", id: u.id, stage: "final", text: "", style: this.instantTag });
+      if (u.steadyText) this.steadyEmit(u, true);
       return;
     }
     const context = this.host.context();
@@ -348,7 +495,7 @@ export class SpeakerPipeline {
 
     if (!this.translating) {
       u.state = "done";
-      this.host.toReader({ t: "caption", id: u.id, stage: "final", text: source });
+      this.host.toReader({ t: "caption", id: u.id, stage: "final", text: source, style: "all" });
       return;
     }
 
@@ -356,6 +503,15 @@ export class SpeakerPipeline {
     this.closing.push(u);
     this.armSeal(u);
     u.sealMax = setTimeout(() => this.seal(u), SEAL_MAX_MS);
+    this.steadyClose(u);
+
+    // The whole-utterance rewrite serves word-by-word readers, and steady readers when the
+    // utterance was short enough that no phrase was shown yet.
+    const steadyNeedsRewrite = this.steadyOn && u.steadyWords === 0 && !u.steadyBusy;
+    if (!this.wants.instant && !steadyNeedsRewrite) {
+      u.refineDone = true;
+      return;
+    }
 
     const abort = new AbortController();
     const deadline = setTimeout(() => abort.abort(), REFINE_DEADLINE_MS);
@@ -374,6 +530,7 @@ export class SpeakerPipeline {
       if (Date.now() - closedAt > REFINE_DEADLINE_MS) refined = null;
       u.refineDone = true;
       u.refined = refined;
+      this.steadyClose(u);
       if (u.state === "done") return;
       if (refined && !isTrivialEdit(this.literal(u), refined)) {
         this.finish(u, "refined", refined);
@@ -399,6 +556,7 @@ export class SpeakerPipeline {
     if (u.sealMax) clearTimeout(u.sealMax);
     this.closing = this.closing.filter((x) => x !== u);
     this.maybeFinish(u);
+    this.steadyClose(u);
   }
 
   private maybeFinish(u: Utterance) {
@@ -407,7 +565,7 @@ export class SpeakerPipeline {
 
   private finish(u: Utterance, stage: "final" | "refined", text: string) {
     u.state = "done";
-    this.host.toReader({ t: "caption", id: u.id, stage, text: text.trim() });
+    this.host.toReader({ t: "caption", id: u.id, stage, text: text.trim(), style: this.instantTag });
     // Keep it attached until sealed so trailing translation tokens are not misattributed to the next one.
   }
 
@@ -419,4 +577,10 @@ export class SpeakerPipeline {
       this.seal(u);
     }
   }
+}
+
+function joinText(a: string, b: string): string {
+  if (!a) return b.trim();
+  const sep = /[\u3000-\u9fff\uff00-\uffef]$/u.test(a) ? "" : " ";
+  return `${a.trimEnd()}${sep}${b.trim()}`;
 }

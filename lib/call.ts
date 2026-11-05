@@ -1,7 +1,8 @@
 "use client";
 import type { ParticipantLang } from "@/shared/lang";
-import type { CaptionStage, CaptionState, ClientMsg, PeerInfo, PeerStatus, RoomKind, ServerMsg, SignalData } from "@/shared/protocol";
+import type { CaptionStage, CaptionState, CaptionStyle, ClientMsg, PeerInfo, PeerStatus, RoomKind, ServerMsg, SignalData } from "@/shared/protocol";
 import { MicCapture } from "./audio";
+import { ScreenAwake } from "./wakeLock";
 import { getCameraTrack, getMicTrack, hasMultipleCameras } from "./media";
 
 export type Phase =
@@ -128,6 +129,8 @@ export class CallController {
   private lastSpeaker: string | null = null;
 
   private mic: MicCapture | null = null;
+  /** The screen stays on while in a call: people read captions without touching the phone. */
+  private awake = new ScreenAwake();
   private facing: "user" | "environment" = "user";
   private cameraBusy = false;
 
@@ -144,7 +147,7 @@ export class CallController {
     private lang: ParticipantLang,
     /** Our local stream. Its tracks change as the camera turns on/off or is recovered. */
     readonly local: MediaStream,
-    private opts: { audioOnly?: boolean; name?: string; inRoom?: boolean } = {},
+    private opts: { audioOnly?: boolean; name?: string; inRoom?: boolean; captionStyle?: CaptionStyle; voiceFocus?: boolean } = {},
   ) {
     const hasVideo = local.getVideoTracks().some((t) => t.readyState === "live");
     const audioOnly = !!opts.audioOnly;
@@ -206,6 +209,7 @@ export class CallController {
 
   /** Must be called from the Join tap (user gesture) so iOS allows audio. */
   async start() {
+    this.awake.on();
     this.startMic(this.local.getAudioTracks()[0]);
     this.watchLocalTracks();
     document.addEventListener("visibilitychange", this.onVisible);
@@ -275,6 +279,19 @@ export class CallController {
   }
 
   /** Same physical room as the other in-room people: don't play their audio here (they're audible anyway). */
+  /** Steady (phrase by phrase, never rewritten) or instant (word by word) captions of others. */
+  setCaptionStyle(style: CaptionStyle) {
+    if (this.opts.captionStyle === style) return;
+    this.opts.captionStyle = style;
+    this.send({ t: "set-caption-style", style });
+  }
+
+  /** Only caption the voice closest to this phone, not people talking further away. */
+  setVoiceFocus(on: boolean) {
+    this.opts.voiceFocus = on;
+    if (this.mic) this.mic.focus = on;
+  }
+
   setInRoom(on: boolean) {
     this.set({ inRoom: on });
     this.send({ t: "set-in-room", inRoom: on });
@@ -327,6 +344,7 @@ export class CallController {
 
   private shutdown() {
     this.stopped = true;
+    this.awake.off();
     document.removeEventListener("visibilitychange", this.onVisible);
     if (this.wsTimer) clearTimeout(this.wsTimer);
     for (const id of [...this.links.keys()]) this.closeLink(id);
@@ -366,6 +384,7 @@ export class CallController {
       },
     );
     this.mic.enabled = !this.state?.muted;
+    this.mic.focus = this.opts.voiceFocus !== false;
     this.mic.start().catch((err) => this.log("mic_tap_failed", { error: String(err) }));
     this.updateMicRemote();
   }
@@ -495,6 +514,7 @@ export class CallController {
           peerId: this.peerId,
           lang: this.lang,
           name: this.opts.name,
+          captionStyle: this.opts.captionStyle,
           inRoom: this.state.inRoom,
         } satisfies ClientMsg),
       );
@@ -1064,7 +1084,7 @@ export class CallController {
     const now = Date.now();
     const captions = this.state.captions.filter((c) => c.doneAt === null || now - c.doneAt < 10_000);
     const i = captions.findIndex((c) => c.id === id);
-    const done = stage !== "live";
+    const done = stage === "final" || stage === "refined";
     if (i >= 0) {
       if (captions[i].doneAt !== null) return; // never mutate a settled line
       captions[i] = { ...captions[i], text, stage, updatedAt: now, doneAt: done ? now : null };

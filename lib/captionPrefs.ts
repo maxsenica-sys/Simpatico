@@ -1,8 +1,10 @@
 "use client";
 
-/** Accessibility: caption size and an optional solid backing box. Remembered on this device. */
+import type { CaptionStyle } from "@/shared/protocol";
+
+/** Accessibility: caption size, an optional solid backing box and reading style. Remembered on this device. */
 export type CaptionSize = "s" | "m" | "l" | "xl";
-export type CaptionPrefs = { size: CaptionSize; box: boolean };
+export type CaptionPrefs = { size: CaptionSize; box: boolean; style: CaptionStyle; focus: boolean };
 
 const KEY = "talk.captions.v1";
 export const CAPTION_SIZES: Record<CaptionSize, string> = {
@@ -15,9 +17,9 @@ export const CAPTION_SIZES: Record<CaptionSize, string> = {
 export function loadCaptionPrefs(): CaptionPrefs {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) ?? "{}") as Partial<CaptionPrefs>;
-    return { size: v.size && v.size in CAPTION_SIZES ? v.size : "m", box: !!v.box };
+    return { size: v.size && v.size in CAPTION_SIZES ? v.size : "m", box: !!v.box, style: v.style === "instant" ? "instant" : "steady", focus: v.focus !== false };
   } catch {
-    return { size: "m", box: false };
+    return { size: "m", box: false, style: "steady", focus: true };
   }
 }
 

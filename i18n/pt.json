@@ -114,5 +114,15 @@
   "captionBox": "Fundo das legendas",
   "shortcuts": "Teclado: M microfone · V câmera · T transcrição · Esc fechar",
   "slogan": "Idiomas diferentes. A mesma conversa.",
-  "captionSettings": "Tamanho do texto"
+  "captionSettings": "Configurações das legendas",
+  "captionStyle": "Legendas",
+  "styleSteady": "Estáveis",
+  "styleInstant": "Palavra por palavra",
+  "styleSteadyHint": "Frases inteiras que não mudam. Mais fáceis de ler.",
+  "styleInstantHint": "Mais rápidas, mas as palavras podem mudar enquanto a pessoa fala.",
+  "backHome": "Voltar ao início",
+  "voiceFocus": "Foco na voz",
+  "voiceFocusHint": "Só a minha voz é legendada, não a de pessoas falando mais longe.",
+  "deniedApp": "Abra Ajustes › Simpatico e permita Câmera e Microfone. Depois, volte aqui.",
+  "micModes": "Isolamento de Voz do iPhone"
 }

@@ -104,6 +104,7 @@ console.log("✓ same-language pair transcribes without translating");
 //    speaker is still talking, and Soniox's own translation supersedes it.
 const { createServer } = await import("node:http");
 let interimCalls = 0;
+const phraseCalls: { text: string; final: boolean }[] = [];
 const llm = createServer((req, res) => {
   let body = "";
   req.on("data", (c) => (body += c));
@@ -111,8 +112,11 @@ const llm = createServer((req, res) => {
     const j = JSON.parse(body);
     const interim = JSON.stringify(j.system).includes("still talking");
     if (interim) interimCalls++;
+    const phrase = String(j.messages[0].content).match(/<new_phrase final="(\w+)">([\s\S]*?)<\/new_phrase>/);
+    if (phrase) phraseCalls.push({ text: phrase[2], final: phrase[1] === "true" });
+    const text = phrase ? `[${phrase[2].trim()}]` : interim ? "ARA-CEVIRI" : "TAM-CEVIRI";
     res.writeHead(200, { "content-type": "application/json" });
-    res.end(JSON.stringify({ id: "m", type: "message", role: "assistant", model: j.model, stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 }, content: [{ type: "text", text: interim ? "ARA-CEVIRI" : "TAM-CEVIRI" }] }));
+    res.end(JSON.stringify({ id: "m", type: "message", role: "assistant", model: j.model, stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 }, content: [{ type: "text", text }] }));
   });
 }).listen(3996);
 process.env.ANTHROPIC_API_KEY = "x";
@@ -135,8 +139,57 @@ console.log("✓ Soniox's translation supersedes the interim");
 push(ws4, [tok("<end>", true)]);
 await until(() => reader.some((m) => m.t === "caption" && m.stage === "refined" && m.text === "TAM-CEVIRI"), 4000);
 p.stop();
-llm.close();
 assert.ok(interimCalls >= 1);
+
+// 6b. Steady captions: phrase by phrase from finalised words, append-only, closed by a final phrase.
+//     With only steady readers, no interim calls are made and no whole-utterance rewrite is needed.
+const steady: any[] = [];
+const ps = new SpeakerPipeline({
+  ref: "test-S",
+  label: "A",
+  toReader: (m) => steady.push(m),
+  toSpeaker: () => {},
+  context: () => [],
+  record: () => {},
+  glossary: () => ({}),
+  styles: () => ({ steady: true, instant: false }),
+});
+const interimBefore = interimCalls;
+ps.setLanguages("en-AU", "tr-TR");
+ps.audio(audio);
+await until(() => configs === 5);
+const ws5 = sockets[4];
+push(ws5, [tok("so yesterday I went to the market,", true), tok(" and I", false)]);
+await until(() => steady.some((m) => m.stage === "steady" && m.text === "[so yesterday I went to the market,]"));
+push(ws5, [tok(" and I bought some fresh fish", true)]);
+// No clause end and under the length cap: a short pause ends the phrase.
+await until(() => steady.some((m) => m.stage === "steady" && m.text.endsWith("[and I bought some fresh fish]")), 3000);
+push(ws5, [tok(" for dinner.", true), tok("<end>", true)]);
+await until(() => steady.some((m) => m.stage === "final"), 3000);
+const shown = steady.filter((m) => m.t === "caption" && m.style === "steady").map((m) => m.text);
+for (let i = 1; i < shown.length; i++) assert.ok(shown[i].startsWith(shown[i - 1]), `steady text only grows: ${shown[i - 1]} -> ${shown[i]}`);
+assert.equal(shown.at(-1), "[so yesterday I went to the market,] [and I bought some fresh fish] [for dinner.]");
+assert.ok(phraseCalls.at(-1)!.final, "the closing phrase is marked final");
+assert.equal(interimCalls, interimBefore, "no interim calls without word-by-word readers");
+ps.stop();
+console.log("✓ steady captions: phrase by phrase, append-only, final phrase closes the line");
+
+// 6c. Steady, short utterance: nothing shown while speaking, then the whole-utterance rewrite once.
+steady.length = 0;
+ps.setLanguages("en-AU", "tr-TR");
+ps.audio(audio);
+await until(() => configs === 6);
+const ws6 = sockets[5];
+push(ws6, [tok("see you", true)]);
+await sleep(1200);
+push(ws6, [tok(" soon", true), tok("<end>", true)]);
+await until(() => steady.some((m) => m.style === "steady" && m.stage === "final"), 4000);
+const short = steady.filter((m) => m.style === "steady");
+assert.equal(short.length, 1, "one settled line, no intermediate guesses");
+assert.equal(short[0].text, "TAM-CEVIRI");
+ps.stop();
+llm.close();
+console.log("✓ steady captions: a short sentence appears once, already idiomatic");
 
 // 7. Anti-flicker edit-distance rule
 assert.equal(isTrivialEdit("Bunu yarın yaparız.", "bunu yarın yaparız"), true);

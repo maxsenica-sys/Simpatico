@@ -17,7 +17,7 @@
   "retry": "Try again",
   "peerLeft": "They left the call.",
   "callEnded": "Call ended",
-  "rejoin": "Rejoin",
+  "rejoin": "Rejoin call",
   "endCall": "End call",
   "mute": "Mute microphone",
   "unmute": "Unmute microphone",
@@ -114,5 +114,15 @@
   "captionBox": "Caption background",
   "shortcuts": "Keyboard: M mute · V camera · T transcript · Esc close",
   "slogan": "Different languages. Same conversation.",
-  "captionSettings": "Text size"
+  "captionSettings": "Caption settings",
+  "captionStyle": "Captions",
+  "styleSteady": "Steady",
+  "styleInstant": "Word by word",
+  "styleSteadyHint": "Whole phrases that don't change. Easiest to read.",
+  "styleInstantHint": "Fastest, but words can change as they speak.",
+  "backHome": "Back to home",
+  "voiceFocus": "Voice focus",
+  "voiceFocusHint": "Only my voice is captioned, not people talking further away.",
+  "deniedApp": "Open Settings › Simpatico and allow Camera and Microphone, then come back.",
+  "micModes": "iPhone voice isolation"
 }

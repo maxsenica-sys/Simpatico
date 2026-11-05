@@ -69,6 +69,15 @@ try {
   if (!(await a.locator(".controls").isVisible())) throw new Error("call controls should always be visible");
 
   step("B (Turkish phone) opens the link: UI must be Turkish with no settings touched");
+  // B reads word by word (instant); A keeps the default steady captions.
+  await b.addInitScript(() => localStorage.setItem("talk.captions.v1", JSON.stringify({ style: "instant" })));
+  // Steady captions must never show pass-1 words that are later rewritten: watch A's screen for any.
+  await a.evaluate(() => {
+    window.__sawLiteral = false;
+    new MutationObserver(() => {
+      if ([...document.querySelectorAll(".cap")].some((e) => /\ben:/.test(e.textContent))) window.__sawLiteral = true;
+    }).observe(document.body, { subtree: true, childList: true, characterData: true });
+  });
   await b.goto(url);
   await b.getByText("Konuştuğun dil: Türkçe").waitFor();
   await b.screenshot({ path: OUT + "2-guest-join-tr.png" });
@@ -79,9 +88,9 @@ try {
   const videoUp = (p) => p.waitForFunction(() => { const v = document.querySelector("video.remote"); return v && v.videoWidth > 0 && !v.paused; }, null, { timeout: 25000 });
   await Promise.all([videoUp(a), videoUp(b)]);
 
-  step("Pass-1 captions arrive, translated into each reader's language");
+  step("Word-by-word reader (B) gets pass-1 captions; steady reader (A) gets settled phrases only");
   await b.waitForFunction(() => [...document.querySelectorAll(".cap")].some((e) => e.textContent.includes("tr:")), null, { timeout: 20000 });
-  await a.waitForFunction(() => [...document.querySelectorAll(".cap")].some((e) => e.textContent.includes("en:")), null, { timeout: 20000 });
+  await a.waitForFunction(() => [...document.querySelectorAll(".cap")].some((e) => e.textContent.includes("(English)")), null, { timeout: 20000 });
   const liveOpacity = await b.evaluate(() => { const e = document.querySelector(".cap.live"); return e ? getComputedStyle(e).opacity : null; });
   console.log("  live caption opacity on B:", liveOpacity);
 
@@ -91,7 +100,9 @@ try {
 
   step("Pass-2 refinement swaps in");
   await b.waitForFunction(() => [...document.querySelectorAll(".cap.done")].some((e) => e.textContent.includes("✨ (Turkish)")), null, { timeout: 20000 });
-  await a.waitForFunction(() => [...document.querySelectorAll(".cap.done")].some((e) => e.textContent.includes("✨ (English)")), null, { timeout: 20000 });
+  await a.waitForFunction(() => [...document.querySelectorAll(".cap.done")].some((e) => e.textContent.includes("(English)")), null, { timeout: 20000 });
+  if (await a.evaluate(() => window.__sawLiteral)) throw new Error("steady captions showed a pass-1 guess");
+  console.log("  A captions (steady):", await a.$$eval(".cap", (els) => els.map((e) => `[${e.className}] ${e.textContent}`)));
   await b.screenshot({ path: OUT + "3-guest-call.png" });
   await a.screenshot({ path: OUT + "4-host-call.png" });
   console.log("  B captions:", await b.$$eval(".cap", (els) => els.map((e) => `[${e.className}] ${e.textContent}`)));
@@ -100,7 +111,7 @@ try {
   await b.locator(".controls").getByRole("button", { name: "Konuşma dökümünü göster" }).click();
   await b.getByRole("heading", { name: "Konuşma dökümü" }).waitFor();
   if (await b.getByRole("radiogroup", { name: "Altyazı boyutu" }).count()) throw new Error("caption settings should start hidden");
-  await b.getByRole("button", { name: "Yazı boyutu" }).click();
+  await b.getByRole("button", { name: "Altyazı ayarları" }).click();
   await b.getByRole("radiogroup", { name: "Altyazı boyutu" }).waitFor();
   await b.waitForTimeout(500);
   await b.screenshot({ path: OUT + "5-guest-transcript.png" });

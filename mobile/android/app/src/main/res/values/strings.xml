@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Simpatico</string>
+    <string name="title_activity_main">Simpatico</string>
+    <string name="package_name">app.simpaticocall</string>
+    <string name="custom_url_scheme">app.simpaticocall</string>
+</resources>

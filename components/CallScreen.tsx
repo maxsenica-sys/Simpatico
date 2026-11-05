@@ -27,7 +27,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const [connectedAt, setConnectedAt] = useState<number | null>(null);
   const [videoLostAt, setVideoLostAt] = useState<number | null>(null);
   const [firstOwnAt, setFirstOwnAt] = useState<number | null>(null);
-  const [prefs, setPrefs] = useState<CaptionPrefs>({ size: "m", box: false });
+  const [prefs, setPrefs] = useState<CaptionPrefs>({ size: "m", box: false, style: "steady", focus: true });
   const [invite, setInvite] = useState(false);
   const [wide, setWide] = useState(false);
 
@@ -39,6 +39,8 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const changePrefs = (p: CaptionPrefs) => {
     setPrefs(p);
     saveCaptionPrefs(p);
+    call.setCaptionStyle(p.style);
+    call.setVoiceFocus(p.focus);
   };
   const save = () => {
     const names = { ...s.names };
@@ -553,12 +555,12 @@ function EndScreen({ call, s, onSave, onRejoin }: { call: CallController; s: Cal
               {t("saveTranscript")}
             </button>
           )}
-          <button className="btn primary" onClick={onRejoin}>
+          <Link className="btn primary" href="/">
+            {t("backHome")}
+          </Link>
+          <button className="btn" onClick={onRejoin}>
             {t("rejoin")}
           </button>
-          <Link className="btn" href="/">
-            {t("startNew")}
-          </Link>
         </div>
       </div>
     </main>

@@ -7,7 +7,16 @@ export type BrowserEnv = {
   inApp: string | null;
   canCall: boolean;
   standalone: boolean;
+  /** Inside the Simpatico iPhone / Android app (Capacitor shell), not a browser. */
+  nativeApp: boolean;
 };
+
+/** The app shells append this to the web view's user agent (mobile/capacitor.config.ts). */
+export const NATIVE_APP_UA = /SimpaticoApp\//;
+
+export function isNativeApp(): boolean {
+  return typeof navigator !== "undefined" && NATIVE_APP_UA.test(navigator.userAgent);
+}
 
 const IN_APP: [RegExp, string][] = [
   [/Instagram/i, "Instagram"],
@@ -28,13 +37,15 @@ export function detectEnv(): BrowserEnv {
   const ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const android = /Android/i.test(ua);
   const hasMedia = !!navigator.mediaDevices?.getUserMedia && typeof RTCPeerConnection !== "undefined";
-  let inApp = IN_APP.find(([re]) => re.test(ua))?.[1] ?? null;
-  // Android WebViews and iOS WKWebViews without getUserMedia are embedded browsers too.
-  if (!inApp && android && /; wv\)/.test(ua)) inApp = "app";
-  if (!inApp && ios && !hasMedia) inApp = "app";
+  const nativeApp = NATIVE_APP_UA.test(ua);
+  let inApp = nativeApp ? null : (IN_APP.find(([re]) => re.test(ua))?.[1] ?? null);
+  // Android WebViews and iOS WKWebViews without getUserMedia are embedded browsers too
+  // (our own app's web view is not: it can call).
+  if (!inApp && !nativeApp && android && /; wv\)/.test(ua)) inApp = "app";
+  if (!inApp && !nativeApp && ios && !hasMedia) inApp = "app";
   const standalone =
     window.matchMedia?.("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true;
-  return { ios, android, inApp, canCall: hasMedia, standalone };
+  return { ios, android, inApp, canCall: hasMedia, standalone, nativeApp };
 }
 
 /** Best-effort deep link that opens the current page in the system browser. */

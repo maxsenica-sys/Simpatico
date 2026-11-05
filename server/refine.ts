@@ -185,3 +185,72 @@ export async function interimTranslate(input: InterimInput): Promise<string | nu
     return null;
   }
 }
+
+const PHRASE_SYSTEM = `You write the subtitles for a live video call between people who do not share a language. People here often talk for a long time without pausing, so the subtitle is built phrase by phrase: each turn you get the next finished phrase of what the speaker is saying, and your translation is added after the subtitle already on screen. Nothing on screen is ever changed afterwards, so the reader only ever reads each part once.
+
+- Translate only the new phrase, so that it reads as the natural continuation of the subtitle already shown. Never repeat, correct or rephrase what is already shown. Because of word order, the subtitle so far may already carry part of this phrase's meaning (a "when", "that" or "and" placed earlier); don't translate that part again.
+- Translate meaning, not words. Idioms, slang and colloquialisms become the natural equivalent in the target language; keep the speaker's register and tone. Drop fillers and false starts that carry no meaning.
+- If the phrase stops mid-sentence, stop there too; do not guess what comes next. When it is marked final, it is the end of what they said: finish the sentence naturally.
+- The transcript comes from speech recognition and can contain mistakes. Use what was said before and the recent conversation to work out what was meant, but translate only the new phrase.
+- You don't know anyone's gender. Where the target language marks it, prefer phrasing that avoids committing to one, otherwise use the grammatical default.
+- Your whole reply appears on screen: the translation of the new phrase only, in the target language and its usual script, with no notes or alternatives. Only if the phrase is nothing but fillers ("um", "you know"), reply with nothing.`;
+
+export type PhraseInput = {
+  /** The next finished phrase of the utterance, in the source language. */
+  phrase: string;
+  /** What the speaker already said earlier in this utterance (source language). */
+  before: string;
+  /** The subtitle already on screen for this utterance (target language). */
+  shown: string;
+  /** This phrase ends what they said. */
+  final: boolean;
+  sourceLang: string;
+  targetLang: string;
+  context: ContextLine[];
+  signal: AbortSignal;
+};
+
+/**
+ * Steady captions: translate one finished phrase of a long utterance as a continuation of the
+ * subtitle already shown, so text is only ever appended, never rewritten. Null on failure;
+ * an empty string when the phrase needs no subtitle.
+ */
+export async function phraseTranslate(input: PhraseInput): Promise<string | null> {
+  if (!refineConfigured()) return null;
+  client ??= new Anthropic();
+  const src = langInfo(input.sourceLang).name;
+  const tgt = langInfo(input.targetLang).name;
+  const context = input.context.map((c) => `${c.who} (${langInfo(c.lang).name}): ${c.text}`).join("\n");
+  const user = [
+    `<languages>${src} to ${tgt}</languages>`,
+    context ? `<recent_conversation>\n${context}\n</recent_conversation>` : "",
+    input.before ? `<said_so_far>${input.before}</said_so_far>` : "",
+    input.shown ? `<subtitle_so_far>${input.shown}</subtitle_so_far>` : "",
+    `<new_phrase final="${input.final}">${input.phrase}</new_phrase>`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  const started = Date.now();
+  try {
+    const res = await client.messages.create(
+      {
+        model: MODEL,
+        max_tokens: 300,
+        thinking: { type: "disabled" },
+        output_config: { effort: "low" },
+        system: [{ type: "text", text: PHRASE_SYSTEM }, { type: "text", text: SLANG, cache_control: { type: "ephemeral" } }],
+        messages: [{ role: "user", content: user }],
+      },
+      { signal: input.signal, maxRetries: 0 },
+    );
+    if (res.stop_reason === "refusal") return null;
+    const raw = res.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
+    log("phrase_ok", { ms: Date.now() - started, chars: input.phrase.length, final: input.final, cached: res.usage.cache_read_input_tokens ?? 0 });
+    // Test harness only: never set in production, where no words of a conversation are logged.
+    if (process.env.DEBUG_PHRASES === "1") console.log(JSON.stringify({ phrase: input.phrase, final: input.final, out: raw }));
+    return subtitleOnly(raw);
+  } catch (err) {
+    log(input.signal.aborted ? "phrase_late" : "phrase_error", { ms: Date.now() - started, error: input.signal.aborted ? undefined : String(err) });
+    return null;
+  }
+}

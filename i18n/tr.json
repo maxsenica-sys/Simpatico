@@ -17,7 +17,7 @@
   "retry": "Tekrar dene",
   "peerLeft": "Karşı taraf aramadan ayrıldı.",
   "callEnded": "Arama sona erdi",
-  "rejoin": "Yeniden katıl",
+  "rejoin": "Aramaya geri dön",
   "endCall": "Aramayı bitir",
   "mute": "Mikrofonu kapat",
   "unmute": "Mikrofonu aç",
@@ -114,5 +114,15 @@
   "captionBox": "Altyazı arka planı",
   "shortcuts": "Klavye: M mikrofon · V kamera · T döküm · Esc kapat",
   "slogan": "Farklı diller. Aynı sohbet.",
-  "captionSettings": "Yazı boyutu"
+  "captionSettings": "Altyazı ayarları",
+  "captionStyle": "Altyazılar",
+  "styleSteady": "Sabit",
+  "styleInstant": "Kelime kelime",
+  "styleSteadyHint": "Değişmeyen tam ifadeler. Okuması en kolayı.",
+  "styleInstantHint": "En hızlısı, ama konuştukça kelimeler değişebilir.",
+  "backHome": "Ana sayfaya dön",
+  "voiceFocus": "Ses odağı",
+  "voiceFocusHint": "Sadece benim sesim altyazıya dönüşür, uzaktaki konuşmalar değil.",
+  "deniedApp": "Ayarlar › Simpatico’yu aç, Kamera ve Mikrofon’a izin ver, sonra geri dön.",
+  "micModes": "iPhone ses yalıtımı"
 }

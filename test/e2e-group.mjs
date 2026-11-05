@@ -71,17 +71,17 @@ try {
   console.log("  Max's people strip:", await max.$$eval(".person:not(.invite-tile)", (els) => els.map((e) => `${e.querySelector(".person-name").textContent} (${e.querySelector(".person-lang").textContent})`).join(", ")));
 
   step("Coach's Turkish reaches each person in their own language, labelled with his name");
-  await waitCaption(max, "Coach", /en:/, "Max reads English");
-  await waitCaption(ivan, "Coach", /ru:/, "Ivan reads Russian");
+  await waitCaption(max, "Coach", /en:|\(English\)/, "Max reads English");
+  await waitCaption(ivan, "Coach", /ru:|\(Russian\)/, "Ivan reads Russian");
   await waitCaption(ayse, "Coach", /^Coach[^:]*$/, "Ayşe reads Turkish: original words, no translation");
   console.log("  Max:", (await captionsFrom(max, "Coach")).at(-1));
   console.log("  Ivan:", (await captionsFrom(ivan, "Coach")).at(-1));
   console.log("  Ayşe:", (await captionsFrom(ayse, "Coach")).at(-1));
 
   step("Max's English reaches Coach and Ayşe in Turkish, Ivan in Russian");
-  await waitCaption(coach, "Max", /tr:/, "Coach reads Turkish");
-  await waitCaption(ivan, "Max", /ru:/, "Ivan reads Russian");
-  await waitCaption(ayse, "Max", /tr:/, "Ayşe reads Turkish");
+  await waitCaption(coach, "Max", /tr:|\(Turkish\)/, "Coach reads Turkish");
+  await waitCaption(ivan, "Max", /ru:|\(Russian\)/, "Ivan reads Russian");
+  await waitCaption(ayse, "Max", /tr:|\(Turkish\)/, "Ayşe reads Turkish");
 
   step("In-room phones: only one of Ivan/Ayşe is captioned at a time (same voice, same room)");
   await max.waitForFunction(() => [...document.querySelectorAll(".cap-who")].some((e) => e.textContent === "Ivan" || e.textContent === "Ayşe"), null, { timeout: 25000 });

@@ -28,7 +28,11 @@ export async function getIceServers(): Promise<RTCIceServer[]> {
     );
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const body = (await res.json()) as { iceServers: RTCIceServer | RTCIceServer[] };
-    const turn = Array.isArray(body.iceServers) ? body.iceServers : [body.iceServers];
+    // Browsers block port 53, so a TURN URL on it only times out: leave it out.
+    const turn = (Array.isArray(body.iceServers) ? body.iceServers : [body.iceServers]).map((s) => ({
+      ...s,
+      urls: (Array.isArray(s.urls) ? s.urls : [s.urls]).filter((u) => !/:53(\?|$)/.test(u)),
+    }));
     const servers = [...STUN, ...turn];
     cached = { servers, until: Date.now() + (ttl - 3600) * 1000 };
     return servers;

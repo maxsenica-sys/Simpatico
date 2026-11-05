@@ -8,6 +8,15 @@ const DOUBLE_TALK_PENALTY_DB = 10;
 const OPEN_CHUNKS = 2; // 200 ms above threshold to open
 const HANGOVER_CHUNKS = 6; // 600 ms below threshold to close (captions finalize sooner; Soniox wants >= 200 ms)
 const PREROLL_CHUNKS = 3;
+/**
+ * Voice focus: speech much quieter than this phone's own talker is someone further away.
+ * A voice at ~0.5 m is roughly 12-20 dB louder than one 2-4 m away, so speech more than
+ * FOCUS_MARGIN_DB below the usual level of the voice we caption is not sent for captions.
+ * Learnt from the last few seconds of admitted speech, so a louder (closer) voice always passes.
+ */
+const FOCUS_MARGIN_DB = 16;
+const FOCUS_HISTORY = 80; // 8 s of speech
+const FOCUS_MIN_HISTORY = 15; // 1.5 s before it starts filtering
 
 type Level = { floor: number };
 function trackFloor(l: Level, db: number) {
@@ -32,7 +41,11 @@ export class MicCapture {
   private above = 0;
   private below = 0;
   private speaking = false;
+  /** Recent levels of the speech we captioned (the person holding this phone). */
+  private near: number[] = [];
   enabled = true;
+  /** Ignore voices much quieter than the person at this phone (people further away). */
+  focus = true;
 
   constructor(
     private track: MediaStreamTrack,
@@ -95,7 +108,7 @@ export class MicCapture {
     if (!this.enabled) db = -120;
     trackFloor(this.local, db);
     const threshold = Math.max(MIN_THRESHOLD_DB, this.local.floor + ABOVE_FLOOR_DB) + (this.remoteTalking() ? DOUBLE_TALK_PENALTY_DB : 0);
-    const voiced = db > threshold;
+    const voiced = db > threshold && (!this.focus || db >= this.nearLevel() - FOCUS_MARGIN_DB);
 
     if (!this.speaking) {
       this.preroll.push({ pcm, db });
@@ -112,12 +125,23 @@ export class MicCapture {
     }
 
     this.onChunk(pcm, db);
+    if (voiced) {
+      this.near.push(db);
+      if (this.near.length > FOCUS_HISTORY) this.near.shift();
+    }
     this.below = voiced ? 0 : this.below + 1;
     if (this.below >= HANGOVER_CHUNKS) {
       this.speaking = false;
       this.above = 0;
       this.onSpeech(false);
     }
+  }
+
+  /** Typical level of this phone's talker: the 70th percentile of recent captioned speech. */
+  private nearLevel(): number {
+    if (this.near.length < FOCUS_MIN_HISTORY) return -Infinity;
+    const sorted = [...this.near].sort((a, b) => a - b);
+    return sorted[Math.floor(sorted.length * 0.7)];
   }
 
   stop() {

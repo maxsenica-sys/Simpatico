@@ -63,7 +63,7 @@ export function Captions({
         {shown.map((c) => {
           const fading = c.doneAt !== null && now - c.doneAt > LINGER_MS;
           return (
-            <p key={c.id} data-id={c.id} className={`cap ${c.doneAt === null ? "live" : "done"} ${fading ? "fading" : ""}`} dir="auto">
+            <p key={c.id} data-id={c.id} className={`cap ${c.doneAt === null ? (c.stage === "steady" ? "steady" : "live") : "done"} ${fading ? "fading" : ""}`} dir="auto">
               {names && <span className="cap-who">{names[c.from] ?? ""}</span>}
               {c.text}
             </p>
@@ -72,7 +72,7 @@ export function Captions({
       </div>
       {/* They're talking but no words have arrived yet: show that something is coming.
           Kept outside the 3-line box so it never pushes a caption line out of view. */}
-      {speaking && !shown.some((c) => c.doneAt === null) && (
+      {speaking && !shown.some((c) => c.doneAt === null && c.stage === "live") && (
         <div className="typing" aria-hidden="true">
           <span />
           <span />

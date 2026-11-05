@@ -18,7 +18,7 @@ export function Home() {
   useEffect(() => {
     navigator.serviceWorker?.register("/sw.js").catch(() => {});
     const env = detectEnv();
-    if (env.ios && !env.standalone && !env.inApp) setIosHint(true);
+    if (env.ios && !env.standalone && !env.inApp && !env.nativeApp) setIosHint(true);
     const onPrompt = (e: Event) => {
       e.preventDefault();
       setInstall(e as InstallEvent);

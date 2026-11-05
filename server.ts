@@ -9,7 +9,7 @@ import { getIceServers } from "./server/ice";
 import { device } from "./server/store";
 import { log } from "./server/log";
 import { refineConfigured } from "./server/refine";
-import { broadcast, createRoom, disconnect, getRoom, info, others, removePeer, seat, send, setInRoom, speakerAudio, stopSpeaking, type Peer, type Room } from "./server/rooms";
+import { broadcast, createRoom, disconnect, getRoom, info, others, removePeer, seat, send, setCaptionStyle, setInRoom, speakerAudio, stopSpeaking, type Peer, type Room } from "./server/rooms";
 import { sonioxConfigured } from "./server/soniox";
 
 const dev = process.env.NODE_ENV !== "production";
@@ -93,7 +93,7 @@ wss.on("connection", (ws, req) => {
       }
       room = getRoom(msg.room);
       if (!room) return send(ws, { t: "error", code: "room-not-found" });
-      const result = seat(room, msg.peerId, lang, ws, { name: msg.name, inRoom: msg.inRoom, device: devName });
+      const result = seat(room, msg.peerId, lang, ws, { name: msg.name, inRoom: msg.inRoom, device: devName, captionStyle: msg.captionStyle });
       if (result === "room-full") return send(ws, { t: "error", code: "room-full" });
       peer = result.peer;
       const rest = others(room, peer);
@@ -133,6 +133,9 @@ wss.on("connection", (ws, req) => {
         break;
       case "set-in-room":
         setInRoom(room, peer, !!msg.inRoom);
+        break;
+      case "set-caption-style":
+        setCaptionStyle(peer, msg.style);
         break;
       case "log":
         log(`client_${String(msg.event).slice(0, 40)}`, { room: room.code, peer: peer.label, ...(msg.detail ?? {}) });

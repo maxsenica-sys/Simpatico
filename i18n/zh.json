@@ -17,7 +17,7 @@
   "retry": "重试",
   "peerLeft": "对方已离开通话。",
   "callEnded": "通话已结束",
-  "rejoin": "重新加入",
+  "rejoin": "重新加入通话",
   "endCall": "结束通话",
   "mute": "关闭麦克风",
   "unmute": "打开麦克风",
@@ -114,5 +114,15 @@
   "captionBox": "字幕背景",
   "shortcuts": "快捷键：M 静音 · V 相机 · T 文字记录 · Esc 关闭",
   "slogan": "语言不同，畅聊无阻。",
-  "captionSettings": "文字大小"
+  "captionSettings": "字幕设置",
+  "captionStyle": "字幕",
+  "styleSteady": "整句显示",
+  "styleInstant": "逐字显示",
+  "styleSteadyHint": "整句呈现，不会变动，最易阅读。",
+  "styleInstantHint": "最快，但说话过程中文字可能会变动。",
+  "backHome": "返回首页",
+  "voiceFocus": "人声聚焦",
+  "voiceFocusHint": "只为我的声音生成字幕，不包括远处其他人的说话声。",
+  "deniedApp": "打开“设置” › Simpatico，允许“相机”和“麦克风”，然后返回此处。",
+  "micModes": "iPhone 语音突显"
 }

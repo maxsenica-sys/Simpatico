@@ -39,18 +39,26 @@ export type SignalData =
   | ({ kind: "status" } & PeerStatus);
 
 export type ClientMsg =
-  | { t: "join"; room: string; peerId: string; lang: ParticipantLang; name?: string; inRoom?: boolean }
+  | { t: "join"; room: string; peerId: string; lang: ParticipantLang; name?: string; inRoom?: boolean; captionStyle?: CaptionStyle }
   /** Ask one peer (or every peer) to send a fresh offer: our connection to them is gone. */
   | { t: "need-offer"; to?: string }
   | { t: "signal"; to: string; data: SignalData }
   | { t: "speech"; on: boolean }
   | { t: "set-in-room"; inRoom: boolean }
+  | { t: "set-caption-style"; style: CaptionStyle }
   | { t: "log"; event: string; detail?: Record<string, unknown> }
   | { t: "leave" };
+
+/**
+ * How a person likes to read captions. "steady": phrase by phrase, each translated once and never
+ * changed (the default). "instant": word by word as they speak, revised as the sentence grows.
+ */
+export type CaptionStyle = "steady" | "instant";
 
 /** Stages of a caption line, in the order they can occur. */
 export type CaptionStage =
   | "live" // pass 1, still changing (60% opacity)
+  | "steady" // steady reading style: settled text that may still grow at the end, never rewritten
   | "final" // settled on the pass-1 text (no refinement, or refinement was trivial / late)
   | "refined"; // pass 2 replaced it (100% opacity)
 

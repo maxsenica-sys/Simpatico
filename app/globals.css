@@ -293,6 +293,8 @@ p { margin: 0; line-height: 1.5; }
 .seg-btn { min-width: 40px; min-height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); font-weight: 700; cursor: pointer; }
 .seg-btn.on { background: var(--accent); border-color: transparent; color: var(--accent-ink); }
 .seg-btn.wide { padding: 0 14px; font-weight: 600; }
+.style-hint { width: 100%; margin: -4px 0 0; }
+.cap.steady { opacity: 1; }
 .round-btn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-2); font-weight: 800; font-size: 1rem; cursor: pointer; display: grid; place-items: center; }
 .round-btn:last-child { font-size: 1.5rem; font-weight: 500; }
 .round-btn.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; }

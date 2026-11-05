@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { I18nProvider } from "@/lib/i18n";
 import { installErrorReporter } from "@/lib/errors";
+import { installNativeLinks } from "@/lib/native";
 import { loadLang, saveLang, uiCode } from "@/lib/prefs";
 import type { ParticipantLang } from "@/shared/lang";
 
@@ -19,6 +20,7 @@ export function LangRoot({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<ParticipantLang | null>(null);
   useEffect(() => {
     installErrorReporter();
+    installNativeLinks();
     setLangState(loadLang());
   }, []);
   if (!lang) return <div className="boot" />;

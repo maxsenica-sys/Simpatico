@@ -2,13 +2,14 @@
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n";
+import { canShareLink, shareLink } from "@/lib/native";
 
 export function ShareLink({ url, compact = false, qr = false }: { url: string; compact?: boolean; /** Show the QR code straight away. */ qr?: boolean }) {
   const t = useT();
   const [copied, setCopied] = useState(false);
   const [showQr, setShowQr] = useState(qr);
   const [svg, setSvg] = useState<string | null>(null);
-  const canShare = typeof navigator !== "undefined" && !!navigator.share;
+  const canShare = canShareLink();
 
   useEffect(() => {
     if (!showQr || svg) return;
@@ -46,7 +47,7 @@ export function ShareLink({ url, compact = false, qr = false }: { url: string; c
       </div>
       <div className="share-actions">
         {canShare && (
-          <button className="btn primary" onClick={() => navigator.share({ url }).catch(() => {})}>
+          <button className="btn primary" onClick={() => void shareLink(url)}>
             {t("share")}
           </button>
         )}

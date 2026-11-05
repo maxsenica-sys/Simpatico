@@ -71,11 +71,13 @@ createServer((req, res) => {
     const utterance = content.match(/<utterance[^>]*>([\s\S]*?)<\/utterance>/)?.[1] ?? "";
     // Steady captions: one phrase at a time, answered quickly and marked ◆.
     const phrase = content.match(/<new_phrase[^>]*>([\s\S]*?)<\/new_phrase>/)?.[1];
+    // Live preview of the words still being spoken: marked ~.
+    const fragment = content.match(/<fragment>([\s\S]*?)<\/fragment>/)?.[1];
     const target = content.match(/<languages>.* to (.*)<\/languages>/)?.[1] ?? "?";
     const hasContext = content.includes("<recent_conversation>");
     const n = ++calls;
     // Every 4th call is deliberately late, to exercise the 1500 ms deadline.
-    const delay = phrase !== undefined ? 250 : n % 4 === 0 ? 2200 : 350;
+    const delay = phrase !== undefined || fragment !== undefined ? 250 : n % 4 === 0 ? 2200 : 350;
     console.log(JSON.stringify({ mock: "llm_call", n, target, hasContext, delay, model: parsed.model, thinking: parsed.thinking }));
     setTimeout(() => {
       if (res.destroyed) return;
@@ -86,7 +88,7 @@ createServer((req, res) => {
           type: "message",
           role: "assistant",
           model: parsed.model,
-          content: [{ type: "text", text: phrase !== undefined ? `◆ (${target}) ${phrase}` : `✨ (${target}) ${utterance}` }],
+          content: [{ type: "text", text: phrase !== undefined ? `◆ (${target}) ${phrase}` : fragment !== undefined ? `~ (${target}) ${fragment}` : `✨ (${target}) ${utterance}` }],
           stop_reason: "end_turn",
           stop_sequence: null,
           usage: { input_tokens: 10, output_tokens: 10 },

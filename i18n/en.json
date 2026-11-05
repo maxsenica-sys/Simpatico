@@ -117,12 +117,14 @@
   "captionSettings": "Caption settings",
   "captionStyle": "Captions",
   "styleSteady": "Steady",
-  "styleInstant": "Word by word",
-  "styleSteadyHint": "Whole phrases that don't change. Easiest to read.",
-  "styleInstantHint": "Fastest, but words can change as they speak.",
+  "styleInstant": "Live",
+  "styleSteadyHint": "Only settled words, phrase by phrase. Calmest to read.",
+  "styleInstantHint": "Fastest: a faint preview of what they're saying, then settled words that don't change.",
   "backHome": "Back to home",
   "voiceFocus": "Voice focus",
   "voiceFocusHint": "Only my voice is captioned, not people talking further away.",
   "deniedApp": "Open Settings › Simpatico and allow Camera and Microphone, then come back.",
-  "micModes": "iPhone voice isolation"
+  "micModes": "iPhone voice isolation",
+  "isAway": "{name} left the app for a moment and can't hear you.",
+  "selfSize": "Your camera. Tap to change size, drag to move."
 }

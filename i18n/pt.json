@@ -117,12 +117,14 @@
   "captionSettings": "Configurações das legendas",
   "captionStyle": "Legendas",
   "styleSteady": "Estáveis",
-  "styleInstant": "Palavra por palavra",
-  "styleSteadyHint": "Frases inteiras que não mudam. Mais fáceis de ler.",
-  "styleInstantHint": "Mais rápidas, mas as palavras podem mudar enquanto a pessoa fala.",
+  "styleInstant": "Ao vivo",
+  "styleSteadyHint": "Só palavras definitivas, frase por frase. Mais tranquilo de ler.",
+  "styleInstantHint": "Mais rápido: uma prévia suave do que a pessoa está dizendo e, depois, palavras definitivas que não mudam.",
   "backHome": "Voltar ao início",
   "voiceFocus": "Foco na voz",
   "voiceFocusHint": "Só a minha voz é legendada, não a de pessoas falando mais longe.",
   "deniedApp": "Abra Ajustes › Simpatico e permita Câmera e Microfone. Depois, volte aqui.",
-  "micModes": "Isolamento de Voz do iPhone"
+  "micModes": "Isolamento de Voz do iPhone",
+  "isAway": "{name} saiu do app por um momento e não está ouvindo você.",
+  "selfSize": "Sua câmera. Toque para mudar o tamanho e arraste para mover."
 }

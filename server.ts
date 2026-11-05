@@ -6,7 +6,10 @@ import { sanitizeLang } from "./shared/lang";
 import type { ClientMsg } from "./shared/protocol";
 import { clientError, dashboard, feedback } from "./server/admin";
 import { getIceServers } from "./server/ice";
-import { device } from "./server/store";
+import { append, device } from "./server/store";
+
+/** Client events kept on disk to diagnose dropped calls: connection health only. */
+const CONN_EVENTS = new Set(["ice_connected", "ice_failed", "connect_timeout", "heal", "signal_failed", "offer_failed", "weak_network", "socket_back", "away", "back", "reconnected", "gave_up"]);
 import { log } from "./server/log";
 import { refineConfigured } from "./server/refine";
 import { broadcast, createRoom, disconnect, getRoom, info, others, removePeer, seat, send, setCaptionStyle, setInRoom, speakerAudio, stopSpeaking, type Peer, type Room } from "./server/rooms";
@@ -137,9 +140,14 @@ wss.on("connection", (ws, req) => {
       case "set-caption-style":
         setCaptionStyle(peer, msg.style);
         break;
-      case "log":
-        log(`client_${String(msg.event).slice(0, 40)}`, { room: room.code, peer: peer.label, ...(msg.detail ?? {}) });
+      case "log": {
+        const event = String(msg.event).slice(0, 40);
+        const detail = { room: room.code, peer: peer.label, ...(msg.detail ?? {}) };
+        log(`client_${event}`, detail);
+        // Connection health is kept (no words, no media) to find out why calls drop.
+        if (CONN_EVENTS.has(event)) append("conn", { event, device: devName, ...detail });
         break;
+      }
       case "leave":
         removePeer(room, peer, "left");
         break;

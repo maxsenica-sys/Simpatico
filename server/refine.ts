@@ -26,7 +26,7 @@ const SYSTEM = `You write the subtitles for a live, face-to-face video call betw
 - The transcript comes from speech recognition and can contain mistakes, fillers and false starts. Use the recent conversation to work out what was meant. Drop fillers that carry no meaning.
 - Keep it as short as the natural spoken version. It is read as a subtitle while watching the speaker's face.
 - Glossary entries are names, nicknames and in-jokes between these two people. Use them as given.
-- You don't know the speaker's or listener's gender. Where the target language marks gender (verb endings, adjectives, pronouns), prefer natural phrasing that avoids committing to one; if that isn't possible, use the grammatical default.
+- You don't know anyone's gender (speaker, listener or people mentioned) unless the conversation makes it clear. Where the target language marks gender (verb endings, adjectives, pronouns), prefer natural phrasing that avoids committing to one; if that isn't possible, use the grammatical default. Never add a gender the source doesn't have: Turkish "o", Persian "u", Indonesian "dia", Chinese spoken "tā" become "they" (or the person's name) in English: just "they", never "he/she" or a slash. Example: "O da geliyor mu?" is "Are they coming too?", not "Is he coming too?".
 - Render interjections and backchannels ("mm-hmm", "uh-huh", "wow", "oh no") with the target language's own spoken equivalent, never the source-language sound.
 - Your whole reply appears on screen as the subtitle, so reply with the translation only, written in the target language and its usual script: no quotes, notes, alternatives, transliteration, second attempts or explanations. If the utterance has no translatable content, reply with it unchanged.`;
 
@@ -39,7 +39,7 @@ const SLANG = `<spoken_language_reference>
 People on these calls talk casually: friends, families, teammates. Below are common slang words, particles and set phrases by language. They are examples, not a complete list. They are written in Latin letters here, but the transcript uses each language's own script, and speech recognition may spell them oddly. Read them by meaning, and when the target language has its own casual equivalent at the same register, use it.
 
 English: "no cap" = honestly; "lowkey" = a bit, quietly; "bet" = OK, deal; "deadass" = seriously; "slaps" = is great; "sus" = suspicious; "my bad" = sorry; "mate", "bro", "dude" = friend; "innit" = isn't it, right; "gonna/wanna" = going to/want to; "it's giving…" = it looks/feels like…
-Turkish: "kanka", "kanki" = buddy; "abi", "abla" = bro, sis (also polite for an older person); "lan" = dude (rough, between friends); "valla" = honestly; "aynen" = exactly; "eyvallah" = thanks, cheers; "hadi ya", "yok artık" = no way; "kolay gelsin" = greeting to someone working; "eline sağlık" = thanks for the food, nice work; "geçmiş olsun" = sorry that happened, get well; "afiyet olsun" = enjoy your meal; "kafayı yemek" = to go crazy; "boş yapma" = stop talking nonsense; "efsane" = legendary; "çok fena" = awesome or awful, by context.
+Turkish: "kanka", "kanki" = buddy; "abi", "abla" = bro, sis (also polite for an older person); "lan" = dude (rough, between friends); "valla" = honestly; "aynen" = exactly; "eyvallah" = thanks, cheers; "hadi ya", "yok artık" = no way; "kolay gelsin" = greeting to someone working; "eline sağlık" = thanks for the food, nice work; "geçmiş olsun" = sorry that happened, get well; "afiyet olsun" = enjoy your meal; "kafayı yemek" = to go crazy; "boş yapma" = stop talking nonsense; "efsane" = legendary; "çok fena" = awesome or awful, by context; "hocam" = coach, teacher, or a friendly respectful "mate" (by context, never left as "hocam"); "naber", "ne haber" = what's up; "iyiyim" = I'm good; "sağ ol", "saol" = thanks; "kusura bakma" = sorry; "boşver" = never mind; "tamam", "olur" = OK; "hı hı" = yeah; "yok" = no, there isn't; "hadi" = come on, let's go; "of ya" = ugh. Turkish has one word, "o", for he, she and it: in English use the person's name or "they" unless the conversation makes it clear. English "you" to Turkish: "sen" between friends, family and teammates, "siz" for strangers, elders or to show respect; follow the conversation's tone and stay consistent.
 Russian: "блин" = damn; "короче" = anyway, long story short; "ну" = well; "давай" = come on, OK, bye; "чё" = what; "прикол" = funny thing, joke; "кайф" = bliss; "норм" = fine; "жесть", "капец" = insane, crazy; "забей" = forget it; "ваще" = totally.
 Spanish: "tío/tía" (Spain), "güey/wey" (Mexico), "che" (Argentina), "pana" (Venezuela, Caribbean) = dude; "vale" = OK; "guay", "chévere", "padre", "bacán" = cool; "neta" = really; "ni modo" = oh well; "me vale" = I don't care.
 Portuguese (Brazil): "cara", "mano" = dude; "beleza" = cool, OK; "valeu" = thanks; "né" = right?; "tipo" = like; "nossa" = wow; "tô de boa" = I'm chill; "saudade" = missing someone; "gambiarra" = makeshift fix.
@@ -64,7 +64,29 @@ export function subtitleOnly(text: string): string {
     .map((l) => l.trim())
     .filter(Boolean)
     .filter((l) => !/^(wait|note|actually|hmm|let me|i should|i need|translation\s*:|subtitle\s*:)/i.test(l));
-  return (lines.length > 1 ? lines[lines.length - 1] : (lines[0] ?? "")).trim();
+  const line = lines.length > 1 ? lines[lines.length - 1] : (lines[0] ?? "");
+  // A continuation sometimes opens with "..." — the screen shows it joined to what came before.
+  let out = line.replace(/^(\.\.\.|…)\s*/u, "").trim();
+  // A subtitle wrapped in quotes as a whole: drop the quotes (quotes inside are kept).
+  const q = out.match(/^["“„«'‘](.+)["”»'’]$/su);
+  if (q && !/["“”«»]/u.test(q[1])) out = q[1].trim();
+  return out;
+}
+
+/**
+ * True when a "translation" is really the source handed back (same words), e.g. Turkish in,
+ * Turkish out. Treated as a failure so it is retried or replaced, never shown as a caption.
+ */
+export function looksUntranslated(source: string, out: string): boolean {
+  // The test mocks echo their input on purpose.
+  if (process.env.ECHO_CHECK === "off") return false;
+  const words = (t: string) => t.toLocaleLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
+  const a = words(source);
+  const b = words(out);
+  if (a.length < 3 || b.length < 3) return false; // names, "OK", short loanwords are fine
+  const src = new Set(a);
+  const same = b.filter((w) => src.has(w)).length;
+  return same / b.length >= 0.8;
 }
 
 let client: Anthropic | null = null;
@@ -118,6 +140,10 @@ export async function refine(input: RefineInput): Promise<string | null> {
       .flatMap((b) => (b.type === "text" ? [b.text] : []))
       .join("");
     const text = subtitleOnly(raw);
+    if (text && looksUntranslated(input.source, text)) {
+      log("refine_untranslated", { ms: Date.now() - started, src: input.sourceLang, tgt: input.targetLang });
+      return null;
+    }
     log("refine_ok", { ms: Date.now() - started, src: input.sourceLang, tgt: input.targetLang, cached: res.usage.cache_read_input_tokens ?? 0 });
     return text || null;
   } catch (err) {
@@ -127,72 +153,14 @@ export async function refine(input: RefineInput): Promise<string | null> {
   }
 }
 
-const INTERIM_SYSTEM = `You write live subtitles for a video call between two people who don't share a language. The speaker is still talking. You get the newest stretch of their speech, transcribed as it is spoken, and you translate just that stretch so the listener can follow along before the sentence is finished.
-
-- Translate only the fragment you are given. It may stop mid-sentence: do not complete it, guess what comes next, or add final punctuation.
-- Use the earlier part of the same sentence only to understand the fragment; do not translate it again.
-- Natural spoken wording, same register and tone. Idioms and slang by meaning, not word for word.
-- Your whole reply appears on screen as the subtitle: the translation only, in the target language and its usual script.`;
-
-export type InterimInput = {
-  /** The newest untranslated stretch of the utterance. */
-  fragment: string;
-  /** What the speaker said earlier in the same utterance (already captioned). */
-  before: string;
-  sourceLang: string;
-  targetLang: string;
-  signal: AbortSignal;
-};
-
-/**
- * A quick translation of the untranslated tail of a long utterance that is still being spoken,
- * so the reader isn't left waiting for the speaker to pause. Null on any failure.
- */
-export async function interimTranslate(input: InterimInput): Promise<string | null> {
-  if (!refineConfigured()) return null;
-  client ??= new Anthropic();
-  const src = langInfo(input.sourceLang).name;
-  const tgt = langInfo(input.targetLang).name;
-  const user = [
-    `<languages>${src} to ${tgt}</languages>`,
-    input.before ? `<earlier_in_sentence>${input.before}</earlier_in_sentence>` : "",
-    `<fragment>${input.fragment}</fragment>`,
-  ]
-    .filter(Boolean)
-    .join("\n\n");
-  const started = Date.now();
-  try {
-    const res = await client.messages.create(
-      {
-        model: MODEL,
-        max_tokens: 200,
-        thinking: { type: "disabled" },
-        output_config: { effort: "low" },
-        system: [{ type: "text", text: INTERIM_SYSTEM }, { type: "text", text: SLANG, cache_control: { type: "ephemeral" } }],
-        messages: [{ role: "user", content: user }],
-      },
-      { signal: input.signal, maxRetries: 0 },
-    );
-    if (res.stop_reason === "refusal") return null;
-    const raw = res.content
-      .flatMap((b) => (b.type === "text" ? [b.text] : []))
-      .join("");
-    const text = subtitleOnly(raw);
-    log("interim_ok", { ms: Date.now() - started, chars: input.fragment.length, cached: res.usage.cache_read_input_tokens ?? 0 });
-    return text || null;
-  } catch (err) {
-    if (!input.signal.aborted) log("interim_error", { ms: Date.now() - started, error: String(err) });
-    return null;
-  }
-}
-
 const PHRASE_SYSTEM = `You write the subtitles for a live video call between people who do not share a language. People here often talk for a long time without pausing, so the subtitle is built phrase by phrase: each turn you get the next finished phrase of what the speaker is saying, and your translation is added after the subtitle already on screen. Nothing on screen is ever changed afterwards, so the reader only ever reads each part once.
 
 - Translate only the new phrase, so that it reads as the natural continuation of the subtitle already shown. Never repeat, correct or rephrase what is already shown. Because of word order, the subtitle so far may already carry part of this phrase's meaning (a "when", "that" or "and" placed earlier); don't translate that part again.
 - Translate meaning, not words. Idioms, slang and colloquialisms become the natural equivalent in the target language; keep the speaker's register and tone. Drop fillers and false starts that carry no meaning.
-- If the phrase stops mid-sentence, stop there too; do not guess what comes next. When it is marked final, it is the end of what they said: finish the sentence naturally.
+- If the phrase stops mid-sentence, stop there too; do not guess what comes next. In languages where the verb comes last (Turkish, Hindi, Urdu, Bengali, Japanese, Korean), a phrase often arrives before its verb: translate only what is there and never invent the missing verb; it comes with the next phrase, so place it naturally then. When the phrase is marked final, it is the end of what they said: finish the sentence naturally.
+- You don't know anyone's gender. Never add one the source doesn't have: Turkish "o", Indonesian "dia" and similar become just "they" (or the person's name) in English, never "he/she".
 - The transcript comes from speech recognition and can contain mistakes. Use what was said before and the recent conversation to work out what was meant, but translate only the new phrase.
-- You don't know anyone's gender. Where the target language marks it, prefer phrasing that avoids committing to one, otherwise use the grammatical default.
+- Where the target language marks gender, prefer phrasing that avoids committing to one, otherwise use the grammatical default.
 - Your whole reply appears on screen: the translation of the new phrase only, in the target language and its usual script, with no notes or alternatives. Only if the phrase is nothing but fillers ("um", "you know"), reply with nothing.`;
 
 export type PhraseInput = {
@@ -248,7 +216,12 @@ export async function phraseTranslate(input: PhraseInput): Promise<string | null
     log("phrase_ok", { ms: Date.now() - started, chars: input.phrase.length, final: input.final, cached: res.usage.cache_read_input_tokens ?? 0 });
     // Test harness only: never set in production, where no words of a conversation are logged.
     if (process.env.DEBUG_PHRASES === "1") console.log(JSON.stringify({ phrase: input.phrase, final: input.final, out: raw }));
-    return subtitleOnly(raw);
+    const text = subtitleOnly(raw);
+    if (text && looksUntranslated(input.phrase, text)) {
+      log("phrase_untranslated", { ms: Date.now() - started });
+      return null;
+    }
+    return text;
   } catch (err) {
     log(input.signal.aborted ? "phrase_late" : "phrase_error", { ms: Date.now() - started, error: input.signal.aborted ? undefined : String(err) });
     return null;

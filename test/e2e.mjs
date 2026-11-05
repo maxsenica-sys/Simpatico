@@ -69,13 +69,20 @@ try {
   if (!(await a.locator(".controls").isVisible())) throw new Error("call controls should always be visible");
 
   step("B (Turkish phone) opens the link: UI must be Turkish with no settings touched");
-  // B reads word by word (instant); A keeps the default steady captions.
-  await b.addInitScript(() => localStorage.setItem("talk.captions.v1", JSON.stringify({ style: "instant" })));
-  // Steady captions must never show pass-1 words that are later rewritten: watch A's screen for any.
+  // B chose Steady captions; A keeps the default (Live: settled phrases plus a faint preview).
+  await b.addInitScript(() => localStorage.setItem("talk.captions.v1", JSON.stringify({ style: "steady", styleSet: true })));
+  // Neither style ever shows Soniox's pass-1 guesses (which used to be rewritten): watch A's screen.
+  // Settled caption text may only grow, never be rewritten (the faint preview may change).
   await a.evaluate(() => {
-    window.__sawLiteral = false;
+    window.__rewrites = [];
+    const seen = new Map();
+    const settled = (p) => [...p.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join("").trim();
     new MutationObserver(() => {
-      if ([...document.querySelectorAll(".cap")].some((e) => /\ben:/.test(e.textContent))) window.__sawLiteral = true;
+      for (const p of document.querySelectorAll(".cap[data-id]")) {
+        const id = p.dataset.id, now = settled(p), before = seen.get(id);
+        if (before && now && !now.startsWith(before)) window.__rewrites.push([before, now]);
+        if (now) seen.set(id, now);
+      }
     }).observe(document.body, { subtree: true, childList: true, characterData: true });
   });
   await b.goto(url);
@@ -88,20 +95,20 @@ try {
   const videoUp = (p) => p.waitForFunction(() => { const v = document.querySelector("video.remote"); return v && v.videoWidth > 0 && !v.paused; }, null, { timeout: 25000 });
   await Promise.all([videoUp(a), videoUp(b)]);
 
-  step("Word-by-word reader (B) gets pass-1 captions; steady reader (A) gets settled phrases only");
-  await b.waitForFunction(() => [...document.querySelectorAll(".cap")].some((e) => e.textContent.includes("tr:")), null, { timeout: 20000 });
+  step("Captions arrive translated: settled phrases for both, plus the faint preview for Live (A)");
+  await b.waitForFunction(() => [...document.querySelectorAll(".cap")].some((e) => e.textContent.includes("(Turkish)")), null, { timeout: 20000 });
   await a.waitForFunction(() => [...document.querySelectorAll(".cap")].some((e) => e.textContent.includes("(English)")), null, { timeout: 20000 });
-  const liveOpacity = await b.evaluate(() => { const e = document.querySelector(".cap.live"); return e ? getComputedStyle(e).opacity : null; });
-  console.log("  live caption opacity on B:", liveOpacity);
+  if (await b.locator(".cap-tail").count()) throw new Error("Steady captions must not show a preview");
 
   step("One-to-one captions say who is talking");
   await b.waitForFunction(() => [...document.querySelectorAll(".cap-who")].some((e) => e.textContent === "Max"), null, { timeout: 10000 });
   await a.waitForFunction(() => [...document.querySelectorAll(".cap-who")].some((e) => e.textContent === "Ayşe"), null, { timeout: 10000 });
 
   step("Pass-2 refinement swaps in");
-  await b.waitForFunction(() => [...document.querySelectorAll(".cap.done")].some((e) => e.textContent.includes("✨ (Turkish)")), null, { timeout: 20000 });
+  await b.waitForFunction(() => [...document.querySelectorAll(".cap.done")].some((e) => e.textContent.includes("(Turkish)")), null, { timeout: 20000 });
   await a.waitForFunction(() => [...document.querySelectorAll(".cap.done")].some((e) => e.textContent.includes("(English)")), null, { timeout: 20000 });
-  if (await a.evaluate(() => window.__sawLiteral)) throw new Error("steady captions showed a pass-1 guess");
+  const rewrites = await a.evaluate(() => window.__rewrites);
+  if (rewrites.length) throw new Error("settled caption text was rewritten: " + JSON.stringify(rewrites));
   console.log("  A captions (steady):", await a.$$eval(".cap", (els) => els.map((e) => `[${e.className}] ${e.textContent}`)));
   await b.screenshot({ path: OUT + "3-guest-call.png" });
   await a.screenshot({ path: OUT + "4-host-call.png" });
@@ -145,6 +152,26 @@ try {
   const la = await labels(a), lb = await labels(b);
   console.log("  host:", la.join(" | "), "\n  guest:", lb.join(" | "));
   if (la.length < 5 || Math.abs(la.length - lb.length) > 1) throw new Error("host and guest controls differ"); // Flip only shows with 2 cameras
+
+  step("Self view: tap for bigger, tap again for a 50/50 split, tap again back to small");
+  await a.locator(".self").click();
+  await a.locator(".self.big").waitFor({ timeout: 3000 });
+  await a.locator(".self").click();
+  await a.locator(".call.split .self.split").waitFor({ timeout: 3000 });
+  await a.screenshot({ path: OUT + "10-host-split.png" });
+  await a.locator(".self").click();
+  await a.locator(".self.small").waitFor({ timeout: 3000 });
+  if (await a.locator(".call.split").count()) throw new Error("split should be off again");
+
+  step("B switches to another app: A is told B can't hear; it clears when B comes back");
+  const setVisible = (p, visible) => p.evaluate((v) => {
+    Object.defineProperty(document, "visibilityState", { value: v ? "visible" : "hidden", configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  }, visible);
+  await setVisible(b, false);
+  await a.getByText("Ayşe left the app for a moment").waitFor({ timeout: 8000 });
+  await setVisible(b, true);
+  await a.getByText("Ayşe left the app for a moment").waitFor({ state: "detached", timeout: 8000 });
 
   step("A turns the camera off: B sees 'camera off', captions keep working; then back on");
   await show(a);

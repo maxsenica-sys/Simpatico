@@ -117,12 +117,14 @@
   "captionSettings": "Configuración de subtítulos",
   "captionStyle": "Subtítulos",
   "styleSteady": "Estable",
-  "styleInstant": "Palabra por palabra",
-  "styleSteadyHint": "Frases completas que no cambian. Más fáciles de leer.",
-  "styleInstantHint": "Más rápido, pero las palabras pueden cambiar mientras hablan.",
+  "styleInstant": "En vivo",
+  "styleSteadyHint": "Solo palabras definitivas, frase por frase. Más cómodo de leer.",
+  "styleInstantHint": "Lo más rápido: una vista previa tenue de lo que dicen y luego las palabras definitivas, que ya no cambian.",
   "backHome": "Volver al inicio",
   "voiceFocus": "Enfoque de voz",
   "voiceFocusHint": "Solo se subtitula mi voz, no la de personas que hablan más lejos.",
   "deniedApp": "Abre Configuración › Simpatico, permite Cámara y Micrófono y luego vuelve aquí.",
-  "micModes": "Aislamiento de voz del iPhone"
+  "micModes": "Aislamiento de voz del iPhone",
+  "isAway": "{name} salió de la app un momento y no te puede escuchar.",
+  "selfSize": "Tu cámara. Toca para cambiar el tamaño y arrastra para moverla."
 }

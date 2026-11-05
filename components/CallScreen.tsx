@@ -8,6 +8,7 @@ import { langInfo } from "@/shared/lang";
 import { useT } from "@/lib/i18n";
 import { Captions } from "./Captions";
 import { Notice } from "./Notice";
+import { SelfView, type SelfMode } from "./SelfView";
 import { ShareLink } from "./ShareLink";
 import { Transcript } from "./Transcript";
 
@@ -18,16 +19,16 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const t = useT();
   const s = useSyncExternalStore(call.subscribe, call.getState, call.getState);
   const stageRef = useRef<HTMLVideoElement>(null);
-  const selfRef = useRef<HTMLVideoElement>(null);
   const [blocked, setBlocked] = useState<Set<string>>(new Set());
   const [selfView, setSelfView] = useState(true);
+  const [selfMode, setSelfMode] = useState<SelfMode>("small");
   const [transcript, setTranscript] = useState(false);
   const [fit, setFit] = useState<"cover" | "contain">("cover");
   const [now, setNow] = useState(() => Date.now());
   const [connectedAt, setConnectedAt] = useState<number | null>(null);
   const [videoLostAt, setVideoLostAt] = useState<number | null>(null);
   const [firstOwnAt, setFirstOwnAt] = useState<number | null>(null);
-  const [prefs, setPrefs] = useState<CaptionPrefs>({ size: "m", box: false, style: "steady", focus: true });
+  const [prefs, setPrefs] = useState<CaptionPrefs>({ size: "m", box: false, style: "instant", focus: true });
   const [invite, setInvite] = useState(false);
   const [wide, setWide] = useState(false);
 
@@ -84,13 +85,6 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
     }
   }, [stage?.stream]);
 
-  useEffect(() => {
-    const v = selfRef.current;
-    if (v && v.srcObject !== s.selfVideo) {
-      v.srcObject = s.selfVideo;
-      v.play().catch(() => {});
-    }
-  }, [s.selfVideo, selfView, s.camOn, s.phase]);
 
   useEffect(() => {
     if (s.phase === "connected") setConnectedAt((c) => c ?? Date.now());
@@ -241,6 +235,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
         ),
       });
     if (!group && stage?.partnerAudioOnly && s.camOn) banners.push({ key: "partner-audio", tone: "info", text: t("theyAreAudioOnly") });
+    for (const p of s.participants) if (p.away) banners.push({ key: `away-${p.id}`, tone: "info", text: t("isAway", { name: p.name }) });
     if (ccState !== "ok")
       banners.push({ key: "cc", tone: "warn", text: ccState === "paused" ? t("captionsPaused") : t("captionsUnavailable") });
     if (s.muted) banners.push({ key: "muted", tone: "info", text: t("muted") });
@@ -248,7 +243,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
 
   return (
     <main
-      className={`call ${group ? "group" : ""} ${prefs.box ? "cap-box" : ""}`}
+      className={`call ${group ? "group" : ""} ${prefs.box ? "cap-box" : ""} ${selfView && s.camOn && s.selfVideo && selfMode === "split" ? "split" : ""}`}
       style={{ ["--cap-size" as string]: CAPTION_SIZES[prefs.size] }}
     >
       <video
@@ -398,12 +393,19 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
       </div>
 
       {selfView && s.camOn && s.selfVideo && (
-        <div className={`self ${s.phase === "waiting" ? "low" : ""}`} onClick={(e) => e.stopPropagation()}>
-          <video ref={selfRef} className={facingMirror(s)} autoPlay playsInline muted />
-          <button className="self-x" aria-label={t("hideSelf")} onClick={() => setSelfView(false)}>
-            ×
-          </button>
-        </div>
+        <SelfView
+          stream={s.selfVideo}
+          mirror={facingMirror(s)}
+          low={s.phase === "waiting"}
+          mode={selfMode}
+          onMode={setSelfMode}
+          onHide={() => {
+            setSelfView(false);
+            setSelfMode("small");
+          }}
+          hideLabel={t("hideSelf")}
+          sizeLabel={t("selfSize")}
+        />
       )}
       {!selfView && s.camOn && (
         <button

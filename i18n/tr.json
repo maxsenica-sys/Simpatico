@@ -117,12 +117,14 @@
   "captionSettings": "Altyazı ayarları",
   "captionStyle": "Altyazılar",
   "styleSteady": "Sabit",
-  "styleInstant": "Kelime kelime",
-  "styleSteadyHint": "Değişmeyen tam ifadeler. Okuması en kolayı.",
-  "styleInstantHint": "En hızlısı, ama konuştukça kelimeler değişebilir.",
+  "styleInstant": "Canlı",
+  "styleSteadyHint": "Sadece kesinleşmiş kelimeler, ifade ifade. Okuması en rahatı.",
+  "styleInstantHint": "En hızlısı: söyledikleri soluk bir önizlemeyle görünür, sonra değişmeyen kelimelere dönüşür.",
   "backHome": "Ana sayfaya dön",
   "voiceFocus": "Ses odağı",
   "voiceFocusHint": "Sadece benim sesim altyazıya dönüşür, uzaktaki konuşmalar değil.",
   "deniedApp": "Ayarlar › Simpatico’yu aç, Kamera ve Mikrofon’a izin ver, sonra geri dön.",
-  "micModes": "iPhone ses yalıtımı"
+  "micModes": "iPhone ses yalıtımı",
+  "isAway": "{name} bir anlığına uygulamadan çıktı, seni duyamıyor.",
+  "selfSize": "Kameran. Boyutu değiştirmek için dokun, taşımak için sürükle."
 }

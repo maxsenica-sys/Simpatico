@@ -117,12 +117,14 @@
   "captionSettings": "Pengaturan teks",
   "captionStyle": "Teks",
   "styleSteady": "Stabil",
-  "styleInstant": "Kata per kata",
-  "styleSteadyHint": "Kalimat utuh yang tidak berubah. Paling mudah dibaca.",
-  "styleInstantHint": "Paling cepat, tapi kata bisa berubah saat mereka bicara.",
+  "styleInstant": "Langsung",
+  "styleSteadyHint": "Hanya kata yang sudah pasti, per frasa. Paling nyaman dibaca.",
+  "styleInstantHint": "Tercepat: pratinjau samar dari ucapan mereka, lalu kata yang sudah pasti dan tidak berubah lagi.",
   "backHome": "Kembali ke beranda",
   "voiceFocus": "Fokus suara",
   "voiceFocusHint": "Hanya suaraku yang dibuat teks, bukan suara orang yang lebih jauh.",
   "deniedApp": "Buka Pengaturan › Simpatico, izinkan Kamera dan Mikrofon, lalu kembali ke sini.",
-  "micModes": "Isolasi Suara iPhone"
+  "micModes": "Isolasi Suara iPhone",
+  "isAway": "{name} sedang keluar dari aplikasi sebentar dan tidak bisa mendengarmu.",
+  "selfSize": "Kameramu. Ketuk untuk ubah ukuran, seret untuk memindahkan."
 }

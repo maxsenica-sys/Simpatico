@@ -4,7 +4,8 @@ import type { CaptionStyle } from "@/shared/protocol";
 
 /** Accessibility: caption size, an optional solid backing box and reading style. Remembered on this device. */
 export type CaptionSize = "s" | "m" | "l" | "xl";
-export type CaptionPrefs = { size: CaptionSize; box: boolean; style: CaptionStyle; focus: boolean };
+/** `styleSet`: the person picked a reading style themselves (otherwise the default applies). */
+export type CaptionPrefs = { size: CaptionSize; box: boolean; style: CaptionStyle; styleSet?: boolean; focus: boolean };
 
 const KEY = "talk.captions.v1";
 export const CAPTION_SIZES: Record<CaptionSize, string> = {
@@ -17,9 +18,11 @@ export const CAPTION_SIZES: Record<CaptionSize, string> = {
 export function loadCaptionPrefs(): CaptionPrefs {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) ?? "{}") as Partial<CaptionPrefs>;
-    return { size: v.size && v.size in CAPTION_SIZES ? v.size : "m", box: !!v.box, style: v.style === "instant" ? "instant" : "steady", focus: v.focus !== false };
+    // Live is the default; Steady only when the person chose it.
+    const style: CaptionStyle = v.styleSet && v.style === "steady" ? "steady" : "instant";
+    return { size: v.size && v.size in CAPTION_SIZES ? v.size : "m", box: !!v.box, style, styleSet: !!v.styleSet, focus: v.focus !== false };
   } catch {
-    return { size: "m", box: false, style: "steady", focus: true };
+    return { size: "m", box: false, style: "instant", focus: true };
   }
 }
 

@@ -117,12 +117,14 @@
   "captionSettings": "字幕设置",
   "captionStyle": "字幕",
   "styleSteady": "整句显示",
-  "styleInstant": "逐字显示",
-  "styleSteadyHint": "整句呈现，不会变动，最易阅读。",
-  "styleInstantHint": "最快，但说话过程中文字可能会变动。",
+  "styleInstant": "实时显示",
+  "styleSteadyHint": "只显示已确定的文字，逐句呈现，阅读最轻松。",
+  "styleInstantHint": "最快：先浅色预览对方正在说的话，再显示不会变动的确定文字。",
   "backHome": "返回首页",
   "voiceFocus": "人声聚焦",
   "voiceFocusHint": "只为我的声音生成字幕，不包括远处其他人的说话声。",
   "deniedApp": "打开“设置” › Simpatico，允许“相机”和“麦克风”，然后返回此处。",
-  "micModes": "iPhone 语音突显"
+  "micModes": "iPhone 语音突显",
+  "isAway": "{name} 暂时离开了 App，听不到你说话。",
+  "selfSize": "你的画面。点按可调整大小，拖动可移动位置。"
 }

@@ -5,7 +5,7 @@ import { WebSocketServer, type WebSocket } from "ws";
 
 import { SpeakerPipeline } from "../server/pipeline";
 import { isTrivialEdit } from "../server/text";
-import { subtitleOnly } from "../server/refine";
+import { looksUntranslated, subtitleOnly } from "../server/refine";
 
 delete process.env.ANTHROPIC_API_KEY; // pass 2 off: utterances settle on the literal text
 const wss = new WebSocketServer({ port: 3997 });
@@ -100,8 +100,6 @@ await until(() => reader.some((m) => m.t === "caption" && m.stage === "final" &&
 p.stop();
 console.log("✓ same-language pair transcribes without translating");
 
-// 6. Long utterance: an interim LLM translation of the untranslated tail shows while the
-//    speaker is still talking, and Soniox's own translation supersedes it.
 const { createServer } = await import("node:http");
 let interimCalls = 0;
 const phraseCalls: { text: string; final: boolean }[] = [];
@@ -126,20 +124,21 @@ p.setLanguages("en-AU", "tr-TR");
 p.audio(audio);
 await until(() => configs === 4);
 const ws4 = sockets[3];
+// 6. Live readers (default): a phrase settles once 8 words are safely recognised, and the words
+//    after it show as a faint preview (tail) that is replaced, never the settled text.
 const longLive = "so yesterday I went down to the market near the harbour and";
 push(ws4, [tok(longLive, false)]);
-await sleep(1300); // nothing translated for > 1.2 s
-push(ws4, [tok(longLive + " bought", false)]);
-await until(() => reader.some((m) => m.t === "caption" && m.stage === "live" && m.text.includes("ARA-CEVIRI")), 4000);
-console.log("✓ interim translation shown while a long sentence is still being spoken");
-push(ws4, [tok(longLive + " bought fish", true)]);
-push(ws4, [tok("dün limana yakın pazara gittim ve balık aldım", true, true)]);
-await until(() => reader.some((m) => m.t === "caption" && m.stage === "live" && m.text.includes("balık") && !m.text.includes("ARA-CEVIRI")));
-console.log("✓ Soniox's translation supersedes the interim");
-push(ws4, [tok("<end>", true)]);
-await until(() => reader.some((m) => m.t === "caption" && m.stage === "refined" && m.text === "TAM-CEVIRI"), 4000);
+await until(() => reader.some((m) => m.t === "caption" && m.style === "instant" && m.text.startsWith("[so yesterday")), 4000);
+await until(() => reader.some((m) => m.t === "caption" && m.style === "instant" && /^\[harbour and\]$|^\[.*\]$/.test(m.tail ?? "")), 4000);
+console.log("✓ live: settled phrase plus a faint preview of the words being spoken");
+push(ws4, [tok(longLive + " bought fish", true), tok("<end>", true)]);
+await until(() => reader.some((m) => m.t === "caption" && m.style === "instant" && m.stage === "final"), 4000);
+const live = reader.filter((m) => m.t === "caption" && m.style === "instant");
+for (let i = 1; i < live.length; i++) assert.ok(live[i].text.startsWith(live[i - 1].text), "settled text only grows");
+assert.equal(live.at(-1).tail, undefined, "the final line has no preview");
+assert.ok(!reader.some((m) => m.t === "caption" && !m.id.endsWith("~s")), "no word-by-word guesses when the LLM is on");
 p.stop();
-assert.ok(interimCalls >= 1);
+console.log("✓ live: no rewrites of settled text, final line clean");
 
 // 6b. Steady captions: phrase by phrase from finalised words, append-only, closed by a final phrase.
 //     With only steady readers, no interim calls are made and no whole-utterance rewrite is needed.
@@ -197,10 +196,19 @@ assert.equal(isTrivialEdit("I am going to the store tomorrow.", "I'm going to th
 assert.equal(isTrivialEdit("break your leg", "good luck"), false);
 console.log("✓ trivial-edit detection");
 
+// A "translation" that is the source handed back is caught (Turkish in, Turkish out).
+delete process.env.ECHO_CHECK;
+assert.equal(looksUntranslated("bugün akşam yemeğe çıkalım mı", "bugün akşam yemeğe çıkalım mı?"), true);
+assert.equal(looksUntranslated("bugün akşam yemeğe çıkalım mı", "Shall we go out for dinner tonight?"), false);
+assert.equal(looksUntranslated("Ayşe", "Ayşe"), false);
+console.log("✓ untranslated replies are rejected");
+
 // A model second-guessing itself in the visible reply never reaches the screen.
 assert.equal(subtitleOnly("Arre yaar, bas karo.\nWait, I should check: the target is English.\nHey, come on, enough already."), "Hey, come on, enough already.");
 assert.equal(subtitleOnly("  Dude, that was legendary  "), "Dude, that was legendary");
 assert.equal(subtitleOnly("Note: casual register\nSee you tomorrow!"), "See you tomorrow!");
+assert.equal(subtitleOnly('"sarı gagalı ördekler için"'), "sarı gagalı ördekler için");
+assert.equal(subtitleOnly("…and then we left"), "and then we left");
 console.log("✓ subtitle-only cleanup");
 
 wss.close();

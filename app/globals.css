@@ -100,7 +100,8 @@ p { margin: 0; line-height: 1.5; }
 
 /* top of the call: controls, captions badge, banners, "your words" line, stacked */
 .top-stack {
-  position: absolute; top: calc(10px + var(--safe-t)); left: 10px; right: 10px; z-index: 5;
+  /* Clear of the status bar / Dynamic Island even where the browser reports no safe area. */
+  position: absolute; top: calc(12px + max(var(--safe-t), 10px)); left: 8px; right: 8px; z-index: 5;
   display: flex; flex-direction: column; align-items: stretch; gap: 8px; pointer-events: none;
 }
 .top-stack > * { pointer-events: auto; }
@@ -164,14 +165,33 @@ p { margin: 0; line-height: 1.5; }
 
 .tap-sound { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); padding: 12px 20px; border-radius: 999px; border: 0; background: rgba(0, 0, 0, 0.6); font-weight: 600; cursor: pointer; }
 
-/* self view sits bottom-right, lifted above the 3-line caption band */
+/* Self view: a corner preview (drag to any corner; bottom corners sit above the caption band),
+   tap for bigger, tap again for a 50/50 split with the other person. */
 .self {
-  position: absolute; right: 12px; bottom: calc(var(--safe-b) + 24px + var(--cap-size) * var(--cap-lh) * 3 + 12px);
-  width: clamp(84px, 22vw, 180px); aspect-ratio: 3 / 4; border-radius: 14px; overflow: hidden;
+  --self-bottom: calc(var(--safe-b) + 24px + var(--cap-size) * var(--cap-lh) * 3 + 12px);
+  --self-top: calc(max(var(--safe-t), 8px) + 150px);
+  position: absolute; width: clamp(84px, 22vw, 180px); aspect-ratio: 3 / 4; border-radius: 14px; overflow: hidden;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.14); background: #111;
+  touch-action: none; cursor: grab; z-index: 4;
+  transition: width 0.2s ease;
 }
+.self.dragging { transition: none; cursor: grabbing; z-index: 6; }
+.self.c-br { right: 12px; bottom: var(--self-bottom); }
+.self.c-bl { left: 12px; bottom: var(--self-bottom); }
+.self.c-tr { right: 12px; top: var(--self-top); }
+.self.c-tl { left: 12px; top: var(--self-top); }
 /* while waiting there are no captions, so drop it to the corner and keep the invite card clear */
-.self.low { bottom: calc(var(--safe-b) + 16px); }
+.self.low { --self-bottom: calc(var(--safe-b) + 16px); }
+.self.big { width: clamp(150px, 46vw, 340px); }
+/* Split: the other person in the top half, you in the bottom half (side by side in landscape). */
+.self.split { inset: 50% 0 0 0; width: auto; aspect-ratio: auto; border-radius: 0; border: 0; border-top: 2px solid #000; box-shadow: none; cursor: pointer; }
+.self.split .self-x { display: none; }
+.call.split .remote, .call.split .no-video { top: 0; left: 0; right: auto; bottom: auto; width: 100%; height: 50%; }
+.call.split .captions-zone { z-index: 5; }
+@media (orientation: landscape) {
+  .self.split { inset: 0 0 0 50%; border-top: 0; border-left: 2px solid #000; }
+  .call.split .remote, .call.split .no-video { width: 50%; height: 100%; }
+}
 .self video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .self-x { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(0, 0, 0, 0.55); font-size: 18px; line-height: 1; cursor: pointer; }
 
@@ -295,6 +315,8 @@ p { margin: 0; line-height: 1.5; }
 .seg-btn.wide { padding: 0 14px; font-weight: 600; }
 .style-hint { width: 100%; margin: -4px 0 0; }
 .cap.steady { opacity: 1; }
+/* Live style: the words being spoken right now, before their phrase settles. */
+.cap-tail { opacity: 0.55; }
 .round-btn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-2); font-weight: 800; font-size: 1rem; cursor: pointer; display: grid; place-items: center; }
 .round-btn:last-child { font-size: 1.5rem; font-weight: 500; }
 .round-btn.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
@@ -325,4 +347,19 @@ p { margin: 0; line-height: 1.5; }
 /* people who turn animations off */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+}
+
+/* Phones: every call button fits on one row (up to 7: mic, camera, flip, audio only, in room, text, end). */
+@media (max-width: 440px) {
+  .controls { column-gap: 2px; }
+  .ctrl { width: 50px; }
+  .round { width: 44px; height: 44px; }
+  .ctrl-label { font-size: 0.62rem; }
+}
+/* Smallest phones (iPhone SE / mini): still one row. */
+@media (max-width: 380px) {
+  .controls { column-gap: 1px; }
+  .ctrl { width: 47px; }
+  .round { width: 41px; height: 41px; }
+  .ctrl-label { font-size: 0.6rem; }
 }

@@ -16,7 +16,7 @@ export type Phase =
   | "full"
   | "replaced";
 
-export type Caption = { id: string; from: string; text: string; stage: CaptionStage; updatedAt: number; doneAt: number | null };
+export type Caption = { id: string; from: string; text: string; tail?: string; stage: CaptionStage; updatedAt: number; doneAt: number | null };
 export type TranscriptLine = { id: string; who: "me" | "them"; from: string | null; text: string; final: boolean; at: number };
 
 /** A problem one side can see about the call, shown as a banner with an action where one helps. */
@@ -36,6 +36,8 @@ export type Participant = PeerInfo & {
   videoOk: boolean;
   /** They chose audio only, so I'm not sending them video. */
   partnerAudioOnly: boolean;
+  /** They switched to another app (their phone paused their camera and mic). */
+  away: boolean;
   /** Their speech is being captioned right now. */
   speaking: boolean;
   captionStatus: CaptionState;
@@ -82,6 +84,9 @@ export type CallState = {
 };
 
 const CONNECT_TIMEOUT_MS = 20_000;
+/** After a drop, keep trying to bring a call back this long (ICE restart every RETRY_EVERY_MS). */
+const RECONNECT_FOR_MS = 2 * 60_000;
+const RETRY_EVERY_MS = 8_000;
 const DISCONNECT_GRACE_MS = 4_000;
 const STATUS_EVERY_MS = 2_000;
 /** Consecutive bad reports (x 2 s) before we act on "they can't see / hear you". */
@@ -108,6 +113,10 @@ type Link = {
   noVideoReports: number;
   noAudioReports: number;
   localVideoBad: number;
+  /** Has been connected at least once: a drop is retried quietly instead of reported as failed. */
+  wasConnected: boolean;
+  /** When the connection dropped, while it is down. */
+  lostAt: number | null;
 };
 
 /**
@@ -210,6 +219,8 @@ export class CallController {
   /** Must be called from the Join tap (user gesture) so iOS allows audio. */
   async start() {
     this.awake.on();
+    window.addEventListener("online", this.onNetwork);
+    (navigator as { connection?: EventTarget }).connection?.addEventListener?.("change", this.onNetwork);
     this.startMic(this.local.getAudioTracks()[0]);
     this.watchLocalTracks();
     document.addEventListener("visibilitychange", this.onVisible);
@@ -334,8 +345,24 @@ export class CallController {
 
   // --------------------------------------------------------- local media
 
+  /** This page is in the background (another app, or the screen locked). */
+  private hidden = false;
+
   private onVisible = () => {
-    if (document.visibilityState !== "visible") return;
+    if (document.visibilityState !== "visible") {
+      // Tell the others straight away: the phone is about to pause our camera and mic.
+      if (!this.hidden) {
+        this.hidden = true;
+        this.sendAllStatus();
+        this.log("away", {});
+      }
+      return;
+    }
+    if (this.hidden) {
+      this.hidden = false;
+      this.sendAllStatus();
+      this.log("back", {});
+    }
     this.mic?.resume();
     // iOS pauses or ends the camera and mic while Safari is in the background (e.g. switching to
     // WhatsApp to send the link). Bring them back as soon as we're visible again.
@@ -345,6 +372,8 @@ export class CallController {
   private shutdown() {
     this.stopped = true;
     this.awake.off();
+    window.removeEventListener("online", this.onNetwork);
+    (navigator as { connection?: EventTarget }).connection?.removeEventListener?.("change", this.onNetwork);
     document.removeEventListener("visibilitychange", this.onVisible);
     if (this.wsTimer) clearTimeout(this.wsTimer);
     for (const id of [...this.links.keys()]) this.closeLink(id);
@@ -564,6 +593,7 @@ export class CallController {
       remoteCam: null,
       videoOk: false,
       partnerAudioOnly: false,
+      away: false,
       speaking: false,
       captionStatus: "ok",
     };
@@ -615,6 +645,7 @@ export class CallController {
       case "joined": {
         this.selfId = msg.selfId;
         this.iceServers = msg.iceServers;
+        if (!msg.fresh && this.state.reconnecting) this.log("socket_back", { tries: this.wsRetry });
         this.set({ reconnecting: false, kind: msg.kind, max: msg.max });
         const present = new Set(msg.peers.map((p) => p.id));
         for (const p of this.state.participants) if (!present.has(p.id)) this.removeParticipant(p.id);
@@ -649,7 +680,7 @@ export class CallController {
         this.onSignal(msg.from, msg.data);
         break;
       case "caption":
-        this.onCaption(msg.from, msg.id, msg.stage, msg.text);
+        this.onCaption(msg.from, msg.id, msg.stage, msg.text, msg.tail);
         break;
       case "own":
         this.upsertTranscript({ id: msg.id, who: "me", from: null, text: msg.text, final: msg.final });
@@ -697,6 +728,8 @@ export class CallController {
         noVideoReports: 0,
         noAudioReports: 0,
         localVideoBad: 0,
+        wasConnected: false,
+        lostAt: null,
       };
       this.links.set(id, link);
     }
@@ -801,6 +834,9 @@ export class CallController {
     const s = override ?? pc.connectionState;
     if (s === "connected") {
       this.clearTimers(link);
+      if (link.lostAt !== null) this.log("reconnected", { downMs: Date.now() - link.lostAt });
+      link.lostAt = null;
+      link.wasConnected = true;
       this.patchParticipant(link.id, { connected: true, failed: false });
       this.recomputePhase();
       // Tell them straight away whether to expect video from us, rather than after the first health check.
@@ -809,12 +845,14 @@ export class CallController {
       this.prioritiseAudio(pc);
       this.startStatusLoop();
     } else if (s === "disconnected") {
+      if (link.wasConnected) link.lostAt ??= Date.now();
       // Often transient (network switch). Give it a moment, then restart ICE.
       if (link.disconnectTimer) clearTimeout(link.disconnectTimer);
       link.disconnectTimer = setTimeout(() => {
         if (link.pc === pc && pc.connectionState !== "connected") this.restartIce(link);
       }, DISCONNECT_GRACE_MS);
     } else if (s === "failed") {
+      if (link.wasConnected) link.lostAt ??= Date.now();
       this.log("ice_failed", { offerer: link.offerer, servers: this.iceServers.length });
       this.restartIce(link);
     }
@@ -834,15 +872,39 @@ export class CallController {
 
   private armConnectTimeout(link: Link) {
     if (link.connectTimer) clearTimeout(link.connectTimer);
-    link.connectTimer = setTimeout(() => {
-      const p = this.participant(link.id);
-      if (p && !p.connected) {
-        this.log("connect_timeout", { pcState: link.pc?.connectionState, ice: link.pc?.iceConnectionState });
+    link.connectTimer = setTimeout(
+      () => {
+        const p = this.participant(link.id);
+        if (!p || p.connected) return;
+        // A call that was working: keep trying quietly ("Reconnecting…") for a couple of minutes.
+        if (link.wasConnected && link.lostAt !== null && Date.now() - link.lostAt < RECONNECT_FOR_MS) {
+          this.restartIce(link);
+          return;
+        }
+        this.log(link.wasConnected ? "gave_up" : "connect_timeout", { pcState: link.pc?.connectionState, ice: link.pc?.iceConnectionState, relay: this.iceServers.length > 1 });
         this.patchParticipant(link.id, { failed: true });
         this.recomputePhase();
-      }
-    }, CONNECT_TIMEOUT_MS);
+      },
+      link.wasConnected ? RETRY_EVERY_MS : CONNECT_TIMEOUT_MS,
+    );
   }
+
+  /**
+   * The phone changed network (Wi-Fi ↔ mobile data) or came back online: reconnect signalling at
+   * once and restart ICE, rather than waiting for the old network path to time out.
+   */
+  private onNetwork = (e: Event) => {
+    if (this.stopped) return;
+    if (!this.ws || this.ws.readyState > WebSocket.OPEN) {
+      if (this.wsTimer) clearTimeout(this.wsTimer);
+      this.wsRetry = 0;
+      this.connectSocket();
+    }
+    for (const link of this.links.values()) {
+      if (!link.pc) continue;
+      if (e.type === "change" || link.pc.connectionState !== "connected") this.restartIce(link);
+    }
+  };
 
   private clearTimers(link: Link) {
     if (link.connectTimer) clearTimeout(link.connectTimer);
@@ -901,6 +963,7 @@ export class CallController {
         wantVideo: !this.state.audioOnly,
         recvVideo: recv?.video ?? (p?.videoOk || null),
         recvAudio: recv?.audio ?? null,
+        away: this.hidden,
       },
     });
   }
@@ -1010,6 +1073,8 @@ export class CallController {
       this.applyVideoSender(link);
     }
     if (s.cam !== p.remoteCam) this.patchParticipant(from, { remoteCam: s.cam });
+    if (!!s.away !== p.away) this.patchParticipant(from, { away: !!s.away });
+    if (s.away) return; // their phone isn't measuring anything while they're in another app
 
     // "They can't see you": I'm sending them video but frames aren't arriving there.
     link.noVideoReports = this.sendingVideo(from) && s.recvVideo === false ? link.noVideoReports + 1 : 0;
@@ -1080,19 +1145,20 @@ export class CallController {
 
   // -------------------------------------------------------------- captions
 
-  private onCaption(from: string, id: string, stage: CaptionStage, text: string) {
+  private onCaption(from: string, id: string, stage: CaptionStage, text: string, tail?: string) {
     const now = Date.now();
-    const captions = this.state.captions.filter((c) => c.doneAt === null || now - c.doneAt < 10_000);
+    const captions = this.state.captions.filter((c) => c.doneAt === null || now - c.doneAt < 30_000);
     const i = captions.findIndex((c) => c.id === id);
     const done = stage === "final" || stage === "refined";
     if (i >= 0) {
       if (captions[i].doneAt !== null) return; // never mutate a settled line
-      captions[i] = { ...captions[i], text, stage, updatedAt: now, doneAt: done ? now : null };
-    } else if (text) {
-      captions.push({ id, from, text, stage, updatedAt: now, doneAt: done ? now : null });
+      captions[i] = { ...captions[i], text, tail, stage, updatedAt: now, doneAt: done ? now : null };
+    } else if (text || tail) {
+      captions.push({ id, from, text, tail, stage, updatedAt: now, doneAt: done ? now : null });
     }
-    this.set({ captions: captions.filter((c) => c.text) });
-    this.upsertTranscript({ id, who: "them", from, text, final: done });
+    this.set({ captions: captions.filter((c) => c.text || c.tail) });
+    // The transcript keeps settled words only, never the preview.
+    if (text) this.upsertTranscript({ id, who: "them", from, text, final: done });
   }
 
   private upsertTranscript(line: Omit<TranscriptLine, "at">) {

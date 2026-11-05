@@ -1,7 +1,7 @@
 import { baseLang, sameLanguage } from "../shared/lang";
 import type { CaptionStage, CaptionState } from "../shared/protocol";
 import { log } from "./log";
-import { interimTranslate, phraseTranslate, refine, refineConfigured, type ContextLine } from "./refine";
+import { phraseTranslate, refine, refineConfigured, type ContextLine } from "./refine";
 import { SonioxStream, sonioxConfigured, type SonioxToken } from "./soniox";
 import { isTrivialEdit } from "./text";
 
@@ -20,21 +20,10 @@ const SEAL_MAX_MS = 2500;
  * utterance, and no audio is lost (it is buffered while the socket connects).
  */
 const IDLE_CLOSE_MS = 10_000;
-/**
- * Interim translations: when a long utterance has an untranslated tail this many words long, for
- * this long, translate the tail with the LLM so the reader isn't waiting for the speaker to pause.
- */
 const tuned = (key: string, fallback: number) => {
   const v = Number(process.env[key]);
   return Number.isFinite(v) && v > 0 ? v : fallback;
 };
-// Live A/B on Fly (31.6 s of continuous speech, en -> tr, 3 runs each): 4 words / 800 / 1200 ms left
-// 5-7 gaps over 2 s per run (longest ~3.4 s); 2 / 300 / 700 with the stale-retry below left 0-1
-// (longest ~2.2 s). The idiomatic pass still rewrites the whole sentence when it ends.
-const INTERIM_MIN_WORDS = tuned("INTERIM_MIN_WORDS", 2);
-const INTERIM_WAIT_MS = tuned("INTERIM_WAIT_MS", 300);
-const INTERIM_EVERY_MS = tuned("INTERIM_EVERY_MS", 700);
-const INTERIM_TIMEOUT_MS = 2500;
 /**
  * Steady captions (the default reading style): a long utterance is subtitled phrase by phrase from
  * Soniox's finalised words, each phrase translated once and appended, never rewritten. A phrase is
@@ -42,8 +31,13 @@ const INTERIM_TIMEOUT_MS = 2500;
  */
 const STEADY_MIN_WORDS = tuned("STEADY_MIN_WORDS", 4);
 const STEADY_MAX_WORDS = tuned("STEADY_MAX_WORDS", 8);
-const STEADY_PAUSE_MS = tuned("STEADY_PAUSE_MS", 900);
+const STEADY_PAUSE_MS = tuned("STEADY_PAUSE_MS", 700);
 const STEADY_TIMEOUT_MS = 3000;
+/** Live readers' faint preview of the words not yet in a phrase. */
+const PREVIEW_MIN_WORDS = 2;
+const PREVIEW_EVERY_MS = tuned("PREVIEW_EVERY_MS", 700);
+const PREVIEW_TIMEOUT_MS = 2500;
+const VERB_FINAL = new Set(["tr", "hi", "ur", "bn", "ja", "ko", "fa", "ta", "te", "mr", "kn", "ml", "gu", "pa", "az", "kk", "uz", "mn", "my", "ne", "si"]);
 /** Short joining words a phrase shouldn't end on (the main Latin-script app languages). */
 const JOINING = /^(and|or|but|so|when|if|that|which|who|where|while|because|the|a|an|of|to|in|on|at|for|with|from|by|as|than|then|ve|ama|ile|için|gibi|de|da|ki|и|а|но|что|когда|в|на|с|y|o|pero|que|cuando|el|la|los|las|de|en|con|para|e|ou|mas|quando|o|os|as|do|da|em|com|et|ou|mais|quand|le|les|du|des|dans|avec|pour|dan|atau|tapi|yang|di|ke|dari|untuk)$/i;
 const CLAUSE_END = /[.!?;:,…。！？，、；：؟،।]["'”’)\]]*\s*$/u;
@@ -57,7 +51,7 @@ export type CaptionStyleTag = "instant" | "steady" | "all";
 
 /** What a pipeline says to the people reading this speaker; the room adds who it is from. */
 export type ReaderMsg =
-  | { t: "caption"; id: string; stage: CaptionStage; text: string; style?: CaptionStyleTag }
+  | { t: "caption"; id: string; stage: CaptionStage; text: string; tail?: string; style?: CaptionStyleTag }
   | { t: "captions"; state: CaptionState; side: "theirs" };
 export type SpeakerMsg =
   | { t: "own"; id: string; text: string; final: boolean }
@@ -102,14 +96,12 @@ type Utterance = {
   lastReaderText?: string;
   lastOwnText?: string;
   lastOrigText?: string;
-  /** Length of origFinal that Soniox's own translation has caught up with. */
-  covered: number;
-  /** When `covered` last moved (or the utterance began). */
-  coveredAt: number;
-  /** An LLM translation of the source after `covered`, valid while `covered` hasn't moved. */
-  interim: { covered: number; tail: string; text: string } | null;
-  interimBusy: boolean;
-  interimAt: number;
+  /** Live readers: a quick translation of the words after the shown phrases (faint, may change). */
+  previewText: string;
+  previewSource: string;
+  previewBusy: boolean;
+  previewAt: number;
+  previewTimer?: NodeJS.Timeout;
   /** Steady captions: words of the utterance already translated and shown. */
   steadyWords: number;
   /** Steady captions: the subtitle shown so far for this utterance (only ever appended to). */
@@ -239,11 +231,10 @@ export class SpeakerPipeline {
       sealed: false,
       refineDone: false,
       refined: null,
-      covered: 0,
-      coveredAt: Date.now(),
-      interim: null,
-      interimBusy: false,
-      interimAt: 0,
+      previewText: "",
+      previewSource: "",
+      previewBusy: false,
+      previewAt: 0,
       steadyWords: 0,
       steadyText: "",
       steadyBusy: false,
@@ -285,20 +276,13 @@ export class SpeakerPipeline {
         if (tok.is_final) u.trFinal += tok.text;
         else u.trLive += tok.text;
         touched.add(u);
-        // Soniox translates a chunk right after finalising its source, so its translation now
-        // covers the source finalised so far; any interim for that stretch is superseded.
-        if (u.state === "open" && u.origFinal.length > u.covered) {
-          u.covered = u.origFinal.length;
-          u.coveredAt = Date.now();
-          u.interim = null;
-        }
         if (u.state === "closing") this.armSeal(u);
       }
     }
     for (const u of touched) this.emit(u);
     if (this.open) {
-      this.maybeInterim(this.open);
       this.maybeSteady(this.open);
+      this.maybePreview(this.open);
     }
   }
 
@@ -306,9 +290,13 @@ export class SpeakerPipeline {
     return this.host.styles?.() ?? { steady: true, instant: true };
   }
 
-  /** Steady captions need the LLM; without it everyone gets the one (instant) version. */
+  /**
+   * Settled phrases (both reading styles) need the LLM; without it everyone gets the one
+   * Soniox-only version. Live readers get the same phrases plus a faint preview.
+   */
   private get steadyOn() {
-    return this.translating && this.wants.steady && refineConfigured();
+    const w = this.wants;
+    return this.translating && (w.steady || w.instant) && refineConfigured();
   }
 
   private get instantTag(): CaptionStyleTag {
@@ -323,6 +311,11 @@ export class SpeakerPipeline {
    * Waiting for Soniox to mark words final costs 5+ s on continuous speech; its earlier words
    * almost never change once a couple more have been heard.
    */
+  /** Verb-final languages: wait longer for a clause boundary, so a phrase usually includes its verb. */
+  private get phraseScale() {
+    return VERB_FINAL.has(baseLang(this.speaks) ?? "") ? 1.5 : 1;
+  }
+
   private steadyUnits(u: Utterance) {
     const full = u.origFinal + u.origLive;
     const spaced = /\s/.test(full.trim()) || !/[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af\u0e00-\u0e7f]/u.test(full);
@@ -341,7 +334,7 @@ export class SpeakerPipeline {
     for (let i = pending.length - 1; i + 1 >= STEADY_MIN_WORDS * scale; i--) {
       if (CLAUSE_END.test(pending[i])) return this.steadyPhrase(u, false, i + 1);
     }
-    if (pending.length >= STEADY_MAX_WORDS * scale) {
+    if (pending.length >= Math.round(STEADY_MAX_WORDS * scale * this.phraseScale)) {
       // Don't end a phrase on a joining word ("when", "and", "the"): it belongs with what follows.
       let n = pending.length;
       while (n > STEADY_MIN_WORDS * scale && n > pending.length - 3 && JOINING.test(pending[n - 1])) n--;
@@ -408,48 +401,83 @@ export class SpeakerPipeline {
 
   private steadyEmit(u: Utterance, final: boolean) {
     if (final) u.steadyDone = true;
-    if (!u.steadyText && !final) return;
-    this.host.toReader({ t: "caption", id: `${u.id}~s`, stage: final ? "final" : "steady", text: u.steadyText, style: "steady" });
+    // The preview covered words that are now settled: drop it (the next one follows within a second).
+    u.previewText = "";
+    u.previewSource = "";
+    const wants = this.wants;
+    if (wants.steady && (u.steadyText || final)) {
+      this.host.toReader({ t: "caption", id: `${u.id}~s`, stage: final ? "final" : "steady", text: u.steadyText, style: "steady" });
+    }
+    if (wants.instant) this.sendLive(u, final);
+    if (!final && u.state === "open") this.maybePreview(u);
   }
 
   private literal(u: Utterance): string {
     if (!this.translating) return (u.origFinal + u.origLive).trim();
-    const base = (u.trFinal + u.trLive).trim();
-    if (u.state === "open" && u.interim && u.interim.covered === u.covered) return `${base} ${u.interim.text}`.trim();
-    return base;
+    return (u.trFinal + u.trLive).trim();
   }
 
   /**
-   * Long utterance, nothing translated for a while: translate the untranslated tail now.
-   * `retry` skips the waits: an interim that came back stale (Soniox covered part of it meanwhile)
-   * is followed at once by one for the new tail, instead of leaving the reader on a gap.
+   * Live readers: a quick translation of the words after the last shown phrase, drawn faintly
+   * after the settled text so the reader isn't waiting for the phrase to finish. It is replaced
+   * as they keep talking and disappears when the phrase lands, so only the faint end ever moves.
    */
-  private maybeInterim(u: Utterance, retry = false) {
-    if (!this.translating || u.state !== "open" || u.interimBusy || !this.wants.instant) return;
+  private maybePreview(u: Utterance) {
+    if (!this.steadyOn || !this.wants.instant || u.state !== "open" || u.previewBusy || u.steadyDone) return;
     const now = Date.now();
-    if (!retry && (now - u.coveredAt < INTERIM_WAIT_MS || now - u.interimAt < INTERIM_EVERY_MS)) return;
-    const source = u.origFinal + u.origLive;
-    const tail = source.slice(u.covered).trim();
-    // Words, or for scripts written without spaces (Chinese, Japanese, Thai), characters / 2.
-    const words = Math.max(tail.split(/\s+/).filter(Boolean).length, Math.floor(tail.length / 2) * (/\s/.test(tail) ? 0 : 1));
-    if (words < INTERIM_MIN_WORDS || tail === u.interim?.tail) return;
-    u.interimBusy = true;
-    u.interimAt = now;
-    const covered = u.covered;
-    interimTranslate({
-      fragment: tail,
-      before: source.slice(0, covered).trim(),
+    const wait = u.previewAt + PREVIEW_EVERY_MS - now;
+    if (wait > 0) {
+      // Check again then, even if no new words arrive meanwhile (the speaker paused).
+      u.previewTimer ??= setTimeout(() => {
+        u.previewTimer = undefined;
+        this.maybePreview(u);
+      }, wait);
+      return;
+    }
+    const { units, sep, scale } = this.steadyUnits(u);
+    const from = u.steadyWords;
+    const tail = units.slice(from);
+    if (tail.length < PREVIEW_MIN_WORDS * scale) return;
+    const fragment = tail.join(sep);
+    if (fragment === u.previewSource) return;
+    u.previewBusy = true;
+    u.previewAt = now;
+    // Same continuation prompt as the settled phrases: it sees the subtitle already shown, so the
+    // preview carries on from it instead of re-translating it.
+    phraseTranslate({
+      phrase: fragment,
+      before: units.slice(0, from).join(sep),
+      shown: u.steadyText,
+      final: false,
       sourceLang: this.speaks!,
       targetLang: this.reads!,
-      signal: AbortSignal.timeout(INTERIM_TIMEOUT_MS),
+      context: this.host.context(),
+      signal: AbortSignal.timeout(PREVIEW_TIMEOUT_MS),
     }).then((text) => {
-      u.interimBusy = false;
-      // Only useful if Soniox hasn't caught up meanwhile and the utterance is still being spoken.
-      if (u.state !== "open") return;
-      if (u.covered !== covered) return this.maybeInterim(u, true);
+      u.previewBusy = false;
+      if (u.state !== "open" || u.steadyDone) return;
+      // A phrase landed meanwhile: this preview overlaps it. Preview what's left, right away.
+      if (u.steadyWords !== from) {
+        u.previewAt = 0;
+        return this.maybePreview(u);
+      }
       if (!text) return;
-      u.interim = { covered, tail, text };
-      this.emit(u);
+      u.previewText = text;
+      u.previewSource = fragment;
+      this.sendLive(u, false);
+    });
+  }
+
+  /** The Live version of a line: settled phrases plus the faint preview. */
+  private sendLive(u: Utterance, final: boolean) {
+    if (!u.steadyText && !u.previewText && !final) return;
+    this.host.toReader({
+      t: "caption",
+      id: `${u.id}~s`,
+      stage: final ? "final" : "steady",
+      text: u.steadyText,
+      tail: final ? undefined : u.previewText || undefined,
+      style: "instant",
     });
   }
 
@@ -463,7 +491,7 @@ export class SpeakerPipeline {
       u.lastOrigText = own;
       this.host.toOriginal({ t: "caption", id: `${u.id}-src`, stage: "live", text: own });
     }
-    if (u.state === "done") return;
+    if (u.state === "done" || this.steadyOn) return;
     const text = this.literal(u);
     if (text && text !== u.lastReaderText) {
       u.lastReaderText = text;
@@ -483,7 +511,7 @@ export class SpeakerPipeline {
     if (!source) {
       u.state = "done";
       if (u.lastReaderText) this.host.toReader({ t: "caption", id: u.id, stage: "final", text: "", style: this.instantTag });
-      if (u.steadyText) this.steadyEmit(u, true);
+      if (u.steadyText || u.previewText) this.steadyEmit(u, true);
       return;
     }
     const context = this.host.context();
@@ -507,8 +535,8 @@ export class SpeakerPipeline {
 
     // The whole-utterance rewrite serves word-by-word readers, and steady readers when the
     // utterance was short enough that no phrase was shown yet.
-    const steadyNeedsRewrite = this.steadyOn && u.steadyWords === 0 && !u.steadyBusy;
-    if (!this.wants.instant && !steadyNeedsRewrite) {
+    const steadyNeedsRewrite = u.steadyWords === 0 && !u.steadyBusy;
+    if (this.steadyOn && !steadyNeedsRewrite) {
       u.refineDone = true;
       return;
     }
@@ -565,6 +593,7 @@ export class SpeakerPipeline {
 
   private finish(u: Utterance, stage: "final" | "refined", text: string) {
     u.state = "done";
+    if (this.steadyOn) return; // steady / live readers get their own version
     this.host.toReader({ t: "caption", id: u.id, stage, text: text.trim(), style: this.instantTag });
     // Keep it attached until sealed so trailing translation tokens are not misattributed to the next one.
   }

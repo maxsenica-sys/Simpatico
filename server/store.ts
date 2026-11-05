@@ -10,7 +10,7 @@ import { log } from "./log";
 const DIR = process.env.DATA_DIR ?? (existsSync("/data") ? "/data" : join(process.cwd(), "data"));
 const MAX_BYTES = 5 * 1024 * 1024; // rotate each file at 5 MB (one previous file kept)
 
-export type Kind = "feedback" | "errors" | "calls";
+export type Kind = "feedback" | "errors" | "calls" | "conn";
 
 function file(kind: Kind) {
   return join(DIR, `${kind}.jsonl`);

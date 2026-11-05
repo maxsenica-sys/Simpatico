@@ -8,6 +8,10 @@
 	<string>Simpatico uses the microphone so the people you call can hear you and read your words in their language.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Simpatico connects calls directly between phones on the same network when it can.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
   <key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>

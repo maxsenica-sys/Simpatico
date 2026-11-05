@@ -132,7 +132,7 @@ npm run mock-soniox
 ```
 
 ```bash
-SONIOX_API_KEY=x SONIOX_URL=ws://localhost:3999 ANTHROPIC_API_KEY=x ANTHROPIC_BASE_URL=http://localhost:3998 npm run dev
+ECHO_CHECK=off SONIOX_API_KEY=x SONIOX_URL=ws://localhost:3999 ANTHROPIC_API_KEY=x ANTHROPIC_BASE_URL=http://localhost:3998 npm run dev
 ```
 
 ```bash

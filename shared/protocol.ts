@@ -29,6 +29,8 @@ export type PeerStatus = {
   recvVideo: boolean | null;
   /** Your audio packets are arriving here. */
   recvAudio: boolean | null;
+  /** I switched to another app: my phone has paused my camera and mic, and I can't hear you. */
+  away?: boolean;
 };
 
 export type SignalData =
@@ -50,8 +52,9 @@ export type ClientMsg =
   | { t: "leave" };
 
 /**
- * How a person likes to read captions. "steady": phrase by phrase, each translated once and never
- * changed (the default). "instant": word by word as they speak, revised as the sentence grows.
+ * How a person likes to read captions. Both show settled phrases that are never rewritten.
+ * "instant" (shown as "Live", the default) also draws a faint preview of the words being spoken
+ * after them; "steady" shows the settled phrases only.
  */
 export type CaptionStyle = "steady" | "instant";
 
@@ -71,7 +74,8 @@ export type ServerMsg =
   | { t: "peer-info"; peer: PeerInfo }
   | { t: "signal"; from: string; data: SignalData }
   /** A caption of what `from` said, in this reader's language. */
-  | { t: "caption"; id: string; from: string; stage: CaptionStage; text: string }
+  /** `tail`: Live reading style only, a faint preview of the words after `text` (may still change). */
+  | { t: "caption"; id: string; from: string; stage: CaptionStage; text: string; tail?: string }
   /** What this participant themself said (source language), for the transcript. */
   | { t: "own"; id: string; text: string; final: boolean }
   /** Caption service health: "theirs" = captions of `from` reaching me, "mine" = captions of my speech. */

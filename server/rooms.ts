@@ -7,10 +7,15 @@ import { SpeakerPipeline, type ReaderMsg } from "./pipeline";
 import { append } from "./store";
 import type { ContextLine } from "./refine";
 
-export const ROOM_TTL_MS = 2 * 60 * 60 * 1000;
-export const EMPTY_TTL_MS = 60 * 1000;
-/** A dropped socket keeps its seat (and its WebRTC calls, which may still be up) for this long. */
-export const SEAT_GRACE_MS = 15 * 1000;
+/** A call has no time limit while anyone is in it. A link nobody has used yet lasts a day. */
+export const UNUSED_TTL_MS = 24 * 60 * 60 * 1000;
+/** Everyone gone: the link keeps working this long, so a dropped call can be rejoined. */
+export const EMPTY_TTL_MS = 10 * 60 * 1000;
+/**
+ * A dropped connection keeps its seat (and its WebRTC calls, which may still be up) for this
+ * long: phones switching between Wi-Fi and mobile data, lifts and tunnels, a quick app switch.
+ */
+export const SEAT_GRACE_MS = 90 * 1000;
 /**
  * Group calls are a full mesh: every phone connects to every other phone. That is fine for
  * audio and for video from the active speaker only, up to about a dozen people; beyond that the
@@ -116,7 +121,8 @@ export function broadcast(room: Room, msg: ServerMsg, except?: Peer) {
 
 function expired(room: Room) {
   const now = Date.now();
-  return now - room.createdAt > ROOM_TTL_MS || (room.emptySince !== null && now - room.emptySince > EMPTY_TTL_MS);
+  if (room.peers.size === 0 && room.emptySince === null) return now - room.createdAt > UNUSED_TTL_MS;
+  return room.emptySince !== null && now - room.emptySince > EMPTY_TTL_MS;
 }
 
 function cleanName(name: unknown, label: string): string {
@@ -143,7 +149,7 @@ export function seat(
     }
     const used = new Set([...room.peers.values()].map((p) => p.label));
     const label = [...LABELS].find((l) => !used.has(l)) ?? `P${room.peers.size + 1}`;
-    peer = { id: peerId, label, name: "", lang, inRoom: false, ws: null, graceTimer: null, pipelines: new Map(), primaryKey: null, speaking: false, captionStyle: "steady" };
+    peer = { id: peerId, label, name: "", lang, inRoom: false, ws: null, graceTimer: null, pipelines: new Map(), primaryKey: null, speaking: false, captionStyle: "instant" };
     room.peers.set(peerId, peer);
     fresh = true;
   }
@@ -154,7 +160,7 @@ export function seat(
   peer.lang = lang;
   peer.name = cleanName(opts.name, peer.label);
   peer.inRoom = room.kind === "group" && !!opts.inRoom;
-  peer.captionStyle = opts.captionStyle === "instant" ? "instant" : "steady";
+  peer.captionStyle = opts.captionStyle === "steady" ? "steady" : "instant";
   room.emptySince = null;
   const connected = [...room.peers.values()].filter((p) => p.ws).length;
   room.stats.people.add(peerId);
@@ -168,7 +174,7 @@ export function seat(
 }
 
 export function setCaptionStyle(peer: Peer, style: unknown) {
-  peer.captionStyle = style === "instant" ? "instant" : "steady";
+  peer.captionStyle = style === "steady" ? "steady" : "instant";
 }
 
 /** Does this reader get this caption message? Each reading style gets only its own version. */

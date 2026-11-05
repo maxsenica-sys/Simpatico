@@ -117,12 +117,14 @@
   "captionSettings": "Réglages des sous-titres",
   "captionStyle": "Sous-titres",
   "styleSteady": "Stables",
-  "styleInstant": "Mot à mot",
-  "styleSteadyHint": "Des phrases complètes qui ne changent pas. Plus faciles à lire.",
-  "styleInstantHint": "Plus rapides, mais les mots peuvent changer pendant que l’autre parle.",
+  "styleInstant": "En direct",
+  "styleSteadyHint": "Uniquement les mots définitifs, phrase par phrase. Le plus reposant à lire.",
+  "styleInstantHint": "Le plus rapide : un aperçu léger de ce que l’autre dit, puis les mots définitifs, qui ne changent plus.",
   "backHome": "Retour à l’accueil",
   "voiceFocus": "Isolation de la voix",
   "voiceFocusHint": "Seule ma voix est sous-titrée, pas celle des personnes plus éloignées.",
   "deniedApp": "Ouvre Réglages › Simpatico et autorise Appareil photo et Micro, puis reviens ici.",
-  "micModes": "Isolation de la voix de l’iPhone"
+  "micModes": "Isolation de la voix de l’iPhone",
+  "isAway": "{name} a quitté l’app un instant et ne t’entend pas.",
+  "selfSize": "Ta caméra. Touche pour changer la taille, fais glisser pour déplacer."
 }

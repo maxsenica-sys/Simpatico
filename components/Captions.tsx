@@ -3,7 +3,10 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Caption } from "@/lib/call";
 
 /** A settled line stays this long, then fades. */
-const LINGER_MS = 6000;
+/** A finished line stays this long once a newer one is showing… */
+const LINGER_MS = 8000;
+/** …and the newest line stays this long when nobody says anything new. */
+const LAST_LINGER_MS = 20_000;
 const FADE_MS = 600;
 const MAX_UTTERANCES = 3;
 
@@ -36,7 +39,7 @@ export function Captions({
 
   const shown = captions
     .map((c) => (frozen.current.has(c.id) ? { ...c, text: frozen.current.get(c.id)! } : c))
-    .filter((c) => c.doneAt === null || now - c.doneAt < LINGER_MS + FADE_MS)
+    .filter((c, i, all) => c.doneAt === null || now - c.doneAt < (i === all.length - 1 ? LAST_LINGER_MS : LINGER_MS) + FADE_MS)
     .slice(-MAX_UTTERANCES);
 
   // After layout, freeze the text of any older line that is no longer fully inside the
@@ -60,19 +63,25 @@ export function Captions({
   return (
     <div className="captions-zone">
       <div className="captions" ref={box} aria-live="polite" lang={lang}>
-        {shown.map((c) => {
-          const fading = c.doneAt !== null && now - c.doneAt > LINGER_MS;
+        {shown.map((c, i) => {
+          const fading = c.doneAt !== null && now - c.doneAt > (i === shown.length - 1 ? LAST_LINGER_MS : LINGER_MS);
           return (
             <p key={c.id} data-id={c.id} className={`cap ${c.doneAt === null ? (c.stage === "steady" ? "steady" : "live") : "done"} ${fading ? "fading" : ""}`} dir="auto">
               {names && <span className="cap-who">{names[c.from] ?? ""}</span>}
               {c.text}
+              {c.tail && (
+                <span className="cap-tail" aria-hidden="true">
+                  {c.text ? " " : ""}
+                  {c.tail}
+                </span>
+              )}
             </p>
           );
         })}
       </div>
       {/* They're talking but no words have arrived yet: show that something is coming.
           Kept outside the 3-line box so it never pushes a caption line out of view. */}
-      {speaking && !shown.some((c) => c.doneAt === null && c.stage === "live") && (
+      {speaking && !shown.some((c) => c.doneAt === null && (c.stage === "live" || c.tail)) && (
         <div className="typing" aria-hidden="true">
           <span />
           <span />

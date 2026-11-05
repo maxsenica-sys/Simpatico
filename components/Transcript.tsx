@@ -73,13 +73,13 @@ export function Transcript({
         <div className="caption-prefs" id="caption-prefs">
           <div className="seg" role="radiogroup" aria-label={t("captionStyle")}>
             <span className="muted small">{t("captionStyle")}</span>
-            {(["steady", "instant"] as const).map((st) => (
+            {(["instant", "steady"] as const).map((st) => (
               <button
                 key={st}
                 role="radio"
                 aria-checked={prefs.style === st}
                 className={`seg-btn wide ${prefs.style === st ? "on" : ""}`}
-                onClick={() => onPrefs({ ...prefs, style: st })}
+                onClick={() => onPrefs({ ...prefs, style: st, styleSet: true })}
               >
                 {t(st === "steady" ? "styleSteady" : "styleInstant")}
               </button>

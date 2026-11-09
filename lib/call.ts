@@ -741,7 +741,9 @@ export class CallController {
     const link = this.ensureLink(id);
     link.session = session;
     link.offerer = offerer;
-    const pc = new RTCPeerConnection({ iceServers: this.iceServers });
+    // `?relay` on the call link forces every connection through the TURN relay (for testing it).
+    const relayOnly = new URLSearchParams(location.search).has("relay");
+    const pc = new RTCPeerConnection({ iceServers: this.iceServers, iceTransportPolicy: relayOnly ? "relay" : "all" });
     link.pc = pc;
     const audio = this.local.getAudioTracks()[0];
     if (audio) link.audioSender = pc.addTrack(audio, this.local);

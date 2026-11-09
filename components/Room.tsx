@@ -126,9 +126,9 @@ export function Room({ code }: { code: string }) {
     <JoinScreen
       stream={media instanceof MediaStream ? media : null}
       group={room.kind === "group" ? { max: room.max } : null}
-      onJoin={({ audioOnly, name, inRoom }) => {
+      onJoin={({ audioOnly, name, inRoom, gender }) => {
         if (!(media instanceof MediaStream)) return;
-        const c = new CallController(code, peerIdFor(code), lang, media, { audioOnly, name, inRoom, captionStyle: loadCaptionPrefs().style, voiceFocus: loadCaptionPrefs().focus });
+        const c = new CallController(code, peerIdFor(code), lang, media, { audioOnly, name, inRoom, gender, captionStyle: loadCaptionPrefs().style, voiceFocus: loadCaptionPrefs().focus });
         callRef.current = c;
         c.start();
         setCall(c);

@@ -6,6 +6,7 @@ import { WebSocketServer, type WebSocket } from "ws";
 import { SpeakerPipeline } from "../server/pipeline";
 import { isTrivialEdit } from "../server/text";
 import { looksUntranslated, subtitleOnly } from "../server/refine";
+import { reply } from "./sse";
 
 delete process.env.ANTHROPIC_API_KEY; // pass 2 off: utterances settle on the literal text
 const wss = new WebSocketServer({ port: 3997 });
@@ -113,8 +114,7 @@ const llm = createServer((req, res) => {
     const phrase = String(j.messages[0].content).match(/<new_phrase final="(\w+)">([\s\S]*?)<\/new_phrase>/);
     if (phrase) phraseCalls.push({ text: phrase[2], final: phrase[1] === "true" });
     const text = phrase ? `[${phrase[2].trim()}]` : interim ? "ARA-CEVIRI" : "TAM-CEVIRI";
-    res.writeHead(200, { "content-type": "application/json" });
-    res.end(JSON.stringify({ id: "m", type: "message", role: "assistant", model: j.model, stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 }, content: [{ type: "text", text }] }));
+    reply(res, j, "m", text);
   });
 }).listen(3996);
 process.env.ANTHROPIC_API_KEY = "x";

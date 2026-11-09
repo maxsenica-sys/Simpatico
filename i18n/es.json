@@ -126,5 +126,8 @@
   "deniedApp": "Abre Configuración › Simpatico, permite Cámara y Micrófono y luego vuelve aquí.",
   "micModes": "Aislamiento de voz del iPhone",
   "isAway": "{name} salió de la app un momento y no te puede escuchar.",
-  "selfSize": "Tu cámara. Toca para cambiar el tamaño y arrastra para moverla."
+  "selfSize": "Tu cámara. Toca para cambiar el tamaño y arrastra para moverla.",
+  "translateMeAs": "Tradúceme como (opcional)",
+  "genderHe": "Él",
+  "genderShe": "Ella"
 }

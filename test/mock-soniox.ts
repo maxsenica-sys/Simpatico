@@ -2,6 +2,7 @@
 // Soniox mock: ws://localhost:3999 — emits fake word tokens proportional to audio received,
 // translation tokens trailing each finalized segment, and <end>/<fin> markers.
 // LLM mock: http://localhost:3998/v1/messages — echoes "✨ <utterance>" after a delay.
+import { reply } from "./sse";
 import { createServer } from "node:http";
 import { WebSocketServer } from "ws";
 
@@ -81,19 +82,7 @@ createServer((req, res) => {
     console.log(JSON.stringify({ mock: "llm_call", n, target, hasContext, delay, model: parsed.model, thinking: parsed.thinking }));
     setTimeout(() => {
       if (res.destroyed) return;
-      res.writeHead(200, { "content-type": "application/json" });
-      res.end(
-        JSON.stringify({
-          id: `msg_${n}`,
-          type: "message",
-          role: "assistant",
-          model: parsed.model,
-          content: [{ type: "text", text: phrase !== undefined ? `◆ (${target}) ${phrase}` : fragment !== undefined ? `~ (${target}) ${fragment}` : `✨ (${target}) ${utterance}` }],
-          stop_reason: "end_turn",
-          stop_sequence: null,
-          usage: { input_tokens: 10, output_tokens: 10 },
-        }),
-      );
+      reply(res, parsed, `msg_${n}`, phrase !== undefined ? `◆ (${target}) ${phrase}` : fragment !== undefined ? `~ (${target}) ${fragment}` : `✨ (${target}) ${utterance}`);
     }, delay);
   });
 }).listen(3998);

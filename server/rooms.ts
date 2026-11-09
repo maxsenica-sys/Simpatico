@@ -1,7 +1,7 @@
 import { randomInt } from "node:crypto";
 import type { WebSocket } from "ws";
 import { baseLang, type ParticipantLang } from "../shared/lang";
-import type { CaptionStyle, PeerInfo, RoomKind, ServerMsg } from "../shared/protocol";
+import type { CaptionStyle, Gender, PeerInfo, RoomKind, ServerMsg } from "../shared/protocol";
 import { log } from "./log";
 import { SpeakerPipeline, type ReaderMsg } from "./pipeline";
 import { append } from "./store";
@@ -49,6 +49,8 @@ export type Peer = {
   speaking: boolean;
   /** How this person reads captions of others. */
   captionStyle: CaptionStyle;
+  /** Optional, for grammatical gender in translations. */
+  gender?: Gender;
 };
 
 export type Room = {
@@ -136,7 +138,7 @@ export function seat(
   peerId: string,
   lang: ParticipantLang,
   ws: WebSocket,
-  opts: { name?: string; inRoom?: boolean; device?: string; captionStyle?: unknown } = {},
+  opts: { name?: string; inRoom?: boolean; device?: string; captionStyle?: unknown; gender?: unknown } = {},
 ): { peer: Peer; fresh: boolean } | "room-full" {
   let peer = room.peers.get(peerId);
   let fresh = false;
@@ -161,6 +163,7 @@ export function seat(
   peer.name = cleanName(opts.name, peer.label);
   peer.inRoom = room.kind === "group" && !!opts.inRoom;
   peer.captionStyle = opts.captionStyle === "steady" ? "steady" : "instant";
+  peer.gender = opts.gender === "m" || opts.gender === "f" ? opts.gender : undefined;
   room.emptySince = null;
   const connected = [...room.peers.values()].filter((p) => p.ws).length;
   room.stats.people.add(peerId);
@@ -185,7 +188,7 @@ function forReader(msg: ReaderMsg, r: Peer): boolean {
 
 function toClient(msg: ReaderMsg, from: string): ServerMsg {
   if (msg.t === "caption") {
-    const { style: _style, ...rest } = msg;
+    const { style: _style, cover: _cover, ...rest } = msg;
     return { ...rest, from };
   }
   return { ...msg, from };
@@ -301,6 +304,10 @@ function makePipeline(room: Room, p: Peer, key: string): SpeakerPipeline {
     glossary: () => room.glossary,
     billed: (seconds) => {
       room.stats.captionSeconds += seconds;
+    },
+    people: () => {
+      const readers = readersOf(room, p, key);
+      return { speaker: p.gender, listener: readers.length === 1 ? readers[0].gender : undefined };
     },
     styles: () => {
       const readers = readersOf(room, p, key);

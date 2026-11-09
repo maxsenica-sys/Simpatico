@@ -96,7 +96,7 @@ wss.on("connection", (ws, req) => {
       }
       room = getRoom(msg.room);
       if (!room) return send(ws, { t: "error", code: "room-not-found" });
-      const result = seat(room, msg.peerId, lang, ws, { name: msg.name, inRoom: msg.inRoom, device: devName, captionStyle: msg.captionStyle });
+      const result = seat(room, msg.peerId, lang, ws, { name: msg.name, inRoom: msg.inRoom, device: devName, captionStyle: msg.captionStyle, gender: msg.gender });
       if (result === "room-full") return send(ws, { t: "error", code: "room-full" });
       peer = result.peer;
       const rest = others(room, peer);

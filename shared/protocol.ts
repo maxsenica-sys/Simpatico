@@ -41,7 +41,7 @@ export type SignalData =
   | ({ kind: "status" } & PeerStatus);
 
 export type ClientMsg =
-  | { t: "join"; room: string; peerId: string; lang: ParticipantLang; name?: string; inRoom?: boolean; captionStyle?: CaptionStyle }
+  | { t: "join"; room: string; peerId: string; lang: ParticipantLang; name?: string; inRoom?: boolean; captionStyle?: CaptionStyle; gender?: Gender }
   /** Ask one peer (or every peer) to send a fresh offer: our connection to them is gone. */
   | { t: "need-offer"; to?: string }
   | { t: "signal"; to: string; data: SignalData }
@@ -57,6 +57,12 @@ export type ClientMsg =
  * after them; "steady" shows the settled phrases only.
  */
 export type CaptionStyle = "steady" | "instant";
+
+/**
+ * Optional: how translations should refer to this person, for languages that mark gender even
+ * for "I" and "you" (Russian "я устал/устала", Portuguese "obrigado/obrigada", Arabic "أنتَ/أنتِ").
+ */
+export type Gender = "m" | "f";
 
 /** Stages of a caption line, in the order they can occur. */
 export type CaptionStage =

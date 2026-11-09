@@ -126,5 +126,8 @@
   "deniedApp": "Ayarlar › Simpatico’yu aç, Kamera ve Mikrofon’a izin ver, sonra geri dön.",
   "micModes": "iPhone ses yalıtımı",
   "isAway": "{name} bir anlığına uygulamadan çıktı, seni duyamıyor.",
-  "selfSize": "Kameran. Boyutu değiştirmek için dokun, taşımak için sürükle."
+  "selfSize": "Kameran. Boyutu değiştirmek için dokun, taşımak için sürükle.",
+  "translateMeAs": "Çevirilerde benden nasıl bahsedilsin (isteğe bağlı)",
+  "genderHe": "Erkek",
+  "genderShe": "Kadın"
 }

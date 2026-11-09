@@ -126,5 +126,8 @@
   "deniedApp": "打开“设置” › Simpatico，允许“相机”和“麦克风”，然后返回此处。",
   "micModes": "iPhone 语音突显",
   "isAway": "{name} 暂时离开了 App，听不到你说话。",
-  "selfSize": "你的画面。点按可调整大小，拖动可移动位置。"
+  "selfSize": "你的画面。点按可调整大小，拖动可移动位置。",
+  "translateMeAs": "翻译时称我为（选填）",
+  "genderHe": "他",
+  "genderShe": "她"
 }

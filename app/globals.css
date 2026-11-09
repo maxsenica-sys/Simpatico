@@ -314,6 +314,8 @@ p { margin: 0; line-height: 1.5; }
 .seg-btn.on { background: var(--accent); border-color: transparent; color: var(--accent-ink); }
 .seg-btn.wide { padding: 0 14px; font-weight: 600; }
 .style-hint { width: 100%; margin: -4px 0 0; }
+.seg.gender { justify-content: flex-start; flex-wrap: wrap; gap: 6px; }
+.seg.gender .muted { flex-basis: 100%; text-align: start; }
 .cap.steady { opacity: 1; }
 /* Live style: the words being spoken right now, before their phrase settles. */
 .cap-tail { opacity: 0.55; }

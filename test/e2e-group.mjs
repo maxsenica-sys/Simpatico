@@ -35,7 +35,7 @@ const { coach, max, ivan, ayse } = pages;
 const join = async (page, person, url) => {
   await page.goto(url + "?debug");
   await page.locator(".field input").fill(person.name);
-  await page.locator(".gender-select").selectOption(person.gender ?? "m");
+  await page.locator(".gender-select").selectOption(person.gender ?? "x");
   if (person.inRoom) await page.locator(".check input").check();
   await page.locator(person.audioOnly ? ".btn.big.secondary" : ".btn.primary.big").click();
 };

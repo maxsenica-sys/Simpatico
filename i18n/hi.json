@@ -131,5 +131,6 @@
   "genderPick": "चुनो",
   "genderMale": "पुरुष",
   "genderFemale": "महिला",
-  "genderRequired": "पुरुष या महिला चुनो"
+  "genderRequired": "कोई एक विकल्प चुनो",
+  "genderNone": "नहीं बताना चाहते"
 }

@@ -131,5 +131,6 @@
   "genderPick": "Seç",
   "genderMale": "Erkek",
   "genderFemale": "Kadın",
-  "genderRequired": "Erkek veya kadın seç"
+  "genderRequired": "Bir seçenek seç",
+  "genderNone": "Belirtmek istemiyorum"
 }

@@ -131,5 +131,6 @@
   "genderPick": "Выбери",
   "genderMale": "Мужской",
   "genderFemale": "Женский",
-  "genderRequired": "Выбери мужской или женский"
+  "genderRequired": "Выбери вариант",
+  "genderNone": "Не указывать"
 }

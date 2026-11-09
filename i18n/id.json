@@ -131,5 +131,6 @@
   "genderPick": "Pilih",
   "genderMale": "Laki-laki",
   "genderFemale": "Perempuan",
-  "genderRequired": "Pilih laki-laki atau perempuan"
+  "genderRequired": "Pilih salah satu",
+  "genderNone": "Tidak ingin menyebutkan"
 }

@@ -57,7 +57,7 @@ try {
   if (await a.locator(".call").count()) throw new Error("joined without a name");
   await a.locator(".field input").fill("Max");
   await a.getByRole("button", { name: "Join with video" }).click();
-  await a.getByText("Choose male or female").waitFor();
+  await a.getByText("Choose an option").waitFor();
   if (await a.locator(".call").count()) throw new Error("joined without a gender");
   await a.locator(".gender-select").selectOption("m");
   await a.getByRole("button", { name: "Join with video" }).click();

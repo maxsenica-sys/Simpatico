@@ -316,10 +316,10 @@ p { margin: 0; line-height: 1.5; }
 .style-hint { width: 100%; margin: -4px 0 0; }
 .who-row { display: flex; gap: 10px; align-items: flex-end; }
 .who-row .name-field { flex: 1; min-width: 0; }
-.who-row .gender-field { flex: 0 0 auto; width: 9.5rem; }
+.who-row .gender-field { flex: 0 0 auto; width: 10.5rem; }
 .gender-select {
   width: 100%; font: inherit; font-weight: 500; color: var(--text); background-color: var(--surface); border: 1px solid var(--line);
-  border-radius: 12px; padding: 12px 34px 12px 14px; min-height: 48px; appearance: none; -webkit-appearance: none; cursor: pointer;
+  border-radius: 12px; padding: 12px 34px 12px 14px; min-height: 48px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; appearance: none; -webkit-appearance: none; cursor: pointer;
   background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
   background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%; background-size: 6px 6px; background-repeat: no-repeat;
 }

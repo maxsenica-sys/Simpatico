@@ -17,6 +17,7 @@ const readName = () => {
 };
 
 export type JoinChoice = { audioOnly: boolean; name: string; inRoom?: boolean; gender?: Gender };
+type GenderChoice = Gender | "x";
 
 export function JoinScreen({
   stream,
@@ -34,17 +35,18 @@ export function JoinScreen({
   const [inRoom, setInRoom] = useState(false);
   const [missing, setMissing] = useState(false);
   // Languages like Russian, Arabic or Portuguese need it even for "I" and "you".
-  const [gender, setGender] = useState<Gender | undefined>(undefined);
+  // "x" = prefer not to say: still a choice, and translations use neutral wording.
+  const [gender, setGender] = useState<GenderChoice | undefined>(undefined);
   useEffect(() => {
     try {
       const g = localStorage.getItem(GENDER_KEY);
-      if (g === "m" || g === "f") setGender(g);
+      if (g === "m" || g === "f" || g === "x") setGender(g);
     } catch {}
   }, []);
   const [missingGender, setMissingGender] = useState(false);
   const genderRef = useRef<HTMLSelectElement>(null);
-  const pickGender = (g: Gender) => {
-    if (g !== "m" && g !== "f") return;
+  const pickGender = (g: GenderChoice) => {
+    if (g !== "m" && g !== "f" && g !== "x") return;
     setGender(g);
     setMissingGender(false);
     try {
@@ -73,7 +75,7 @@ export function JoinScreen({
     try {
       localStorage.setItem(NAME_KEY, n);
     } catch {}
-    onJoin({ audioOnly, name: n, inRoom: group ? inRoom : undefined, gender });
+    onJoin({ audioOnly, name: n, inRoom: group ? inRoom : undefined, gender: gender === "x" ? undefined : gender });
   };
 
   return (
@@ -114,7 +116,7 @@ export function JoinScreen({
               ref={genderRef}
               className="gender-select"
               value={gender ?? ""}
-              onChange={(e) => pickGender(e.target.value as Gender)}
+              onChange={(e) => pickGender(e.target.value as GenderChoice)}
               required
               aria-invalid={missingGender}
               aria-describedby={missingGender ? "gender-error" : undefined}
@@ -124,6 +126,7 @@ export function JoinScreen({
               </option>
               <option value="m">{t("genderMale")}</option>
               <option value="f">{t("genderFemale")}</option>
+              <option value="x">{t("genderNone")}</option>
             </select>
           </label>
         </div>

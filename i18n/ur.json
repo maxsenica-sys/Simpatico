@@ -131,5 +131,6 @@
   "genderPick": "چنو",
   "genderMale": "مرد",
   "genderFemale": "عورت",
-  "genderRequired": "مرد یا عورت چنو"
+  "genderRequired": "کوئی ایک آپشن چنو",
+  "genderNone": "نہیں بتانا چاہتے"
 }

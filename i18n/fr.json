@@ -131,5 +131,6 @@
   "genderPick": "Choisir",
   "genderMale": "Homme",
   "genderFemale": "Femme",
-  "genderRequired": "Choisis homme ou femme"
+  "genderRequired": "Choisis une option",
+  "genderNone": "Je préfère ne pas répondre"
 }

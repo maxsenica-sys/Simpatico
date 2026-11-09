@@ -127,7 +127,9 @@
   "micModes": "iPhone ses yalıtımı",
   "isAway": "{name} bir anlığına uygulamadan çıktı, seni duyamıyor.",
   "selfSize": "Kameran. Boyutu değiştirmek için dokun, taşımak için sürükle.",
-  "translateMeAs": "Çevirilerde benden nasıl bahsedilsin (isteğe bağlı)",
-  "genderHe": "Erkek",
-  "genderShe": "Kadın"
+  "gender": "Cinsiyet",
+  "genderPick": "Seç",
+  "genderMale": "Erkek",
+  "genderFemale": "Kadın",
+  "genderRequired": "Erkek veya kadın seç"
 }

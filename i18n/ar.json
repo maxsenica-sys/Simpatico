@@ -127,7 +127,9 @@
   "micModes": "عزل الصوت في iPhone",
   "isAway": "غادر {name} التطبيق للحظات ولا يمكنه سماعك.",
   "selfSize": "كاميرتك. اضغط لتغيير الحجم، واسحب للتحريك.",
-  "translateMeAs": "ترجِم كلامي بصيغة (اختياري)",
-  "genderHe": "المذكّر",
-  "genderShe": "المؤنّث"
+  "gender": "الجنس",
+  "genderPick": "اختر",
+  "genderMale": "ذكر",
+  "genderFemale": "أنثى",
+  "genderRequired": "اختر: ذكر أو أنثى"
 }

@@ -127,7 +127,9 @@
   "micModes": "Isolation de la voix de l’iPhone",
   "isAway": "{name} a quitté l’app un instant et ne t’entend pas.",
   "selfSize": "Ta caméra. Touche pour changer la taille, fais glisser pour déplacer.",
-  "translateMeAs": "Pronom pour la traduction (facultatif)",
-  "genderHe": "Il",
-  "genderShe": "Elle"
+  "gender": "Genre",
+  "genderPick": "Choisir",
+  "genderMale": "Homme",
+  "genderFemale": "Femme",
+  "genderRequired": "Choisis homme ou femme"
 }

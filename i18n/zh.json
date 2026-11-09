@@ -127,7 +127,9 @@
   "micModes": "iPhone 语音突显",
   "isAway": "{name} 暂时离开了 App，听不到你说话。",
   "selfSize": "你的画面。点按可调整大小，拖动可移动位置。",
-  "translateMeAs": "翻译时称我为（选填）",
-  "genderHe": "他",
-  "genderShe": "她"
+  "gender": "性别",
+  "genderPick": "请选择",
+  "genderMale": "男",
+  "genderFemale": "女",
+  "genderRequired": "请选择男或女"
 }

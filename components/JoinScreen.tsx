@@ -33,7 +33,7 @@ export function JoinScreen({
   const [name, setName] = useState("");
   const [inRoom, setInRoom] = useState(false);
   const [missing, setMissing] = useState(false);
-  // Optional: languages like Russian, Arabic or Portuguese need it even for "I" and "you".
+  // Languages like Russian, Arabic or Portuguese need it even for "I" and "you".
   const [gender, setGender] = useState<Gender | undefined>(undefined);
   useEffect(() => {
     try {
@@ -41,12 +41,14 @@ export function JoinScreen({
       if (g === "m" || g === "f") setGender(g);
     } catch {}
   }, []);
+  const [missingGender, setMissingGender] = useState(false);
+  const genderRef = useRef<HTMLSelectElement>(null);
   const pickGender = (g: Gender) => {
-    const next = gender === g ? undefined : g; // tap again to clear
-    setGender(next);
+    if (g !== "m" && g !== "f") return;
+    setGender(g);
+    setMissingGender(false);
     try {
-      if (next) localStorage.setItem(GENDER_KEY, next);
-      else localStorage.removeItem(GENDER_KEY);
+      localStorage.setItem(GENDER_KEY, g);
     } catch {}
   };
   const nameRef = useRef<HTMLInputElement>(null);
@@ -62,9 +64,10 @@ export function JoinScreen({
   // Everyone gives a name before joining, host included: captions and the transcript say who is talking.
   const join = (audioOnly: boolean) => {
     const n = name.trim();
-    if (!n) {
-      setMissing(true);
-      nameRef.current?.focus();
+    if (!n || !gender) {
+      setMissing(!n);
+      setMissingGender(!gender);
+      (n ? genderRef.current : nameRef.current)?.focus();
       return;
     }
     try {
@@ -84,37 +87,56 @@ export function JoinScreen({
       </div>
       <section className="join-panel">
         <LanguageLine />
-        <label className={`field ${missing ? "invalid" : ""}`}>
-          <span>{t("yourName")}</span>
-          <input
-            ref={nameRef}
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              if (e.target.value.trim()) setMissing(false);
-            }}
-            onKeyDown={(e) => e.key === "Enter" && join(!hasVideo)}
-            maxLength={40}
-            autoComplete="given-name"
-            enterKeyHint="go"
-            required
-            aria-invalid={missing}
-            aria-describedby={missing ? "name-error" : undefined}
-          />
-          {missing && (
-            <span id="name-error" className="field-error" role="alert">
-              {t("nameRequired")}
-            </span>
-          )}
-        </label>
-        <div className="seg gender" role="radiogroup" aria-label={t("translateMeAs")}>
-          <span className="muted small">{t("translateMeAs")}</span>
-          {(["m", "f"] as const).map((g) => (
-            <button key={g} type="button" role="radio" aria-checked={gender === g} className={`seg-btn wide ${gender === g ? "on" : ""}`} onClick={() => pickGender(g)}>
-              {t(g === "m" ? "genderHe" : "genderShe")}
-            </button>
-          ))}
+        {/* Name and gender, side by side: both needed before joining. Gender is for languages
+            that change words for "I" and "you" (Russian, Arabic, Portuguese, Hindi…). */}
+        <div className="who-row">
+          <label className={`field name-field ${missing ? "invalid" : ""}`}>
+            <span>{t("yourName")}</span>
+            <input
+              ref={nameRef}
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (e.target.value.trim()) setMissing(false);
+              }}
+              onKeyDown={(e) => e.key === "Enter" && join(!hasVideo)}
+              maxLength={40}
+              autoComplete="given-name"
+              enterKeyHint="go"
+              required
+              aria-invalid={missing}
+              aria-describedby={missing ? "name-error" : undefined}
+            />
+          </label>
+          <label className={`field gender-field ${missingGender ? "invalid" : ""}`}>
+            <span>{t("gender")}</span>
+            <select
+              ref={genderRef}
+              className="gender-select"
+              value={gender ?? ""}
+              onChange={(e) => pickGender(e.target.value as Gender)}
+              required
+              aria-invalid={missingGender}
+              aria-describedby={missingGender ? "gender-error" : undefined}
+            >
+              <option value="" disabled>
+                {t("genderPick")}
+              </option>
+              <option value="m">{t("genderMale")}</option>
+              <option value="f">{t("genderFemale")}</option>
+            </select>
+          </label>
         </div>
+        {missing && (
+          <span id="name-error" className="field-error" role="alert">
+            {t("nameRequired")}
+          </span>
+        )}
+        {missingGender && !missing && (
+          <span id="gender-error" className="field-error" role="alert">
+            {t("genderRequired")}
+          </span>
+        )}
         {group && (
           <>
             <label className="check">

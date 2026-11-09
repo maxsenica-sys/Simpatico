@@ -127,7 +127,9 @@
   "micModes": "Isolasi Suara iPhone",
   "isAway": "{name} sedang keluar dari aplikasi sebentar dan tidak bisa mendengarmu.",
   "selfSize": "Kameramu. Ketuk untuk ubah ukuran, seret untuk memindahkan.",
-  "translateMeAs": "Terjemahkan aku sebagai (opsional)",
-  "genderHe": "Laki-laki",
-  "genderShe": "Perempuan"
+  "gender": "Jenis kelamin",
+  "genderPick": "Pilih",
+  "genderMale": "Laki-laki",
+  "genderFemale": "Perempuan",
+  "genderRequired": "Pilih laki-laki atau perempuan"
 }

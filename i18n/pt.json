@@ -127,7 +127,9 @@
   "micModes": "Isolamento de Voz do iPhone",
   "isAway": "{name} saiu do app por um momento e não está ouvindo você.",
   "selfSize": "Sua câmera. Toque para mudar o tamanho e arraste para mover.",
-  "translateMeAs": "Gênero na tradução (opcional)",
-  "genderHe": "Ele",
-  "genderShe": "Ela"
+  "gender": "Gênero",
+  "genderPick": "Escolha",
+  "genderMale": "Masculino",
+  "genderFemale": "Feminino",
+  "genderRequired": "Escolha masculino ou feminino"
 }

@@ -51,11 +51,15 @@ try {
   const url = a.url();
   await a.getByText("You speak English").waitFor();
   await a.screenshot({ path: OUT + "1-host-join.png" });
-  step("A name is required before joining, for the host too");
+  step("Name and gender are required before joining, for the host too");
   await a.getByRole("button", { name: "Join with video" }).click();
   await a.getByText("Add your name").waitFor();
   if (await a.locator(".call").count()) throw new Error("joined without a name");
   await a.locator(".field input").fill("Max");
+  await a.getByRole("button", { name: "Join with video" }).click();
+  await a.getByText("Choose male or female").waitFor();
+  if (await a.locator(".call").count()) throw new Error("joined without a gender");
+  await a.locator(".gender-select").selectOption("m");
   await a.getByRole("button", { name: "Join with video" }).click();
   await a.getByText("Waiting for them to join").waitFor();
   await a.getByText("Send this link").waitFor();
@@ -89,6 +93,7 @@ try {
   await b.getByText("Konuştuğun dil: Türkçe").waitFor();
   await b.screenshot({ path: OUT + "2-guest-join-tr.png" });
   await b.locator(".field input").fill("Ayşe");
+  await b.locator(".gender-select").selectOption("f");
   await b.getByRole("button", { name: "Görüntülü katıl" }).click();
 
   step("WebRTC connects both ways");

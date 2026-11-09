@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { langInfo } from "../shared/lang";
+import { baseLang, langInfo } from "../shared/lang";
 import { log } from "./log";
 
 export type ContextLine = { who: string; lang: string; text: string };
@@ -7,9 +7,26 @@ export type ContextLine = { who: string; lang: string; text: string };
 /** What the people in this caption pipeline told us about themselves (all optional). */
 export type People = { speaker?: "m" | "f"; listener?: "m" | "f" };
 
+/**
+ * Only pass a gender when the words need it: from English, the speaker's when they talk about
+ * themselves ("I…", or thanks: Portuguese "obrigada") and the listener's when they're addressed
+ * ("you"). Otherwise a small model tends to put the speaker's gender on everyone in the sentence
+ * ("my teacher was happy with us" coming out feminine). Other source languages mark person in
+ * verb endings, so the gender is always passed and the prompt rules apply.
+ */
+export function relevantPeople(text: string, sourceLang: string, p: People | undefined): People | undefined {
+  if (!p || baseLang(sourceLang) !== "en") return p;
+  const speaker = p.speaker && /\b(I|I'm|I've|I'll|I'd|thanks?)\b/i.test(text) ? p.speaker : undefined;
+  const listener = p.listener && /\b(you|you're|you've|you'll|you'd|your|yours|yourself)\b/i.test(text) ? p.listener : undefined;
+  return speaker || listener ? { speaker, listener } : undefined;
+}
+
 function peopleTag(p: People | undefined): string {
-  const g = (x?: "m" | "f") => (x === "f" ? "a woman" : x === "m" ? "a man" : null);
-  const parts = [g(p?.speaker) && `The speaker is ${g(p?.speaker)}.`, g(p?.listener) && `The listener is ${g(p?.listener)}.`].filter(Boolean);
+  const parts: string[] = [];
+  const sp = p?.speaker === "f" ? ["a woman", "feminine", "she", "herself"] : p?.speaker === "m" ? ["a man", "masculine", "he", "himself"] : null;
+  const li = p?.listener === "f" ? ["a woman", "feminine", "she"] : p?.listener === "m" ? ["a man", "masculine", "he"] : null;
+  if (sp) parts.push(`The speaker is ${sp[0]}: use ${sp[1]} forms only where ${sp[2]} refers to ${sp[3]} alone (I, me, my). This says nothing about "we" or "us", or about anyone ${sp[2]} mentions (friends, teachers, colleagues, family): for them use the context, else neutral wording or the grammatical default.`);
+  if (li) parts.push(`The listener is ${li[0]}: use ${li[1]} forms only where ${li[2]} alone is addressed as "you".`);
   return parts.length ? `<people>${parts.join(" ")}</people>` : "";
 }
 
@@ -36,7 +53,7 @@ const SYSTEM = `You write the subtitles for a live, face-to-face video call betw
 - The transcript comes from speech recognition and can contain mistakes, fillers and false starts. Use the recent conversation to work out what was meant. Drop fillers that carry no meaning.
 - Keep it as short as the natural spoken version. It is read as a subtitle while watching the speaker's face.
 - Glossary entries are names, nicknames and in-jokes between these two people. Use them as given.
-- Gender: when <people> says the speaker or listener is a man or a woman, use it wherever the target language marks gender ("I'm tired" said by a woman is Russian "я устала", Portuguese thanks from a woman is "obrigada", "you" to a woman in Arabic is "أنتِ"). The source can show it too: Russian past tenses, Hindi and Urdu verb endings, Portuguese "obrigado/obrigada", Thai "ครับ" (man) / "ค่ะ" (woman), Arabic and Hebrew verb forms; use those clues. Otherwise you don't know anyone's gender: prefer phrasing that avoids committing to one, and never add a gender the source doesn't have: Turkish "o", Persian "u", Indonesian "dia", Chinese spoken "tā" become "they" (or the person's name) in English: just "they", never "he/she" or a slash. Example: "O da geliyor mu?" is "Are they coming too?", not "Is he coming too?".
+- Gender: <people> gives the speaker's and listener's gender. Use the speaker's only where the speaker refers to themselves (I, me, my: Russian "я устала", Portuguese "obrigada", Hindi "मैं गई"), and the listener's only where they are addressed as one person (you: Arabic "أنتِ", Spanish "¿estás cansada?"). Everyone else follows the conversation: people mentioned get the gender the context gives them, groups stay plural ("Are they coming?" about several people), "we" is the group, and where nothing says otherwise use neutral wording or the grammatical default. Never put the speaker's or listener's gender on anyone else: a woman saying "My friend is tired" in French is "Mon ami est fatigué" (the friend's gender is unknown), not "Mon amie est fatiguée". The source can show gender too (Russian past tenses, Hindi and Urdu verb endings, Thai "ครับ"/"ค่ะ", Arabic and Hebrew verb forms): use those clues. Never add a gender the source doesn't have: Turkish "o", Persian "u", Indonesian "dia", spoken Chinese "tā" become "they" (or the person's name) in English, never "he/she" or a slash. Example: "O da geliyor mu?" is "Are they coming too?", not "Is he coming too?".
 - Render interjections and backchannels ("mm-hmm", "uh-huh", "wow", "oh no") with the target language's own spoken equivalent, never the source-language sound.
 - Your whole reply appears on screen as the subtitle, so reply with the translation only, written in the target language and its usual script: no quotes, notes, alternatives, transliteration, second attempts or explanations. If the utterance has no translatable content, reply with it unchanged.`;
 
@@ -143,7 +160,7 @@ export async function refine(input: RefineInput): Promise<string | null> {
     `<languages>${src} to ${tgt}</languages>`,
     glossary.length ? `<glossary>\n${glossary.map(([k, v]) => `${k} = ${v}`).join("\n")}\n</glossary>` : "",
     context ? `<recent_conversation>\n${context}\n</recent_conversation>` : "",
-    peopleTag(input.people),
+    peopleTag(relevantPeople(input.source, input.sourceLang, input.people)),
     `<utterance speaker="${input.speaker}">${input.source}</utterance>`,
   ]
     .filter(Boolean)
@@ -189,7 +206,7 @@ const PHRASE_SYSTEM = `You write the subtitles for a live video call between peo
 - Translate only the new phrase, so that it reads as the natural continuation of the subtitle already shown. Never repeat, correct or rephrase what is already shown. Because of word order, the subtitle so far may already carry part of this phrase's meaning (a "when", "that" or "and" placed earlier); don't translate that part again.
 - Translate meaning, not words. Idioms, slang and colloquialisms become the natural equivalent in the target language; keep the speaker's register and tone. Drop fillers and false starts that carry no meaning.
 - If the phrase stops mid-sentence, stop there too; do not guess what comes next. In languages where the verb comes last (Turkish, Hindi, Urdu, Bengali, Japanese, Korean), a phrase often arrives before its verb: translate only what is there and never invent the missing verb; it comes with the next phrase, so place it naturally then. When the phrase is marked final, it is the end of what they said: finish the sentence naturally.
-- Gender: when <people> says the speaker or listener is a man or a woman, use it wherever the target language marks gender (Russian "я устала", Portuguese "obrigada", Arabic "أنتِ"); clues in the source (verb endings, Thai "ครับ"/"ค่ะ") count too. Otherwise never add a gender the source doesn't have: Turkish "o", Indonesian "dia" and similar become just "they" (or the person's name) in English, never "he/she".
+- Gender: <people> gives the speaker's and listener's gender. Apply the speaker's only where they refer to themselves (I, me, my) and the listener's only where they are addressed as one person (you). Everyone else follows the conversation: groups stay plural, people mentioned get the gender the context gives them, otherwise neutral wording. Never put the speaker's gender on a friend, colleague or anyone else they mention. Clues in the source (verb endings, Thai "ครับ"/"ค่ะ") count too. Never add a gender the source doesn't have: Turkish "o", Indonesian "dia" and similar become just "they" (or the person's name) in English, never "he/she".
 - The transcript comes from speech recognition and can contain mistakes. Use what was said before and the recent conversation to work out what was meant, but translate only the new phrase.
 - When nothing tells you someone's gender and the target language marks it, prefer phrasing that avoids committing to one, otherwise use the grammatical default.
 - Your whole reply appears on screen: the translation of the new phrase only, in the target language and its usual script, with no notes or alternatives. Only if the phrase is nothing but fillers ("um", "you know"), reply with nothing.`;
@@ -233,7 +250,7 @@ export async function phraseTranslate(input: PhraseInput): Promise<string | null
   const user = [
     `<languages>${src} to ${tgt}</languages>`,
     context ? `<recent_conversation>\n${context}\n</recent_conversation>` : "",
-    peopleTag(input.people),
+    peopleTag(relevantPeople(`${input.before.split(/\s+/).slice(-12).join(" ")} ${input.phrase}`, input.sourceLang, input.people)),
     input.before ? `<said_so_far>${input.before}</said_so_far>` : "",
     input.shown ? `<subtitle_so_far>${input.shown}</subtitle_so_far>` : "",
     `<new_phrase final="${input.final}">${input.phrase}</new_phrase>`,

@@ -5,7 +5,7 @@ import { WebSocketServer, type WebSocket } from "ws";
 
 import { SpeakerPipeline } from "../server/pipeline";
 import { isTrivialEdit } from "../server/text";
-import { looksUntranslated, subtitleOnly } from "../server/refine";
+import { looksUntranslated, relevantPeople, subtitleOnly } from "../server/refine";
 import { reply } from "./sse";
 
 delete process.env.ANTHROPIC_API_KEY; // pass 2 off: utterances settle on the literal text
@@ -202,6 +202,13 @@ assert.equal(looksUntranslated("bugün akşam yemeğe çıkalım mı", "bugün a
 assert.equal(looksUntranslated("bugün akşam yemeğe çıkalım mı", "Shall we go out for dinner tonight?"), false);
 assert.equal(looksUntranslated("Ayşe", "Ayşe"), false);
 console.log("✓ untranslated replies are rejected");
+
+// Gender only goes to the translator where the words need it (English source).
+assert.deepEqual(relevantPeople("I'm so tired", "en-AU", { speaker: "f" }), { speaker: "f", listener: undefined });
+assert.equal(relevantPeople("My teacher was happy with us", "en-AU", { speaker: "f" }), undefined);
+assert.deepEqual(relevantPeople("Are you ready?", "en", { speaker: "f", listener: "m" }), { speaker: undefined, listener: "m" });
+assert.deepEqual(relevantPeople("Çok yoruldum", "tr", { speaker: "f" }), { speaker: "f" });
+console.log("✓ gender is passed only where it matters");
 
 // A model second-guessing itself in the visible reply never reaches the screen.
 assert.equal(subtitleOnly("Arre yaar, bas karo.\nWait, I should check: the target is English.\nHey, come on, enough already."), "Hey, come on, enough already.");

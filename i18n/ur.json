@@ -127,7 +127,9 @@
   "micModes": "iPhone کی آواز کی علیحدگی",
   "isAway": "{name} تھوڑی دیر کے لیے ایپ سے باہر گیا ہے اور تمہیں سن نہیں سکتا۔",
   "selfSize": "تمہارا کیمرا۔ سائز بدلنے کے لیے ٹیپ کرو، ہٹانے کے لیے گھسیٹو۔",
-  "translateMeAs": "ترجمے میں میری جنس (اختیاری)",
-  "genderHe": "مرد",
-  "genderShe": "عورت"
+  "gender": "جنس",
+  "genderPick": "چنو",
+  "genderMale": "مرد",
+  "genderFemale": "عورت",
+  "genderRequired": "مرد یا عورت چنو"
 }

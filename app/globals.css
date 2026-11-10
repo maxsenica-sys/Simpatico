@@ -314,6 +314,8 @@ p { margin: 0; line-height: 1.5; }
 .seg-btn.on { background: var(--accent); border-color: transparent; color: var(--accent-ink); }
 .seg-btn.wide { padding: 0 14px; font-weight: 600; }
 .style-hint { width: 100%; margin: -4px 0 0; }
+.report-btn { align-self: flex-start; margin-top: 4px; padding: 2px 0; border: 0; background: none; color: var(--muted); font-size: 0.78rem; text-decoration: underline; cursor: pointer; }
+.report-btn.done { text-decoration: none; color: var(--accent); cursor: default; }
 .who-row { display: flex; gap: 10px; align-items: flex-end; }
 .who-row .name-field { flex: 1; min-width: 0; }
 .who-row .gender-field { flex: 0 0 auto; width: 10.5rem; }

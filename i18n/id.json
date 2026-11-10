@@ -132,5 +132,7 @@
   "genderMale": "Laki-laki",
   "genderFemale": "Perempuan",
   "genderRequired": "Pilih salah satu",
-  "genderNone": "Tidak ingin menyebutkan"
+  "genderNone": "Tidak ingin menyebutkan",
+  "reportWrong": "Ada yang salah?",
+  "reportThanks": "Makasih, sudah terkirim"
 }

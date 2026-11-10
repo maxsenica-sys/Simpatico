@@ -132,5 +132,7 @@
   "genderMale": "Male",
   "genderFemale": "Female",
   "genderRequired": "Choose an option",
-  "genderNone": "Prefer not to say"
+  "genderNone": "Prefer not to say",
+  "reportWrong": "Not right?",
+  "reportThanks": "Thanks, sent"
 }

@@ -423,7 +423,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
       <Captions captions={s.captions} names={names} lang={call.info.lang.reads} speaking={connected && anySpeaking} />
 
       {transcript && (
-        <Transcript lines={s.transcript} names={s.names} prefs={prefs} onPrefs={changePrefs} onSave={save} onClose={() => setTranscript(false)} />
+        <Transcript lines={s.transcript} names={s.names} prefs={prefs} onPrefs={changePrefs} onSave={save} onClose={() => setTranscript(false)} onReport={(id) => call.report(id)} />
       )}
       {invite && (
         <div className="sheet invite-sheet" role="dialog" aria-modal="true" aria-label={t("inviteMore")} onClick={(e) => e.stopPropagation()}>

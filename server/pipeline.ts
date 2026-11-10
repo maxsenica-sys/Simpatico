@@ -3,6 +3,7 @@ import type { CaptionStage, CaptionState } from "../shared/protocol";
 import { log } from "./log";
 import { phraseTranslate, refine, refineConfigured, type ContextLine, type People } from "./refine";
 import { SonioxStream, sonioxConfigured, type SonioxToken } from "./soniox";
+import { sonioxContext } from "./vocab";
 import { isTrivialEdit } from "./text";
 
 /**
@@ -78,6 +79,13 @@ export interface PipelineHost {
   glossary(): Record<string, string>;
   /** Seconds an upstream stream was open (Soniox bills by open time), reported when it closes. */
   billed?(seconds: number): void;
+  /**
+   * A caption line settled: what was said and how it was translated. The room keeps the latest
+   * ones in memory only, so a reader can report a bad translation (see rooms.ts).
+   */
+  settled?(id: string, source: string, translation: string): void;
+  /** Names of the people in the call, so speech recognition spells them right. */
+  names?(): string[];
   /** Optional genders of the speaker and (when there is exactly one) the reader, for grammar. */
   people?(): People;
   /** Reading styles wanted by this pipeline's readers right now. Both when not given. */
@@ -181,7 +189,7 @@ export class SpeakerPipeline {
   private startStream() {
     const source = baseLang(this.speaks)!;
     const target = this.translating ? baseLang(this.reads)! : null;
-    const stream = new SonioxStream({ source, target, ref: this.host.ref });
+    const stream = new SonioxStream({ source, target, ref: this.host.ref, context: sonioxContext(source, this.host.names?.() ?? []) });
     this.stream = stream;
     stream.on("ready", () => this.status("ok"));
     stream.on("tokens", (tokens: SonioxToken[]) => {
@@ -414,7 +422,10 @@ export class SpeakerPipeline {
   }
 
   private steadyEmit(u: Utterance, final: boolean) {
-    if (final) u.steadyDone = true;
+    if (final) {
+      u.steadyDone = true;
+      if (u.steadyText) this.host.settled?.(`${u.id}~s`, (u.origFinal + u.origLive).trim(), u.steadyText);
+    }
     // The preview covered words that are now settled: drop it (the next one follows within a second).
     u.previewText = "";
     u.previewSource = "";
@@ -633,6 +644,7 @@ export class SpeakerPipeline {
     u.state = "done";
     if (this.steadyOn) return; // steady / live readers get their own version
     this.host.toReader({ t: "caption", id: u.id, stage, text: text.trim(), style: this.instantTag });
+    this.host.settled?.(u.id, u.origFinal.trim(), text.trim());
     // Keep it attached until sealed so trailing translation tokens are not misattributed to the next one.
   }
 

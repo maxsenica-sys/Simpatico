@@ -132,5 +132,7 @@
   "genderMale": "पुरुष",
   "genderFemale": "महिला",
   "genderRequired": "कोई एक विकल्प चुनो",
-  "genderNone": "नहीं बताना चाहते"
+  "genderNone": "नहीं बताना चाहते",
+  "reportWrong": "कुछ गलत है?",
+  "reportThanks": "शुक्रिया, भेज दिया"
 }

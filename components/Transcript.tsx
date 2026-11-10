@@ -14,6 +14,7 @@ export function Transcript({
   onPrefs,
   onSave,
   onClose,
+  onReport,
 }: {
   lines: TranscriptLine[];
   names: Record<string, string> | null;
@@ -21,11 +22,14 @@ export function Transcript({
   onPrefs: (p: CaptionPrefs) => void;
   onSave: () => void;
   onClose: () => void;
+  /** "Not right?" on a received line: send it to improve translations. */
+  onReport?: (id: string) => void;
 }) {
   const t = useT();
   const end = useRef<HTMLDivElement>(null);
   const closeBtn = useRef<HTMLButtonElement>(null);
   const [settings, setSettings] = useState(false);
+  const [reported, setReported] = useState<Set<string>>(() => new Set());
   useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
   }, [lines.length]);
@@ -145,6 +149,18 @@ export function Transcript({
               l.from && <span className="who">{names[l.from] ?? ""}</span>
             )}
             <p>{l.text}</p>
+            {onReport && l.who === "them" && l.final && (
+              <button
+                className={`report-btn ${reported.has(l.id) ? "done" : ""}`}
+                disabled={reported.has(l.id)}
+                onClick={() => {
+                  onReport(l.id);
+                  setReported((r) => new Set(r).add(l.id));
+                }}
+              >
+                {reported.has(l.id) ? t("reportThanks") : t("reportWrong")}
+              </button>
+            )}
           </div>
         ))}
         <div ref={end} />

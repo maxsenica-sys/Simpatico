@@ -132,5 +132,7 @@
   "genderMale": "পুরুষ",
   "genderFemale": "মহিলা",
   "genderRequired": "একটা অপশন বেছে নাও",
-  "genderNone": "বলতে চাই না"
+  "genderNone": "বলতে চাই না",
+  "reportWrong": "ঠিক হয়নি?",
+  "reportThanks": "ধন্যবাদ, পাঠানো হয়েছে"
 }

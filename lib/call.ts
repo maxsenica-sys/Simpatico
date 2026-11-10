@@ -3,7 +3,7 @@ import type { ParticipantLang } from "@/shared/lang";
 import type { CaptionStage, CaptionState, CaptionStyle, Gender, ClientMsg, PeerInfo, PeerStatus, RoomKind, ServerMsg, SignalData } from "@/shared/protocol";
 import { MicCapture } from "./audio";
 import { ScreenAwake } from "./wakeLock";
-import { getCameraTrack, getMicTrack, hasMultipleCameras } from "./media";
+import { getCameraTrack, getMicTrack, hasMultipleCameras, isMobileDevice } from "./media";
 
 export type Phase =
   | "joining" // socket connecting / join in flight
@@ -86,6 +86,31 @@ export type CallState = {
 const CONNECT_TIMEOUT_MS = 20_000;
 /** After a drop, keep trying to bring a call back this long (ICE restart every RETRY_EVERY_MS). */
 const RECONNECT_FOR_MS = 2 * 60_000;
+/** Video steps when the phone's processor limits encoding: size divisor and frame rate. */
+const CPU_STEPS = [
+  { scale: 1, fps: 30 },
+  { scale: 1.5, fps: 20 },
+  { scale: 2, fps: 15 },
+];
+
+/**
+ * Voice settings in the SDP: in-band forward error correction (recovers lost voice packets
+ * instead of crackling) and DTX (near-silent packets during pauses: less radio, less battery).
+ */
+export function tuneOpus(sdp: string): string {
+  const pt = sdp.match(/a=rtpmap:(\d+) opus\/48000/i)?.[1];
+  if (!pt) return sdp;
+  const want = ["useinbandfec=1", "usedtx=1"];
+  const fmtp = new RegExp(`^a=fmtp:${pt} (.*)$`, "m");
+  if (fmtp.test(sdp)) {
+    return sdp.replace(fmtp, (line, params: string) => {
+      const have = params.split(";").map((x) => x.trim().split("=")[0]);
+      const add = want.filter((w) => !have.includes(w.split("=")[0]));
+      return add.length ? `${line};${add.join(";")}` : line;
+    });
+  }
+  return sdp.replace(new RegExp(`^(a=rtpmap:${pt} opus/48000.*)$`, "mi"), `$1\r\na=fmtp:${pt} ${want.join(";")}`);
+}
 const RETRY_EVERY_MS = 8_000;
 const DISCONNECT_GRACE_MS = 4_000;
 const STATUS_EVERY_MS = 2_000;
@@ -147,6 +172,10 @@ export class CallController {
   private weakChecks = 0;
   private goodChecks = 0;
   private degraded = false;
+  /** Steps of video reduction because the phone's processor is struggling (heat, charging). */
+  private cpuLevel = 0;
+  private cpuChecks = 0;
+  private cpuOkChecks = 0;
   private lastHeal = 0;
   private weakDismissedAt = 0;
 
@@ -295,6 +324,11 @@ export class CallController {
     if (this.opts.captionStyle === style) return;
     this.opts.captionStyle = style;
     this.send({ t: "set-caption-style", style });
+  }
+
+  /** "Not right?" on a caption line: the server saves that line so translations can be improved. */
+  report(id: string) {
+    this.send({ t: "report", id });
   }
 
   /** Only caption the voice closest to this phone, not people talking further away. */
@@ -781,7 +815,7 @@ export class CallController {
       const pc = link.pc!;
       if (!iceRestart) await this.applyVideoSender(link);
       const offer = await pc.createOffer({ iceRestart });
-      await pc.setLocalDescription(offer);
+      await pc.setLocalDescription({ type: "offer", sdp: tuneOpus(offer.sdp ?? "") });
       this.send({ t: "signal", to: id, data: { kind: "offer", session: link.session, sdp: pc.localDescription!.sdp } });
     } catch (err) {
       this.log("offer_failed", { error: String(err) });
@@ -806,7 +840,8 @@ export class CallController {
           }
         }
         await this.flushCandidates(link!);
-        await pc.setLocalDescription(await pc.createAnswer());
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription({ type: "answer", sdp: tuneOpus(answer.sdp ?? "") });
         this.send({ t: "signal", to: from, data: { kind: "answer", session: link!.session, sdp: pc.localDescription!.sdp } });
       } else if (data.kind === "answer") {
         if (!link?.pc || data.session !== link.session || link.pc.signalingState !== "have-local-offer") return;
@@ -979,6 +1014,7 @@ export class CallController {
     if (this.stopped) return;
     let anyWeak = false;
     let heal = false;
+    let cpuLimited = false;
     for (const link of [...this.links.values()]) {
       const pc = link.pc;
       if (!pc || pc.connectionState !== "connected") continue;
@@ -998,7 +1034,10 @@ export class CallController {
           c.lost += Math.max(0, r.packetsLost ?? 0);
           c.received += r.packetsReceived ?? 0;
         }
-        if (r.type === "outbound-rtp" && r.kind === "video") c.framesSent += r.framesSent ?? r.framesEncoded ?? 0;
+        if (r.type === "outbound-rtp" && r.kind === "video") {
+          c.framesSent += r.framesSent ?? r.framesEncoded ?? 0;
+          if (r.qualityLimitationReason === "cpu") cpuLimited = true;
+        }
         if (r.type === "candidate-pair" && r.nominated && r.state === "succeeded") {
           if (r.currentRoundTripTime != null) rtt = r.currentRoundTripTime * 1000;
           if (r.availableOutgoingBitrate != null) outBitrate = r.availableOutgoingBitrate;
@@ -1047,19 +1086,46 @@ export class CallController {
     // First step is automatic and invisible: lower video quality. Then suggest audio only.
     if (this.weakChecks >= 2 && !this.degraded) await this.setVideoQuality(true);
     if (this.goodChecks >= 8 && this.degraded) await this.setVideoQuality(false);
+
+    // The phone can't keep up encoding video (hot, charging, low power mode): lighten the video
+    // a step at a time so the call and its audio stay smooth; go back up after a minute of calm.
+    if (cpuLimited) {
+      this.cpuOkChecks = 0;
+      if (++this.cpuChecks >= 2 && this.cpuLevel < CPU_STEPS.length - 1) {
+        this.cpuLevel++;
+        this.cpuChecks = 0;
+        this.log("cpu_limited", { level: this.cpuLevel });
+        await this.applyVideoEncoding();
+      }
+    } else {
+      this.cpuChecks = 0;
+      if (this.cpuLevel > 0 && ++this.cpuOkChecks >= 30) {
+        this.cpuLevel--;
+        this.cpuOkChecks = 0;
+        await this.applyVideoEncoding();
+      }
+    }
     const suggest = this.weakChecks >= WEAK_CHECKS_TO_WARN && !this.state.audioOnly && Date.now() - this.weakDismissedAt > 60_000;
     this.setProblem("weak-network", suggest);
   }
 
   private async setVideoQuality(low: boolean) {
     this.degraded = low;
+    await this.applyVideoEncoding();
+  }
+
+  /** Video sending settings from network quality (degraded) and processor load (cpuLevel). */
+  private async applyVideoEncoding() {
+    const step = CPU_STEPS[this.cpuLevel];
+    const scale = Math.max(this.degraded ? 2 : 1, step.scale);
+    const maxBitrate = this.degraded ? 250_000 : Math.round((isMobileDevice() ? 900_000 : 1_200_000) / (step.scale * step.scale) + 150_000);
     for (const link of this.links.values()) {
       const sender = link.videoSender;
       if (!sender) continue;
       try {
         const p = sender.getParameters();
         if (!p.encodings?.length) continue;
-        p.encodings = p.encodings.map((e) => ({ ...e, maxBitrate: low ? 250_000 : 1_200_000, scaleResolutionDownBy: low ? 2 : 1 }));
+        p.encodings = p.encodings.map((e) => ({ ...e, maxBitrate, scaleResolutionDownBy: scale, maxFramerate: step.fps }));
         await sender.setParameters(p);
       } catch {}
     }

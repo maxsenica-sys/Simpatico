@@ -34,6 +34,7 @@ export default function Privacy() {
           <li>We don't record your calls. No audio, video or transcript is saved by us.</li>
           <li>Your video and voice go directly between the two devices, encrypted.</li>
           <li>To make captions, the words you speak are sent to our speech and translation providers while you talk, and then discarded by us.</li>
+          <li>If you tap &ldquo;Not right?&rdquo; on a caption, that one sentence and its translation are saved so we can improve translations. Nothing else you say is kept.</li>
           <li>The person you call needs no account. We don't use cookies, ads or tracking.</li>
         </ul>
 
@@ -58,7 +59,18 @@ export default function Privacy() {
         <h3>Captions and transcript</h3>
         <p>
           The transcript you can open during a call lives only in your browser and is gone when you close the page. To keep translations consistent, our server holds the
-          most recent sentences of the conversation in memory while the call room exists (at most 2 hours). It is never written to disk and is deleted when the room closes.
+          most recent sentences of the conversation in memory while the call room exists. It is never written to disk and is deleted when the room closes.
+        </p>
+        <h3>Reporting a translation</h3>
+        <p>
+          In the transcript, each caption you received has a &ldquo;Not right?&rdquo; button. If you tap it, our server saves that one sentence: what was said, the
+          translation you saw, and the two languages. No names, audio or other parts of the conversation are saved with it. We use these reports to teach the app slang,
+          names and phrasing it gets wrong. Only tap it if you are happy for that sentence to be kept; you can ask us to delete reports at {BRAND.contactEmail}.
+        </p>
+        <h3>Your name and gender</h3>
+        <p>
+          The name and gender you choose when joining are shown to (name) or used for (gender, for grammar in languages such as Russian or Arabic) the other people in the
+          call. They are saved in your own browser for next time, and held by our server only while you are in the call.
         </p>
         <h3>Technical logs</h3>
         <p>
@@ -67,8 +79,8 @@ export default function Privacy() {
         </p>
         <h3>On your device</h3>
         <p>
-          Your browser stores your language setting and a random ID for each call link, so a reload rejoins the same call. Nothing else is stored, and nothing is shared
-          with advertisers.
+          Your browser stores your language, name, gender and caption settings, and a random ID for each call link, so a reload rejoins the same call. Nothing else is
+          stored, and nothing is shared with advertisers.
         </p>
 
         <h2>Providers we use</h2>

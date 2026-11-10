@@ -132,5 +132,7 @@
   "genderMale": "Erkek",
   "genderFemale": "Kadın",
   "genderRequired": "Bir seçenek seç",
-  "genderNone": "Belirtmek istemiyorum"
+  "genderNone": "Belirtmek istemiyorum",
+  "reportWrong": "Yanlış mı?",
+  "reportThanks": "Teşekkürler, gönderildi"
 }

@@ -132,5 +132,7 @@
   "genderMale": "ذكر",
   "genderFemale": "أنثى",
   "genderRequired": "اختر أحد الخيارات",
-  "genderNone": "أفضّل عدم الإفصاح"
+  "genderNone": "أفضّل عدم الإفصاح",
+  "reportWrong": "هل من خطأ؟",
+  "reportThanks": "شكرًا، تم الإرسال"
 }

@@ -132,5 +132,7 @@
   "genderMale": "男",
   "genderFemale": "女",
   "genderRequired": "请选择一项",
-  "genderNone": "不愿透露"
+  "genderNone": "不愿透露",
+  "reportWrong": "不准确？",
+  "reportThanks": "谢谢，已发送"
 }

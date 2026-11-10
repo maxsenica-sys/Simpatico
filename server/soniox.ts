@@ -1,6 +1,7 @@
 import { EventEmitter } from "node:events";
 import WebSocket from "ws";
 import { log } from "./log";
+import type { SonioxContext } from "./vocab";
 
 export type SonioxToken = {
   text: string;
@@ -28,6 +29,8 @@ export type SonioxStreamConfig = {
   target: string | null;
   /** Shows up in Soniox's dashboard and our logs. */
   ref: string;
+  /** Names in the call and words to recognise (see vocab.ts). */
+  context?: SonioxContext;
 };
 
 const URL = process.env.SONIOX_URL ?? "wss://stt-rt.soniox.com/transcribe-websocket";
@@ -84,6 +87,7 @@ export class SonioxStream extends EventEmitter {
           // Endpoints a little sooner (0-3, higher = sooner, slightly lower accuracy). v5/v6 models.
           endpoint_latency_adjustment_level: Number(process.env.SONIOX_ENDPOINT_LEVEL ?? 1),
           client_reference_id: ref,
+          ...(this.config.context ? { context: this.config.context } : {}),
           ...(target ? { translation: { type: "one_way", target_language: target } } : {}),
         }),
       );

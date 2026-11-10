@@ -84,6 +84,7 @@ export function dashboard(token: string | undefined, res: ServerResponse) {
   const calls = recent("calls", 500);
   const fb = recent("feedback", 300);
   const errs = recent("errors", 200);
+  const reports = recent("reports", 300);
   const minutes = calls.reduce((s, c) => s + (Number(c.minutes) || 0), 0);
   const cost = calls.reduce((s, c) => s + (Number(c.estCostUsd) || 0), 0);
   const counts = { great: 0, ok: 0, bad: 0 } as Record<string, number>;
@@ -122,6 +123,10 @@ th{color:#9aa0a8;font-weight:600}.wrap{overflow-x:auto}.great{color:#3ddc84}.bad
       `${esc(f.speaks ?? "")} → reads ${esc(f.reads ?? "")}`,
       esc(f.device),
     ]),
+  )}</div>
+<h2>Reported translations</h2><p class="muted">Lines people marked "Not right?". Add fixes to the slang reference (server/refine.ts) or recognition terms (server/vocab.ts).</p><div class="wrap">${table(
+    ["When (UTC)", "Languages", "What was said", "Translation shown", "Call"],
+    reports.map((r) => [when(r.ts), `${esc(r.from)} → ${esc(r.to)}`, esc(r.source), esc(r.translation), esc(r.kind)]),
   )}</div>
 <h2>Calls</h2><div class="wrap">${table(
     ["Ended (UTC)", "Kind", "Minutes", "People", "Languages", "Caption min", "Est. cost", "Devices"],

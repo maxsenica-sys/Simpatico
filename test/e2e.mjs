@@ -125,6 +125,19 @@ try {
   if (await b.getByRole("radiogroup", { name: "Altyazı boyutu" }).count()) throw new Error("caption settings should start hidden");
   await b.getByRole("button", { name: "Altyazı ayarları" }).click();
   await b.getByRole("radiogroup", { name: "Altyazı boyutu" }).waitFor();
+
+  step("B reports a translation as not right: that one line is saved, nothing else");
+  const { readFileSync, existsSync, statSync } = await import("node:fs");
+  const reportsFile = new URL("../data/reports.jsonl", import.meta.url);
+  const before = existsSync(reportsFile) ? statSync(reportsFile).size : 0;
+  await b.getByRole("button", { name: "Yanlış mı?" }).first().click();
+  await b.getByText("Teşekkürler, gönderildi").first().waitFor();
+  await b.waitForTimeout(500);
+  const added = existsSync(reportsFile) ? readFileSync(reportsFile).subarray(before).toString("utf8").trim().split("\n").filter(Boolean) : [];
+  if (added.length !== 1) throw new Error(`expected 1 report line, got ${added.length}`);
+  const rep = JSON.parse(added[0]);
+  if (!rep.source || !rep.translation || rep.to !== "tr") throw new Error("report should hold source, translation and languages: " + added[0]);
+  console.log("  saved:", rep.from, "→", rep.to, "|", rep.source.slice(0, 40), "|", rep.translation.slice(0, 40));
   await b.waitForTimeout(500);
   await b.screenshot({ path: OUT + "5-guest-transcript.png" });
   console.log("  B transcript lines:", await b.$$eval(".tline", (els) => els.length));

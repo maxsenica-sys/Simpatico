@@ -4,6 +4,22 @@ import { log } from "./log";
 
 export type ContextLine = { who: string; lang: string; text: string };
 
+/**
+ * "English (Australia)" rather than "English": slang depends on where the speaker is from
+ * ("pissed" is drunk in Australia and Britain, angry in America; "thongs" are flip-flops).
+ */
+function langName(code: string): string {
+  const name = langInfo(code).name;
+  const region = code.split("-")[1];
+  if (!region) return name;
+  try {
+    const r = new Intl.DisplayNames(["en"], { type: "region" }).of(region.toUpperCase());
+    return r && r !== region ? `${name} (${r})` : name;
+  } catch {
+    return name;
+  }
+}
+
 /** What the people in this caption pipeline told us about themselves (all optional). */
 export type People = { speaker?: "m" | "f"; listener?: "m" | "f" };
 
@@ -52,6 +68,7 @@ const SYSTEM = `You write the subtitles for a live, face-to-face video call betw
 - Keep the speaker's register and tone. Casual stays casual, teasing stays teasing, affectionate stays affectionate, blunt stays blunt. Do not soften, formalise or censor.
 - The transcript comes from speech recognition and can contain mistakes, fillers and false starts. Use the recent conversation to work out what was meant. Drop fillers that carry no meaning.
 - Keep it as short as the natural spoken version. It is read as a subtitle while watching the speaker's face.
+- Never add anything that wasn't said: no extra items, words, sentences or explanations, even if they seem helpful.
 - Glossary entries are names, nicknames and in-jokes between these two people. Use them as given.
 - Gender: <people> gives the speaker's and listener's gender. Use the speaker's only where the speaker refers to themselves (I, me, my: Russian "я устала", Portuguese "obrigada", Hindi "मैं गई"), and the listener's only where they are addressed as one person (you: Arabic "أنتِ", Spanish "¿estás cansada?"). Everyone else follows the conversation: people mentioned get the gender the context gives them, groups stay plural ("Are they coming?" about several people), "we" is the group, and where nothing says otherwise use neutral wording or the grammatical default. Never put the speaker's or listener's gender on anyone else: a woman saying "My friend is tired" in French is "Mon ami est fatigué" (the friend's gender is unknown), not "Mon amie est fatiguée". The source can show gender too (Russian past tenses, Hindi and Urdu verb endings, Thai "ครับ"/"ค่ะ", Arabic and Hebrew verb forms): use those clues. Never add a gender the source doesn't have: Turkish "o", Persian "u", Indonesian "dia", spoken Chinese "tā" become "they" (or the person's name) in English, never "he/she" or a slash. Example: "O da geliyor mu?" is "Are they coming too?", not "Is he coming too?".
 - Render interjections and backchannels ("mm-hmm", "uh-huh", "wow", "oh no") with the target language's own spoken equivalent, never the source-language sound.
@@ -65,7 +82,11 @@ const SYSTEM = `You write the subtitles for a live, face-to-face video call betw
 const SLANG = `<spoken_language_reference>
 People on these calls talk casually: friends, families, teammates. Below are common slang words, particles and set phrases by language. They are examples, not a complete list. They are written in Latin letters here, but the transcript uses each language's own script, and speech recognition may spell them oddly. Read them by meaning, and when the target language has its own casual equivalent at the same register, use it.
 
-English: "no cap" = honestly; "lowkey" = a bit, quietly; "bet" = OK, deal; "deadass" = seriously; "slaps" = is great; "sus" = suspicious; "my bad" = sorry; "mate", "bro", "dude" = friend; "innit" = isn't it, right; "gonna/wanna" = going to/want to; "it's giving…" = it looks/feels like…
+English is spoken differently by region; <languages> may say which (Australia, United Kingdom, United States). The same word can differ: "pissed" = drunk (Australia, UK) but angry (US); "pants" = trousers (US) or underwear / rubbish (UK); "thongs" = flip-flops (Australia: "grab your thongs" is just "grab your flip-flops", nothing added); "fanny pack" vs "bum bag"; "football" = soccer (UK), American football (US), AFL or rugby league (Australia, "footy").
+English, Australian: "arvo" = afternoon; "brekkie" = breakfast; "servo" = petrol station; "bottle-o" = liquor shop; "Maccas" = McDonald's; "bathers", "togs", "cossie" = swimsuit; "esky" = cooler box; "ute" = pickup; "sanga" = sandwich; "snag" = sausage; "barbie" = barbecue; "stubby" = small bottle of beer; "tinny" = can of beer (or small boat); "goon" = cheap cask wine; "cuppa" = cup of tea; "smoko" = short break; "tradie" = tradesperson; "rellies" = relatives; "lollies" = sweets; "bikkie" = biscuit; "sunnies" = sunglasses; "trackies" = tracksuit pants; "mozzie" = mosquito; "durry" = cigarette; "dunny" = toilet; "doona" = duvet; "uni" = university; "g'day" = hi; "how ya going?" = how are you?; "mate" = friend (also neutral address); "reckon" = think; "heaps" = lots, very; "keen" = up for it; "stoked" = thrilled; "no worries", "no wukkas", "no dramas" = no problem, you're welcome; "she'll be right", "she's apples" = it'll be fine; "fair dinkum" = genuine, really?; "fair enough" = OK, understood; "deadset" = truly; "bloody oath", "too right" = absolutely; "yeah nah" = no; "nah yeah" = yes; "ripper", "bonza", "sweet as" = great; "how good is that!" = that's great; "flat out", "flat chat" = very busy; "full on" = intense; "chockers" = packed full; "dodgy" = shady, poor quality; "suss it out" = figure it out; "rock up" = turn up; "my shout" = I'm paying; "chuck a sickie" = take a fake sick day; "chuck a U-ey" = do a U-turn; "hard yakka" = hard work; "spewin'" = really annoyed; "devo" = devastated; "stuffed", "rooted", "knackered" = exhausted (or broken); "carked it" = died, broke down; "strewth", "crikey" = wow; "bogan" = uncouth person; "daggy" = dorky; "drongo", "galah" = idiot; "Straya" = Australia; "Aussie" = Australian; "Kiwi" = New Zealander; "pom", "pommy" = English person.
+English, British: "innit" = isn't it, right?; "bruv", "mate", "pal" = friend; "cheers" = thanks, bye; "ta" = thanks; "knackered" = exhausted; "gutted" = devastated; "chuffed" = pleased; "skint" = broke; "quid" = pound(s); "fiver", "tenner" = £5, £10; "gobsmacked" = astonished; "taking the piss", "taking the mick" = mocking; "having a laugh" = joking; "can't be arsed" = can't be bothered; "cheeky" = playfully bold; "sorted" = done, fixed; "proper", "well" = very ("well good"); "fit" = attractive; "peng" = attractive, great; "minging" = gross; "wagwan" = what's up; "mandem" = the guys; "bare" = lots of; "allow it" = drop it; "peak" = bad luck; "Bob's your uncle" = and that's it; "fortnight" = two weeks; "loo" = toilet; "queue" = line.
+English, American and online: "no cap" = honestly, no lie; "cap" = a lie; "bet" = OK, deal; "facts" = true, I agree; "lowkey" = a bit, secretly; "highkey" = openly, very; "deadass", "on God" = seriously, I swear; "say less" = got it, say no more; "slaps", "fire", "lit", "bussin'" (food) = great; "mid" = mediocre; "sus" = suspicious; "salty" = bitter, annoyed; "tilted" = frustrated, thrown off (from gaming); "it's giving…" = it looks/feels like…; "ate", "slay" = did great; "rizz" = charm; "simp" = overly devoted; "ghosted" = stopped replying; "situationship" = undefined relationship; "delulu" = delusional; "drip" = stylish clothes; "bougie" = fancy; "extra" = over the top; "shook" = shocked; "spill the tea" = share the gossip; "GOAT" = greatest of all time; "W" / "L" = win / loss; "touch grass" = go outside, get real; "based" = admirably yourself; "cringe" = embarrassing; "built different" = exceptional; "rent free" = can't stop thinking about it; "glow up" = big improvement; "caught in 4K" = caught red-handed; "no shot" = no way; "I'm dead", "I'm crying" = that's hilarious; "finna" = going to; "y'all" = you all; "bruh", "fam" = friend, mate; "hella" = very; "chillin'" = relaxing, hanging out; "chillin' like a villain" = relaxing (playful rhyme); "kick it" = hang out; "my bad" = sorry; "gonna/wanna/gotta" = going to / want to / have to.
+Rhymes, catchphrases and set phrases ("see you later, alligator", "easy peasy lemon squeezy", "chillin' like a villain", "winner winner chicken dinner") are translated by meaning and playfulness, not word for word; keep the playful tone if the target language has a similar phrase.
 Turkish: "kanka", "kanki" = buddy; "abi", "abla" = bro, sis (also polite for an older person); "lan" = dude (rough, between friends); "valla" = honestly; "aynen" = exactly; "eyvallah" = thanks, cheers; "hadi ya", "yok artık" = no way; "kolay gelsin" = greeting to someone working; "eline sağlık" = thanks for the food, nice work; "geçmiş olsun" = sorry that happened, get well; "afiyet olsun" = enjoy your meal; "kafayı yemek" = to go crazy; "boş yapma" = stop talking nonsense; "efsane" = legendary; "çok fena" = awesome or awful, by context; "hocam" = coach, teacher, or a friendly respectful "mate" (by context, never left as "hocam"); "naber", "ne haber" = what's up; "iyiyim" = I'm good; "sağ ol", "saol" = thanks; "kusura bakma" = sorry; "boşver" = never mind; "tamam", "olur" = OK; "hı hı" = yeah; "yok" = no, there isn't; "hadi" = come on, let's go; "of ya" = ugh. Turkish has one word, "o", for he, she and it: in English use the person's name or "they" unless the conversation makes it clear. English "you" to Turkish: "sen" between friends, family and teammates, "siz" for strangers, elders or to show respect; follow the conversation's tone and stay consistent.
 Russian: "блин" = damn; "короче" = anyway, long story short; "ну" = well; "давай" = come on, OK, bye; "чё" = what; "прикол" = funny thing, joke; "кайф" = bliss; "норм" = fine; "жесть", "капец" = insane, crazy; "забей" = forget it; "ваще" = totally.
 Spanish: "tío/tía" (Spain), "güey/wey" (Mexico), "che" (Argentina), "pana" (Venezuela, Caribbean) = dude; "vale" = OK; "guay", "chévere", "padre", "bacán" = cool; "neta" = really; "ni modo" = oh well; "me vale" = I don't care.
@@ -151,8 +172,8 @@ export async function refine(input: RefineInput): Promise<string | null> {
     return null;
   }
   client ??= new Anthropic();
-  const src = langInfo(input.sourceLang).name;
-  const tgt = langInfo(input.targetLang).name;
+  const src = langName(input.sourceLang);
+  const tgt = langName(input.targetLang);
   const glossary = Object.entries(input.glossary);
   const context = input.context.map((c) => `${c.who} (${langInfo(c.lang).name}): ${c.text}`).join("\n");
 
@@ -174,7 +195,7 @@ export async function refine(input: RefineInput): Promise<string | null> {
         max_tokens: 400,
         // Latency matters more than depth here: a subtitle rewrite needs no reasoning pass.
         thinking: { type: "disabled" },
-        output_config: { effort: "low" },
+        output_config: { effort: "medium" },
         system: [{ type: "text", text: SYSTEM }, { type: "text", text: SLANG, cache_control: { type: "ephemeral" } }],
         messages: [{ role: "user", content: user }],
       },
@@ -204,7 +225,7 @@ export async function refine(input: RefineInput): Promise<string | null> {
 const PHRASE_SYSTEM = `You write the subtitles for a live video call between people who do not share a language. People here often talk for a long time without pausing, so the subtitle is built phrase by phrase: each turn you get the next finished phrase of what the speaker is saying, and your translation is added after the subtitle already on screen. Nothing on screen is ever changed afterwards, so the reader only ever reads each part once.
 
 - Translate only the new phrase, so that it reads as the natural continuation of the subtitle already shown. Never repeat, correct or rephrase what is already shown. Because of word order, the subtitle so far may already carry part of this phrase's meaning (a "when", "that" or "and" placed earlier); don't translate that part again.
-- Translate meaning, not words. Idioms, slang and colloquialisms become the natural equivalent in the target language; keep the speaker's register and tone. Drop fillers and false starts that carry no meaning.
+- Translate meaning, not words. Idioms, slang and colloquialisms become the natural equivalent in the target language; keep the speaker's register and tone. Drop fillers and false starts that carry no meaning. Never add anything that wasn't said.
 - If the phrase stops mid-sentence, stop there too; do not guess what comes next. In languages where the verb comes last (Turkish, Hindi, Urdu, Bengali, Japanese, Korean), a phrase often arrives before its verb: translate only what is there and never invent the missing verb; it comes with the next phrase, so place it naturally then. When the phrase is marked final, it is the end of what they said: finish the sentence naturally.
 - Gender: <people> gives the speaker's and listener's gender. Apply the speaker's only where they refer to themselves (I, me, my) and the listener's only where they are addressed as one person (you). Everyone else follows the conversation: groups stay plural, people mentioned get the gender the context gives them, otherwise neutral wording. Never put the speaker's gender on a friend, colleague or anyone else they mention. Clues in the source (verb endings, Thai "ครับ"/"ค่ะ") count too. Never add a gender the source doesn't have: Turkish "o", Indonesian "dia" and similar become just "they" (or the person's name) in English, never "he/she".
 - The transcript comes from speech recognition and can contain mistakes. Use what was said before and the recent conversation to work out what was meant, but translate only the new phrase.
@@ -244,8 +265,8 @@ function partialSubtitle(raw: string): string {
 export async function phraseTranslate(input: PhraseInput): Promise<string | null> {
   if (!refineConfigured()) return null;
   client ??= new Anthropic();
-  const src = langInfo(input.sourceLang).name;
-  const tgt = langInfo(input.targetLang).name;
+  const src = langName(input.sourceLang);
+  const tgt = langName(input.targetLang);
   const context = input.context.map((c) => `${c.who} (${langInfo(c.lang).name}): ${c.text}`).join("\n");
   const user = [
     `<languages>${src} to ${tgt}</languages>`,
@@ -262,7 +283,7 @@ export async function phraseTranslate(input: PhraseInput): Promise<string | null
     model: MODEL,
     max_tokens: 300,
     thinking: { type: "disabled" as const },
-    output_config: { effort: "low" as const },
+    output_config: { effort: "medium" as const },
     system: [{ type: "text" as const, text: PHRASE_SYSTEM }, { type: "text" as const, text: SLANG, cache_control: { type: "ephemeral" as const } }],
     messages: [{ role: "user" as const, content: user }],
   };

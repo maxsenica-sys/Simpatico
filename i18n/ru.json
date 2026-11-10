@@ -132,5 +132,7 @@
   "genderMale": "Мужской",
   "genderFemale": "Женский",
   "genderRequired": "Выбери вариант",
-  "genderNone": "Не указывать"
+  "genderNone": "Не указывать",
+  "reportWrong": "Что-то не так?",
+  "reportThanks": "Спасибо, отправлено"
 }

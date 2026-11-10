@@ -132,5 +132,7 @@
   "genderMale": "مرد",
   "genderFemale": "عورت",
   "genderRequired": "کوئی ایک آپشن چنو",
-  "genderNone": "نہیں بتانا چاہتے"
+  "genderNone": "نہیں بتانا چاہتے",
+  "reportWrong": "کچھ غلط ہے؟",
+  "reportThanks": "شکریہ، بھیج دیا گیا"
 }

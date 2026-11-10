@@ -2,19 +2,29 @@
 
 /** Tunables for the local voice-activity gate. Levels are dBFS of 100 ms chunks. */
 const MIN_THRESHOLD_DB = -52;
+/** To START sending: this far above the room's noise floor (clearly a voice). */
 const ABOVE_FLOOR_DB = 12;
+/**
+ * To KEEP sending once someone is talking: much lower (hysteresis), so whispers, soft or
+ * deep voices, yawned words and quiet sentence endings stay in the sentence instead of
+ * being cut off as silence.
+ */
+const STAY_ABOVE_FLOOR_DB = 6;
+const STAY_MIN_THRESHOLD_DB = -58;
+/** A soft word this soon after speech ended continues it (reopens on the lower threshold). */
+const RESUME_MS = 1500;
 /** Extra margin while the other person is audibly talking, so leaked speaker output isn't transcribed as ours. */
 const DOUBLE_TALK_PENALTY_DB = 10;
-const OPEN_CHUNKS = 2; // 200 ms above threshold to open
-const HANGOVER_CHUNKS = 6; // 600 ms below threshold to close (captions finalize sooner; Soniox wants >= 200 ms)
-const PREROLL_CHUNKS = 3;
+const OPEN_CHUNKS = 2; // 2 of the last 3 chunks (100 ms each) voiced to open: soft onsets flicker
+const HANGOVER_CHUNKS = 7; // 700 ms below threshold to close (Soniox wants >= 200 ms)
+const PREROLL_CHUNKS = 5; // 500 ms kept from before the gate opened, so a soft first syllable isn't lost
 /**
  * Voice focus: speech much quieter than this phone's own talker is someone further away.
  * A voice at ~0.5 m is roughly 12-20 dB louder than one 2-4 m away, so speech more than
  * FOCUS_MARGIN_DB below the usual level of the voice we caption is not sent for captions.
  * Learnt from the last few seconds of admitted speech, so a louder (closer) voice always passes.
  */
-const FOCUS_MARGIN_DB = 16;
+const FOCUS_MARGIN_DB = 18;
 const FOCUS_HISTORY = 80; // 8 s of speech
 const FOCUS_MIN_HISTORY = 15; // 1.5 s before it starts filtering
 
@@ -38,7 +48,8 @@ export class MicCapture {
   private local: Level = { floor: -60 };
   private remoteLevel: Level = { floor: -60 };
   private preroll: { pcm: ArrayBuffer; db: number }[] = [];
-  private above = 0;
+  private recent: boolean[] = [];
+  private endedAt = 0;
   private below = 0;
   private speaking = false;
   /** Recent levels of the speech we captioned (the person holding this phone). */
@@ -107,16 +118,23 @@ export class MicCapture {
   private onLevel(pcm: ArrayBuffer, db: number) {
     if (!this.enabled) db = -120;
     trackFloor(this.local, db);
-    const threshold = Math.max(MIN_THRESHOLD_DB, this.local.floor + ABOVE_FLOOR_DB) + (this.remoteTalking() ? DOUBLE_TALK_PENALTY_DB : 0);
-    const voiced = db > threshold && (!this.focus || db >= this.nearLevel() - FOCUS_MARGIN_DB);
+    const penalty = this.remoteTalking() ? DOUBLE_TALK_PENALTY_DB : 0;
+    const start = Math.max(MIN_THRESHOLD_DB, this.local.floor + ABOVE_FLOOR_DB) + penalty;
+    const stay = Math.max(STAY_MIN_THRESHOLD_DB, this.local.floor + STAY_ABOVE_FLOOR_DB) + penalty;
 
     if (!this.speaking) {
       this.preroll.push({ pcm, db });
       if (this.preroll.length > PREROLL_CHUNKS) this.preroll.shift();
-      this.above = voiced ? this.above + 1 : 0;
-      if (this.above >= OPEN_CHUNKS) {
+      // Just after they spoke: a soft word continues the sentence. Otherwise it must be clearly a
+      // voice, and (voice focus) not much quieter than this phone's own talker.
+      const resumed = Date.now() - this.endedAt < RESUME_MS;
+      const voiced = resumed ? db > stay : db > start && (!this.focus || db >= this.nearLevel() - FOCUS_MARGIN_DB);
+      this.recent.push(voiced);
+      if (this.recent.length > 3) this.recent.shift();
+      if ((resumed && voiced) || this.recent.filter(Boolean).length >= OPEN_CHUNKS) {
         this.speaking = true;
         this.below = 0;
+        this.recent = [];
         this.onSpeech(true);
         for (const c of this.preroll) this.onChunk(c.pcm, c.db);
         this.preroll = [];
@@ -124,15 +142,17 @@ export class MicCapture {
       return;
     }
 
+    // Talking: everything above the low "stay" level counts, so quiet words aren't cut out.
+    // Voice focus only decides whether speech starts, never removes words mid-sentence.
     this.onChunk(pcm, db);
-    if (voiced) {
-      this.near.push(db);
+    if (db > start) {
+      this.near.push(db); // the talker's clear speech sets their usual level
       if (this.near.length > FOCUS_HISTORY) this.near.shift();
     }
-    this.below = voiced ? 0 : this.below + 1;
+    this.below = db > stay ? 0 : this.below + 1;
     if (this.below >= HANGOVER_CHUNKS) {
       this.speaking = false;
-      this.above = 0;
+      this.endedAt = Date.now();
       this.onSpeech(false);
     }
   }

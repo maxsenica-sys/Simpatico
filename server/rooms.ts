@@ -16,6 +16,8 @@ export const EMPTY_TTL_MS = 10 * 60 * 1000;
  * long: phones switching between Wi-Fi and mobile data, lifts and tunnels, a quick app switch.
  */
 export const SEAT_GRACE_MS = 90 * 1000;
+/** Settled caption lines kept in memory per room, for "Not right?" reports. */
+const RECENT_LINES = 200;
 /**
  * Group calls are a full mesh: every phone connects to every other phone. That is fine for
  * audio and for video from the active speaker only, up to about a dozen people; beyond that the
@@ -60,6 +62,11 @@ export type Room = {
   createdAt: number;
   peers: Map<string, Peer>;
   history: ContextLine[];
+  /**
+   * The latest settled captions (what was said, how it was translated), in memory only, so a
+   * reader can report a bad translation. Never written anywhere unless someone reports a line.
+   */
+  recent: Map<string, { from: string; source: string; translation: string; srcLang: string; tgtLang: string }>;
   /** Per-room glossary (nicknames, in-jokes, places) injected into pass 2. Empty in V1. */
   glossary: Record<string, string>;
   /** Set when the last connected socket leaves, after someone has joined. */
@@ -94,6 +101,7 @@ export function createRoom(kind: RoomKind = "pair"): Room | null {
     peers: new Map(),
     history: [],
     glossary: {},
+    recent: new Map(),
     emptySince: null,
     floor: null,
     lastFloor: null,
@@ -174,6 +182,19 @@ export function seat(
   updatePipelines(room);
   if (!fresh) broadcast(room, { t: "peer-info", peer: info(peer) }, peer);
   return { peer, fresh };
+}
+
+/**
+ * A reader tapped "Not right?" on a caption: save that one line (what was said and its
+ * translation) so translations can be improved. The only words of a call ever stored, and
+ * only because someone asked.
+ */
+export function reportLine(room: Room, peer: Peer, id: unknown) {
+  if (typeof id !== "string") return;
+  const line = room.recent.get(id);
+  if (!line || line.from === peer.id) return;
+  append("reports", { source: line.source, translation: line.translation, from: line.srcLang, to: line.tgtLang, readerReads: peer.lang.reads, kind: room.kind });
+  log("translation_reported", { room: room.code, from: line.srcLang, to: line.tgtLang });
 }
 
 export function setCaptionStyle(peer: Peer, style: unknown) {
@@ -304,6 +325,11 @@ function makePipeline(room: Room, p: Peer, key: string): SpeakerPipeline {
     glossary: () => room.glossary,
     billed: (seconds) => {
       room.stats.captionSeconds += seconds;
+    },
+    names: () => [...room.peers.values()].map((x) => x.name),
+    settled: (id, source, translation) => {
+      room.recent.set(id, { from: p.id, source, translation, srcLang: p.lang.speaks, tgtLang: key === "same" ? p.lang.speaks : key });
+      if (room.recent.size > RECENT_LINES) room.recent.delete(room.recent.keys().next().value!);
     },
     people: () => {
       const readers = readersOf(room, p, key);

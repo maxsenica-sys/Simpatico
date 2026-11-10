@@ -48,6 +48,8 @@ export type ClientMsg =
   | { t: "speech"; on: boolean }
   | { t: "set-in-room"; inRoom: boolean }
   | { t: "set-caption-style"; style: CaptionStyle }
+  /** "Not right?" on a caption line: the server saves that one line to improve translations. */
+  | { t: "report"; id: string }
   | { t: "log"; event: string; detail?: Record<string, unknown> }
   | { t: "leave" };
 

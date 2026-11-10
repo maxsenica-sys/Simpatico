@@ -13,12 +13,20 @@ export const AUDIO: MediaTrackConstraints = {
   ...({ voiceIsolation: true } as MediaTrackConstraints),
 };
 
+/** Phones and tablets: lighter video, so long calls (especially while charging) don't overheat. */
+export function isMobileDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
 export function videoConstraints(facing: "user" | "environment" = "user"): MediaTrackConstraints {
+  // 960x540 at 24 fps is ~45% less encoding work than 1280x720 at 30, and still sharp on a phone.
+  const mobile = isMobileDevice();
   return {
     facingMode: { ideal: facing },
-    width: { ideal: 1280 },
-    height: { ideal: 720 },
-    frameRate: { ideal: 30, max: 30 },
+    width: { ideal: mobile ? 960 : 1280 },
+    height: { ideal: mobile ? 540 : 720 },
+    frameRate: { ideal: mobile ? 24 : 30, max: mobile ? 24 : 30 },
   };
 }
 

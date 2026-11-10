@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { baseLang, langInfo } from "../shared/lang";
 import { log } from "./log";
+import { vocabExtra } from "./vocab";
 
 export type ContextLine = { who: string; lang: string; text: string };
 
@@ -67,6 +68,7 @@ const SYSTEM = `You write the subtitles for a live, face-to-face video call betw
 - Translate meaning, not words. Idioms, slang, figures of speech and colloquialisms become the natural equivalent in the target language; where there is none, say plainly what was meant.
 - Keep the speaker's register and tone. Casual stays casual, teasing stays teasing, affectionate stays affectionate, blunt stays blunt. Do not soften, formalise or censor.
 - The transcript comes from speech recognition and can contain mistakes, fillers and false starts. Use the recent conversation to work out what was meant. Drop fillers that carry no meaning.
+- Speech recognition often mishears names, characters, brands, places and slang, especially in accents or soft speech ("pin okio" for Pinocchio, "chillin like a villain" split oddly, a name spelled like ordinary words). When a word or phrase looks like a mishearing of a well-known name or saying, translate what was clearly meant. Names of people and characters are kept (or written the way the target language usually writes them).
 - Keep it as short as the natural spoken version. It is read as a subtitle while watching the speaker's face.
 - Never add anything that wasn't said: no extra items, words, sentences or explanations, even if they seem helpful.
 - Glossary entries are names, nicknames and in-jokes between these two people. Use them as given.
@@ -157,6 +159,13 @@ export function looksUntranslated(source: string, out: string): boolean {
   return same / b.length >= 0.8;
 }
 
+/** The slang reference plus approved additions from reports (server/vocab.ts, /data/vocab-extra.json). */
+function slangReference(): string {
+  const add = Object.entries(vocabExtra().slang ?? {}).flatMap(([lang, lines]) => lines.map((l) => `${langInfo(lang).name}: ${l}`));
+  if (!add.length) return SLANG;
+  return SLANG.replace("</spoken_language_reference>", `Added from real calls:\n${add.join("\n")}\n</spoken_language_reference>`);
+}
+
 let client: Anthropic | null = null;
 let warned = false;
 
@@ -196,7 +205,7 @@ export async function refine(input: RefineInput): Promise<string | null> {
         // Latency matters more than depth here: a subtitle rewrite needs no reasoning pass.
         thinking: { type: "disabled" },
         output_config: { effort: "medium" },
-        system: [{ type: "text", text: SYSTEM }, { type: "text", text: SLANG, cache_control: { type: "ephemeral" } }],
+        system: [{ type: "text", text: SYSTEM }, { type: "text", text: slangReference(), cache_control: { type: "ephemeral" } }],
         messages: [{ role: "user", content: user }],
       },
       { signal: input.signal, maxRetries: 0 },
@@ -228,7 +237,7 @@ const PHRASE_SYSTEM = `You write the subtitles for a live video call between peo
 - Translate meaning, not words. Idioms, slang and colloquialisms become the natural equivalent in the target language; keep the speaker's register and tone. Drop fillers and false starts that carry no meaning. Never add anything that wasn't said.
 - If the phrase stops mid-sentence, stop there too; do not guess what comes next. In languages where the verb comes last (Turkish, Hindi, Urdu, Bengali, Japanese, Korean), a phrase often arrives before its verb: translate only what is there and never invent the missing verb; it comes with the next phrase, so place it naturally then. When the phrase is marked final, it is the end of what they said: finish the sentence naturally.
 - Gender: <people> gives the speaker's and listener's gender. Apply the speaker's only where they refer to themselves (I, me, my) and the listener's only where they are addressed as one person (you). Everyone else follows the conversation: groups stay plural, people mentioned get the gender the context gives them, otherwise neutral wording. Never put the speaker's gender on a friend, colleague or anyone else they mention. Clues in the source (verb endings, Thai "ครับ"/"ค่ะ") count too. Never add a gender the source doesn't have: Turkish "o", Indonesian "dia" and similar become just "they" (or the person's name) in English, never "he/she".
-- The transcript comes from speech recognition and can contain mistakes. Use what was said before and the recent conversation to work out what was meant, but translate only the new phrase.
+- The transcript comes from speech recognition and can contain mistakes, especially names, characters and slang in accents or soft speech ("pin okio" for Pinocchio). Use what was said before and the recent conversation to work out what was meant, but translate only the new phrase.
 - When nothing tells you someone's gender and the target language marks it, prefer phrasing that avoids committing to one, otherwise use the grammatical default.
 - Your whole reply appears on screen: the translation of the new phrase only, in the target language and its usual script, with no notes or alternatives. Only if the phrase is nothing but fillers ("um", "you know"), reply with nothing.`;
 
@@ -284,7 +293,7 @@ export async function phraseTranslate(input: PhraseInput): Promise<string | null
     max_tokens: 300,
     thinking: { type: "disabled" as const },
     output_config: { effort: "medium" as const },
-    system: [{ type: "text" as const, text: PHRASE_SYSTEM }, { type: "text" as const, text: SLANG, cache_control: { type: "ephemeral" as const } }],
+    system: [{ type: "text" as const, text: PHRASE_SYSTEM }, { type: "text" as const, text: slangReference(), cache_control: { type: "ephemeral" as const } }],
     messages: [{ role: "user" as const, content: user }],
   };
   try {

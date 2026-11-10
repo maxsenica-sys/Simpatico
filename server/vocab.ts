@@ -1,4 +1,6 @@
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { baseLang } from "../shared/lang";
+import { dataFile } from "./store";
 
 /**
  * Recognition context for Soniox (sent once when each speech stream opens): the setting, the
@@ -41,9 +43,47 @@ const RUSSIAN: string[] = ["короче", "блин", "прикол", "кайф
 
 const BY_LANG: Record<string, string[]> = { en: ENGLISH, tr: TURKISH, es: SPANISH, pt: PORTUGUESE, ru: RUSSIAN };
 
+/**
+ * Approved additions, grown from "Not right?" reports without a redeploy (scripts/review-reports.ts):
+ * /data/vocab-extra.json = { terms: { en: [...], tr: [...] }, slang: { en: ["phrase = meaning", ...] } }.
+ * Re-read at most once a minute when the file changes.
+ */
+export type VocabExtra = { terms?: Record<string, string[]>; slang?: Record<string, string[]> };
+let extra: VocabExtra = {};
+let extraMtime = 0;
+let extraCheckedAt = 0;
+export function vocabExtra(): VocabExtra {
+  const now = Date.now();
+  if (now - extraCheckedAt < 60_000) return extra;
+  extraCheckedAt = now;
+  try {
+    const f = dataFile("vocab-extra.json");
+    if (!existsSync(f)) return extra;
+    const m = statSync(f).mtimeMs;
+    if (m !== extraMtime) {
+      extra = JSON.parse(readFileSync(f, "utf8")) as VocabExtra;
+      extraMtime = m;
+    }
+  } catch {
+    // A bad file never breaks calls: keep the last good version.
+  }
+  return extra;
+}
+
+/** Soniox allows ~10,000 characters of context; terms beyond this budget are left out. */
+const TERMS_BUDGET = 7000;
+
 export function sonioxContext(source: string, names: string[]): SonioxContext {
   const people = [...new Set(names.map((n) => n.trim()).filter((n) => n && !/^[A-Z]$/.test(n)))].slice(0, 12);
-  const terms = [...people, ...(BY_LANG[baseLang(source) ?? ""] ?? [])];
+  const lang = baseLang(source) ?? "";
+  const all = [...people, ...(BY_LANG[lang] ?? []), ...(vocabExtra().terms?.[lang] ?? [])];
+  const terms: string[] = [];
+  let size = 0;
+  for (const t of new Set(all)) {
+    if (size + t.length + 3 > TERMS_BUDGET) break;
+    terms.push(t);
+    size += t.length + 3;
+  }
   return {
     general: [
       { key: "setting", value: "casual video call between friends, family or teammates" },

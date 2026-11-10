@@ -8,7 +8,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 STAGE=$(mktemp -d)
 cd "$ROOT"
 rm -rf .next && NEXT_TELEMETRY_DISABLED=1 npx next build
-cp -r .next public package.json package-lock.json next.config.mjs server.ts server shared fly.toml "$STAGE/"
+cp -r .next public package.json package-lock.json next.config.mjs server.ts server shared scripts fly.toml "$STAGE/"
 rm -rf "$STAGE/.next/cache"
 (cd "$STAGE" && npm ci --omit=dev --no-audit --no-fund)
 cat > "$STAGE/Dockerfile" <<'DOCKER'

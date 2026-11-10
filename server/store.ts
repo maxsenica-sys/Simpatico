@@ -16,6 +16,11 @@ function file(kind: Kind) {
   return join(DIR, `${kind}.jsonl`);
 }
 
+/** A file in the data directory (the Fly volume in production). */
+export function dataFile(name: string): string {
+  return join(DIR, name);
+}
+
 export function append(kind: Kind, record: Record<string, unknown>) {
   try {
     mkdirSync(DIR, { recursive: true });

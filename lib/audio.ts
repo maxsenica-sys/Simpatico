@@ -1,32 +1,18 @@
 "use client";
 
-/** Tunables for the local voice-activity gate. Levels are dBFS of 100 ms chunks. */
-const MIN_THRESHOLD_DB = -52;
-/** To START sending: this far above the room's noise floor (clearly a voice). */
-const ABOVE_FLOOR_DB = 12;
-/**
- * To KEEP sending once someone is talking: much lower (hysteresis), so whispers, soft or
- * deep voices, yawned words and quiet sentence endings stay in the sentence instead of
- * being cut off as silence.
- */
-const STAY_ABOVE_FLOOR_DB = 6;
-const STAY_MIN_THRESHOLD_DB = -58;
-/** A soft word this soon after speech ended continues it (reopens on the lower threshold). */
-const RESUME_MS = 1500;
-/** Extra margin while the other person is audibly talking, so leaked speaker output isn't transcribed as ours. */
-const DOUBLE_TALK_PENALTY_DB = 10;
-const OPEN_CHUNKS = 2; // 2 of the last 3 chunks (100 ms each) voiced to open: soft onsets flicker
-const HANGOVER_CHUNKS = 7; // 700 ms below threshold to close (Soniox wants >= 200 ms)
-const PREROLL_CHUNKS = 5; // 500 ms kept from before the gate opened, so a soft first syllable isn't lost
-/**
- * Voice focus: speech much quieter than this phone's own talker is someone further away.
- * A voice at ~0.5 m is roughly 12-20 dB louder than one 2-4 m away, so speech more than
- * FOCUS_MARGIN_DB below the usual level of the voice we caption is not sent for captions.
- * Learnt from the last few seconds of admitted speech, so a louder (closer) voice always passes.
- */
-const FOCUS_MARGIN_DB = 18;
-const FOCUS_HISTORY = 80; // 8 s of speech
-const FOCUS_MIN_HISTORY = 15; // 1.5 s before it starts filtering
+import { VAD, VoiceGate } from "./vad";
+
+/** Caption audio: soft sentences are lifted towards this peak level, by at most this much. */
+const CAPTION_TARGET_DB = -24;
+const CAPTION_BOOST_MAX_DB = 12;
+
+function boost(pcm: ArrayBuffer, gainDb: number): ArrayBuffer {
+  const g = Math.pow(10, gainDb / 20);
+  const src = new Int16Array(pcm);
+  const out = new Int16Array(src.length);
+  for (let i = 0; i < src.length; i++) out[i] = Math.max(-32768, Math.min(32767, Math.round(src[i] * g)));
+  return out.buffer;
+}
 
 type Level = { floor: number };
 function trackFloor(l: Level, db: number) {
@@ -45,18 +31,18 @@ export class MicCapture {
   private source: MediaStreamAudioSourceNode | null = null;
   private sink: GainNode | null = null;
   private remote: { analyser: AnalyserNode; sources: MediaStreamAudioSourceNode[]; buf: Float32Array<ArrayBuffer> } | null = null;
-  private local: Level = { floor: -60 };
   private remoteLevel: Level = { floor: -60 };
   private preroll: { pcm: ArrayBuffer; db: number }[] = [];
-  private recent: boolean[] = [];
-  private endedAt = 0;
-  private below = 0;
-  private speaking = false;
-  /** Recent levels of the speech we captioned (the person holding this phone). */
-  private near: number[] = [];
+  /** Who is speaking at this phone, decided per 100 ms chunk (lib/vad.ts). */
+  private gate = new VoiceGate();
   enabled = true;
   /** Ignore voices much quieter than the person at this phone (people further away). */
-  focus = true;
+  get focus() {
+    return this.gate.focus;
+  }
+  set focus(on: boolean) {
+    this.gate.focus = on;
+  }
 
   constructor(
     private track: MediaStreamTrack,
@@ -75,7 +61,7 @@ export class MicCapture {
     this.sink = this.ctx.createGain();
     this.sink.gain.value = 0; // keep the node pulled by the graph without playing the mic back
     this.source.connect(this.node).connect(this.sink).connect(this.ctx.destination);
-    this.node.port.onmessage = (e: MessageEvent<{ pcm: ArrayBuffer; db: number }>) => this.onLevel(e.data.pcm, e.data.db);
+    this.node.port.onmessage = (e: MessageEvent<{ pcm: ArrayBuffer; db: number; zcr?: number }>) => this.onLevel(e.data.pcm, e.data.db, e.data.zcr ?? 0);
     await this.resume();
   }
 
@@ -115,53 +101,38 @@ export class MicCapture {
     return db > -50 && db > this.remoteLevel.floor + 10;
   }
 
-  private onLevel(pcm: ArrayBuffer, db: number) {
-    if (!this.enabled) db = -120;
-    trackFloor(this.local, db);
-    const penalty = this.remoteTalking() ? DOUBLE_TALK_PENALTY_DB : 0;
-    const start = Math.max(MIN_THRESHOLD_DB, this.local.floor + ABOVE_FLOOR_DB) + penalty;
-    const stay = Math.max(STAY_MIN_THRESHOLD_DB, this.local.floor + STAY_ABOVE_FLOOR_DB) + penalty;
+  /** Loudest chunk of the sentence being sent: sets the caption-audio boost for soft speakers. */
+  private sentencePeak = -120;
 
-    if (!this.speaking) {
+  private onLevel(pcm: ArrayBuffer, db: number, zcr: number) {
+    if (!this.enabled) db = -120;
+    const ev = this.gate.push(db, zcr, this.remoteTalking(), Date.now());
+    if (ev === null) {
+      // Not speaking: keep the last second, so a soft beginning isn't lost.
       this.preroll.push({ pcm, db });
-      if (this.preroll.length > PREROLL_CHUNKS) this.preroll.shift();
-      // Just after they spoke: a soft word continues the sentence. Otherwise it must be clearly a
-      // voice, and (voice focus) not much quieter than this phone's own talker.
-      const resumed = Date.now() - this.endedAt < RESUME_MS;
-      const voiced = resumed ? db > stay : db > start && (!this.focus || db >= this.nearLevel() - FOCUS_MARGIN_DB);
-      this.recent.push(voiced);
-      if (this.recent.length > 3) this.recent.shift();
-      if ((resumed && voiced) || this.recent.filter(Boolean).length >= OPEN_CHUNKS) {
-        this.speaking = true;
-        this.below = 0;
-        this.recent = [];
-        this.onSpeech(true);
-        for (const c of this.preroll) this.onChunk(c.pcm, c.db);
-        this.preroll = [];
-      }
+      if (this.preroll.length > VAD.PREROLL_CHUNKS) this.preroll.shift();
       return;
     }
-
-    // Talking: everything above the low "stay" level counts, so quiet words aren't cut out.
-    // Voice focus only decides whether speech starts, never removes words mid-sentence.
-    this.onChunk(pcm, db);
-    if (db > start) {
-      this.near.push(db); // the talker's clear speech sets their usual level
-      if (this.near.length > FOCUS_HISTORY) this.near.shift();
+    if (ev === "start") {
+      this.sentencePeak = Math.max(db, ...this.preroll.map((c) => c.db));
+      this.onSpeech(true);
+      for (const c of this.preroll) this.send(c.pcm, c.db);
+      this.preroll = [];
     }
-    this.below = db > stay ? 0 : this.below + 1;
-    if (this.below >= HANGOVER_CHUNKS) {
-      this.speaking = false;
-      this.endedAt = Date.now();
-      this.onSpeech(false);
-    }
+    this.sentencePeak = Math.max(this.sentencePeak, db);
+    this.send(pcm, db);
+    if (ev === "stop") this.onSpeech(false);
   }
 
-  /** Typical level of this phone's talker: the 70th percentile of recent captioned speech. */
-  private nearLevel(): number {
-    if (this.near.length < FOCUS_MIN_HISTORY) return -Infinity;
-    const sorted = [...this.near].sort((a, b) => a - b);
-    return sorted[Math.floor(sorted.length * 0.7)];
+  /**
+   * Whispered or soft sentences reach speech recognition very quietly: lift them (up to +12 dB,
+   * by the sentence's loudest part so the level doesn't pump). Only the copy sent for captions;
+   * the other person hears the real voice. `db` stays the original level (used to tell who is
+   * nearest in a shared room).
+   */
+  private send(pcm: ArrayBuffer, db: number) {
+    const gainDb = Math.min(CAPTION_BOOST_MAX_DB, Math.max(0, CAPTION_TARGET_DB - this.sentencePeak));
+    this.onChunk(gainDb > 0.5 ? boost(pcm, gainDb) : pcm, db);
   }
 
   stop() {

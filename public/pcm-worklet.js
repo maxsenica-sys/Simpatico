@@ -10,6 +10,8 @@ class PcmCapture extends AudioWorkletProcessor {
     this.accN = 0;
     this.t = 0;
     this.energy = 0;
+    this.crossings = 0;
+    this.prev = 0;
   }
 
   process(inputs) {
@@ -29,15 +31,20 @@ class PcmCapture extends AudioWorkletProcessor {
         if (s > 1) s = 1;
         else if (s < -1) s = -1;
         this.energy += s * s;
+        // Zero crossings: breathy / whispered sound crosses zero far more often than voiced sound.
+        if ((s >= 0) !== (this.prev >= 0)) this.crossings++;
+        this.prev = s;
         this.chunk[this.n++] = s < 0 ? s * 0x8000 : s * 0x7fff;
         if (this.n === this.chunk.length) {
           const rms = Math.sqrt(this.energy / this.n);
           const db = rms > 0 ? 20 * Math.log10(rms) : -120;
           const out = this.chunk;
-          this.port.postMessage({ pcm: out.buffer, db }, [out.buffer]);
+          const zcr = this.crossings / this.n;
+          this.port.postMessage({ pcm: out.buffer, db, zcr }, [out.buffer]);
           this.chunk = new Int16Array(1600);
           this.n = 0;
           this.energy = 0;
+          this.crossings = 0;
         }
       }
     }

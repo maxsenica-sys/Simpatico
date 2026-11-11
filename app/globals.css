@@ -377,3 +377,71 @@ p { margin: 0; line-height: 1.5; }
   .round { width: 41px; height: 41px; }
   .ctrl-label { font-size: 0.6rem; }
 }
+
+/* ---------------------------------------------------------------- "Me" (profile) */
+.home { position: relative; }
+.me-btn {
+  position: absolute; top: calc(12px + var(--safe-t)); right: 16px; display: flex; align-items: center; gap: 8px;
+  padding: 4px 12px 4px 4px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--text);
+  text-decoration: none; font-weight: 600; font-size: 0.9rem; z-index: 2;
+}
+.me-btn .avatar { width: 34px; height: 34px; font-size: 0.85rem; }
+.hello { margin: -6px 0 -10px; color: var(--muted); font-weight: 600; }
+.avatar.xl { width: 88px; height: 88px; font-size: 2rem; background: linear-gradient(135deg, #5b8cff, #5fe0bd); color: #0b0d10; }
+
+.profile { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; padding-bottom: calc(40px + var(--safe-b)); }
+.profile-head { display: grid; grid-template-columns: 44px 1fr 90px; align-items: center; gap: 8px; }
+.profile-head h1 { margin: 0; text-align: center; font-size: 1.25rem; }
+.profile-head .round-btn { text-decoration: none; color: var(--text); font-size: 1.3rem; }
+.saved { justify-self: end; font-size: 0.82rem; color: #3ddc84; opacity: 0; transition: opacity 0.2s ease; }
+.saved.on { opacity: 1; }
+.profile-hero { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 6px 12px; }
+.profile-hero p { margin: 0; max-width: 34ch; }
+.pcard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.pcard h2 { margin: 0; font-size: 1rem; }
+.pcard p { margin: 0; }
+.pcard.quiet { background: transparent; align-items: flex-start; }
+.chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 6px 6px 12px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); font-weight: 600; font-size: 0.92rem; }
+.chip button { width: 24px; height: 24px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, 0.08); color: var(--text); cursor: pointer; font-size: 1rem; line-height: 1; }
+.add-row { display: flex; gap: 8px; }
+.add-row input { flex: 1; min-width: 0; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.add-row input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.topics { display: flex; flex-wrap: wrap; gap: 8px; }
+.topic { padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); font: inherit; font-weight: 600; font-size: 0.92rem; cursor: pointer; transition: background 0.15s ease, transform 0.1s ease; }
+.topic:active { transform: scale(0.96); }
+.topic.on { background: rgba(91, 140, 255, 0.18); border-color: var(--accent); }
+.caption-prefs.flat { border: 0; padding: 0; }
+
+.joining-as { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); font-weight: 600; }
+.joining-as .avatar { width: 36px; height: 36px; font-size: 0.9rem; background: linear-gradient(135deg, #5b8cff, #5fe0bd); color: #0b0d10; }
+.joining-as .link { margin-left: auto; }
+
+/* ---------------------------------------------------------------- end of call */
+.end-screen { background: radial-gradient(ellipse at 50% 0%, rgba(91, 140, 255, 0.16), transparent 60%), var(--bg); }
+.end-card { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; animation: rise 0.3s ease; }
+.end-card h1 { margin: 6px 0 0; font-size: 1.7rem; }
+.end-card > p { margin: 0; }
+.end-badge { width: 92px; height: 92px; border-radius: 28px; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 10px 40px rgba(91, 140, 255, 0.18); }
+.end-actions { width: 100%; display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.end-actions .tile { flex: 1 1 0; min-width: 0; }
+.end-actions .tile.primary { flex-basis: 100%; }
+.tile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 104px; padding: 14px 10px;
+  border-radius: 20px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-weight: 650;
+  text-decoration: none; cursor: pointer; transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.tile:hover { border-color: rgba(255, 255, 255, 0.2); }
+.tile:active { transform: scale(0.97); }
+.tile:disabled { opacity: 0.6; }
+.tile.primary { min-height: 88px; flex-direction: row; gap: 12px; font-size: 1.1rem; background: linear-gradient(135deg, #5b8cff, #4f7df0); border-color: transparent; color: #fff; box-shadow: 0 8px 28px rgba(91, 140, 255, 0.35); }
+.tile-icon { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.07); font-size: 1.35rem; line-height: 1; }
+.tile.primary .tile-icon { background: rgba(255, 255, 255, 0.18); }
+.quick-rate { margin-top: 18px; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+.faces { display: flex; gap: 14px; }
+.face { width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); font-size: 1.6rem; cursor: pointer; transition: transform 0.12s ease; }
+.face:hover { transform: scale(1.08); }
+.face:active { transform: scale(0.94); }
+.thanks-row { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+.more { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.more textarea { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; resize: vertical; }

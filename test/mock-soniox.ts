@@ -41,7 +41,7 @@ wss.on("connection", (ws, req) => {
       const msg = JSON.parse(s);
       if (!config) {
         config = msg;
-        console.log(JSON.stringify({ mock: "soniox_config", auth: auth?.slice(0, 12), hints: msg.language_hints, target: msg.translation?.target_language ?? null, open: openSockets }));
+        console.log(JSON.stringify({ mock: "soniox_config", auth: auth?.slice(0, 12), hints: msg.language_hints, target: msg.translation?.target_language ?? null, open: openSockets, terms: msg.context?.terms?.slice(0, 6) }));
         return;
       }
       if (msg.type === "finalize") finalizeAll("<fin>");

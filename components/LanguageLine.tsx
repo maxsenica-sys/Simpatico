@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n";
 import { langFromChoice } from "@/lib/prefs";
+import { loadProfile } from "@/lib/profile";
 import { baseLang, langInfo } from "@/shared/lang";
 import { LANGUAGES } from "@/shared/languages";
 import { useLang } from "./LangRoot";
@@ -21,11 +22,24 @@ function inlineName(code: string, ui: string, native: string): string {
   return native;
 }
 
+/** "Australian English", "español de México": only when the browser has a name for the pair. */
+function regionalName(code: string, region: string, ui: string): string | null {
+  try {
+    const name = new Intl.DisplayNames([ui], { type: "language", fallback: "none" }).of(`${code}-${region}`);
+    return name && !name.includes("(") ? name : null;
+  } catch {
+    return null;
+  }
+}
+
 /** The only place language is ever surfaced: one line, with a quiet "change". */
 export function LanguageLine() {
   const t = useT();
   const { lang, setLang } = useLang();
   const [open, setOpen] = useState(false);
+  // Where you're from ("Me") gives the variety: "Australian English".
+  const [from, setFrom] = useState<string | null>(null);
+  useEffect(() => setFrom(loadProfile().from), []);
   const current = baseLang(lang.speaks) ?? "en";
   return (
     <div className="langline">
@@ -48,7 +62,7 @@ export function LanguageLine() {
         </select>
       ) : (
         <>
-          <span>{t("youSpeak", { lang: inlineName(current, baseLang(lang.ui) ?? current, langInfo(lang.speaks).native) })}</span>
+          <span>{t("youSpeak", { lang: (from && regionalName(current, from, baseLang(lang.ui) ?? current)) || inlineName(current, baseLang(lang.ui) ?? current, langInfo(lang.speaks).native) })}</span>
           <span className="dot">·</span>
           <button className="link" onClick={() => setOpen(true)}>
             {t("change")}

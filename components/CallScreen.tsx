@@ -7,6 +7,7 @@ import { saveTranscript, transcriptText } from "@/lib/transcriptFile";
 import { langInfo } from "@/shared/lang";
 import { useT } from "@/lib/i18n";
 import { Captions } from "./Captions";
+import { LogoMark } from "./Logo";
 import { Notice } from "./Notice";
 import { SelfView, type SelfMode } from "./SelfView";
 import { ShareLink } from "./ShareLink";
@@ -486,6 +487,7 @@ function EndScreen({ call, s, onSave, onRejoin }: { call: CallController; s: Cal
   const [rating, setRating] = useState<"great" | "ok" | "bad" | null>(null);
   const [comment, setComment] = useState("");
   const [sent, setSent] = useState(false);
+  const [more, setMore] = useState(false);
   const pending = useRef<string | null>(null);
 
   const body = (r: string, c: string) =>
@@ -520,52 +522,117 @@ function EndScreen({ call, s, onSave, onRejoin }: { call: CallController; s: Cal
   }, []);
 
   const hadCall = s.startedAt !== null;
+  const minutes = s.startedAt && s.endedAt ? Math.round((s.endedAt - s.startedAt) / 60000) : 0;
+  const duration = minutes < 1 ? t("underMinute") : t("minutesShort", { n: String(minutes) });
+  const people = Object.values(s.names).filter(Boolean);
+  const hasTranscript = s.transcript.some((l) => l.final);
+  // A fresh call of the same kind (one-to-one or group), straight to its join screen.
+  const [starting, setStarting] = useState(false);
+  const newCall = async () => {
+    setStarting(true);
+    try {
+      const res = await fetch(`/api/rooms?kind=${s.kind}`, { method: "POST" });
+      const { code } = (await res.json()) as { code: string };
+      location.assign(`/r/${code}`);
+    } catch {
+      setStarting(false);
+    }
+  };
+  // One tap sends the rating; the comment is optional and never required.
+  const rate = (r: "great" | "ok" | "bad") => {
+    setRating(r);
+    post(body(r, ""));
+    setSent(true);
+  };
   return (
-    <main className="screen center">
-      <div className="card notice end">
+    <main className="screen center end-screen">
+      <div className="end-card">
+        <div className="end-badge" aria-hidden="true">
+          <LogoMark size={56} />
+        </div>
         <h1>{t("callEnded")}</h1>
-        {hadCall && !sent && (
-          <section className="feedback" aria-label={t("howWasCall")}>
-            <p>{t("howWasCall")}</p>
-            <div className="rate" role="radiogroup" aria-label={t("howWasCall")}>
-              {(["great", "ok", "bad"] as const).map((r) => (
-                <button key={r} role="radio" aria-checked={rating === r} className={`btn rate-${r} ${rating === r ? "on" : ""}`} onClick={() => setRating(r)}>
-                  {r === "great" ? t("rateGreat") : r === "ok" ? t("rateOk") : t("rateBad")}
-                </button>
-              ))}
-            </div>
-            {rating && (
-              <>
-                <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder={t("commentPlaceholder")} maxLength={1000} rows={3} />
-                <button
-                  className="btn primary"
-                  onClick={() => {
-                    post(body(rating, comment));
-                    setSent(true);
-                  }}
-                >
-                  {t("sendFeedback")}
-                </button>
-              </>
-            )}
-          </section>
-        )}
-        {sent && <p className="muted" role="status">{t("thanks")}</p>}
-        <div className="actions">
-          {s.transcript.some((l) => l.final) && (
-            <button className="btn" onClick={onSave}>
+        {hadCall && <p className="muted">{people.length ? t("callSummary", { minutes: duration, names: people.join(", ") }) : t("callSummaryAlone", { minutes: duration })}</p>}
+
+        <nav className="end-actions">
+          <button className="tile primary" onClick={onRejoin}>
+            <span className="tile-icon" aria-hidden="true">
+              <PhoneIcon />
+            </span>
+            {t("callAgain")}
+          </button>
+          <button className="tile" onClick={() => void newCall()} disabled={starting}>
+            <span className="tile-icon" aria-hidden="true">
+              ＋
+            </span>
+            {starting ? t("starting") : t("newCall")}
+          </button>
+          <Link className="tile" href="/">
+            <span className="tile-icon" aria-hidden="true">
+              ⌂
+            </span>
+            {t("backHome")}
+          </Link>
+          {hasTranscript && (
+            <button className="tile" onClick={onSave}>
+              <span className="tile-icon" aria-hidden="true">
+                ⤓
+              </span>
               {t("saveTranscript")}
             </button>
           )}
-          <Link className="btn primary" href="/">
-            {t("backHome")}
-          </Link>
-          <button className="btn" onClick={onRejoin}>
-            {t("rejoin")}
-          </button>
-        </div>
+        </nav>
+
+        {hadCall && (
+          <section className="quick-rate" aria-label={t("quickRate")}>
+            {!sent ? (
+              <>
+                <span className="muted small">{t("quickRate")}</span>
+                <div className="faces" role="group" aria-label={t("quickRate")}>
+                  {(["great", "ok", "bad"] as const).map((r) => (
+                    <button key={r} className="face" aria-label={r === "great" ? t("rateGreat") : r === "ok" ? t("rateOk") : t("rateBad")} onClick={() => rate(r)}>
+                      {r === "great" ? "😀" : r === "ok" ? "😐" : "🙁"}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="thanks-row">
+                <span className="small">{t("thanks")}</span>
+                {!more && rating && (
+                  <button className="link small" onClick={() => setMore(true)}>
+                    {t("tellUsMore")}
+                  </button>
+                )}
+                {more && rating && (
+                  <div className="more">
+                    <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder={t("commentPlaceholder")} maxLength={1000} rows={3} />
+                    <button
+                      className="btn small primary"
+                      onClick={() => {
+                        post(body(rating, comment));
+                        setMore(false);
+                        setComment("");
+                      }}
+                      disabled={!comment.trim()}
+                    >
+                      {t("sendFeedback")}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </main>
+  );
+}
+
+function PhoneIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z" />
+    </svg>
   );
 }
 

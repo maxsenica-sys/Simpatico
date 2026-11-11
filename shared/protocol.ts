@@ -41,7 +41,7 @@ export type SignalData =
   | ({ kind: "status" } & PeerStatus);
 
 export type ClientMsg =
-  | { t: "join"; room: string; peerId: string; lang: ParticipantLang; name?: string; inRoom?: boolean; captionStyle?: CaptionStyle; gender?: Gender }
+  | { t: "join"; room: string; peerId: string; lang: ParticipantLang; name?: string; inRoom?: boolean; captionStyle?: CaptionStyle; gender?: Gender; profile?: SpeakerProfile }
   /** Ask one peer (or every peer) to send a fresh offer: our connection to them is gone. */
   | { t: "need-offer"; to?: string }
   | { t: "signal"; to: string; data: SignalData }
@@ -65,6 +65,14 @@ export type CaptionStyle = "steady" | "instant";
  * for "I" and "you" (Russian "я устал/устала", Portuguese "obrigado/obrigada", Arabic "أنتَ/أنتِ").
  */
 export type Gender = "m" | "f";
+
+export type Topic = "sport" | "family" | "work" | "school" | "travel" | "food" | "gaming" | "music" | "health" | "faith";
+
+/**
+ * Optional "Me" profile sent with a call (kept on the phone; the server holds it in memory for
+ * the call only): where you're from (accent, slang), names and words you use, usual topics.
+ */
+export type SpeakerProfile = { from?: string; words?: string[]; topics?: Topic[] };
 
 /** Stages of a caption line, in the order they can occur. */
 export type CaptionStage =

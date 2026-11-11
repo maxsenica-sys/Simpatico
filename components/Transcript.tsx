@@ -1,11 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { TranscriptLine } from "@/lib/call";
-import type { CaptionPrefs, CaptionSize } from "@/lib/captionPrefs";
+import type { CaptionPrefs } from "@/lib/captionPrefs";
+import { CaptionSettings } from "./CaptionSettings";
 import { useT } from "@/lib/i18n";
-import { hasMicModes, showMicModes } from "@/lib/native";
-
-const SIZES: CaptionSize[] = ["s", "m", "l", "xl"];
 
 export function Transcript({
   lines,
@@ -57,7 +55,17 @@ export function Transcript({
             aria-controls="caption-prefs"
             onClick={() => setSettings((v) => !v)}
           >
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              width="22"
+              height="22"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <circle cx="12" cy="12" r="3" />
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
             </svg>
@@ -75,63 +83,7 @@ export function Transcript({
       </header>
       {settings && (
         <div className="caption-prefs" id="caption-prefs">
-          <div className="seg" role="radiogroup" aria-label={t("captionStyle")}>
-            <span className="muted small">{t("captionStyle")}</span>
-            {(["instant", "steady"] as const).map((st) => (
-              <button
-                key={st}
-                role="radio"
-                aria-checked={prefs.style === st}
-                className={`seg-btn wide ${prefs.style === st ? "on" : ""}`}
-                onClick={() => onPrefs({ ...prefs, style: st, styleSet: true })}
-              >
-                {t(st === "steady" ? "styleSteady" : "styleInstant")}
-              </button>
-            ))}
-          </div>
-          <p className="muted small style-hint">
-            {t(
-              prefs.style === "steady" ? "styleSteadyHint" : "styleInstantHint",
-            )}
-          </p>
-          <div className="seg" role="radiogroup" aria-label={t("captionSize")}>
-            <span className="muted small">{t("captionSize")}</span>
-            {SIZES.map((s, i) => (
-              <button
-                key={s}
-                role="radio"
-                aria-checked={prefs.size === s}
-                className={`seg-btn ${prefs.size === s ? "on" : ""}`}
-                style={{ fontSize: `${0.8 + i * 0.18}rem` }}
-                onClick={() => onPrefs({ ...prefs, size: s })}
-              >
-                A
-              </button>
-            ))}
-          </div>
-          <button
-            role="switch"
-            aria-checked={prefs.focus}
-            className={`seg-btn wide ${prefs.focus ? "on" : ""}`}
-            onClick={() => onPrefs({ ...prefs, focus: !prefs.focus })}
-          >
-            {t("voiceFocus")}
-          </button>
-          <p className="muted small style-hint">{t("voiceFocusHint")}</p>
-          {hasMicModes() && (
-            <button className="btn small" onClick={() => void showMicModes()}>
-              {t("micModes")}
-            </button>
-          )}
-          <button
-            role="switch"
-            aria-checked={prefs.box}
-            className={`seg-btn wide ${prefs.box ? "on" : ""}`}
-            onClick={() => onPrefs({ ...prefs, box: !prefs.box })}
-          >
-            {t("captionBox")}
-          </button>
-          <p className="muted small kbd-hint">{t("shortcuts")}</p>
+          <CaptionSettings prefs={prefs} onPrefs={onPrefs} />
         </div>
       )}
       <div className="sheet-body" aria-live="polite">

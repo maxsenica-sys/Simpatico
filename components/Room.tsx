@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { CallController } from "@/lib/call";
 import { loadCaptionPrefs } from "@/lib/captionPrefs";
+import { callLang, loadProfile, speakerProfile } from "@/lib/profile";
 import type { RoomKind } from "@/shared/protocol";
 import { detectEnv, systemBrowserUrl, type BrowserEnv } from "@/lib/env";
 import { useT } from "@/lib/i18n";
@@ -127,8 +128,17 @@ export function Room({ code }: { code: string }) {
       stream={media instanceof MediaStream ? media : null}
       group={room.kind === "group" ? { max: room.max } : null}
       onJoin={({ audioOnly, name, inRoom, gender }) => {
+        const me = loadProfile();
         if (!(media instanceof MediaStream)) return;
-        const c = new CallController(code, peerIdFor(code), lang, media, { audioOnly, name, inRoom, gender, captionStyle: loadCaptionPrefs().style, voiceFocus: loadCaptionPrefs().focus });
+        const c = new CallController(code, peerIdFor(code), callLang(lang, me), media, {
+          audioOnly,
+          name,
+          inRoom,
+          gender,
+          profile: speakerProfile(me),
+          captionStyle: loadCaptionPrefs().style,
+          voiceFocus: loadCaptionPrefs().focus,
+        });
         callRef.current = c;
         c.start();
         setCall(c);

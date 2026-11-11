@@ -67,10 +67,14 @@ export default function Privacy() {
           translation you saw, and the two languages. No names, audio or other parts of the conversation are saved with it. We use these reports to teach the app slang,
           names and phrasing it gets wrong. Only tap it if you are happy for that sentence to be kept; you can ask us to delete reports at {BRAND.contactEmail}.
         </p>
-        <h3>Your name and gender</h3>
+        <h3>Your profile (&ldquo;Me&rdquo;)</h3>
         <p>
-          The name and gender you choose when joining are shown to (name) or used for (gender, for grammar in languages such as Russian or Arabic) the other people in the
-          call. They are saved in your own browser for next time, and held by our server only while you are in the call.
+          Your name, gender, where you&rsquo;re from, the names and words you add, your usual topics and caption settings are saved only in your own browser or app on
+          this device. We have no account for you. When you join a call, your name is shown to the other people, and the rest is sent to our server and held in memory
+          only while you are in the call: gender is used for grammar in languages such as Russian or Arabic, and where you&rsquo;re from, your words and topics help
+          speech recognition spell your words and the translation understand your slang. Your words and topics are also given to Soniox (as recognition hints) and
+          Anthropic (with the sentence being translated). Nothing of your profile is stored by us after the call. &ldquo;Clear my profile&rdquo; removes it from your
+          device.
         </p>
         <h3>Technical logs</h3>
         <p>

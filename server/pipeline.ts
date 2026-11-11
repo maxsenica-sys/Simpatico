@@ -1,5 +1,5 @@
 import { baseLang, sameLanguage } from "../shared/lang";
-import type { CaptionStage, CaptionState } from "../shared/protocol";
+import type { CaptionStage, CaptionState, SpeakerProfile } from "../shared/protocol";
 import { log } from "./log";
 import { phraseTranslate, refine, refineConfigured, type ContextLine, type People } from "./refine";
 import { SonioxStream, sonioxConfigured, type SonioxToken } from "./soniox";
@@ -86,6 +86,8 @@ export interface PipelineHost {
   settled?(id: string, source: string, translation: string): void;
   /** Names of the people in the call, so speech recognition spells them right. */
   names?(): string[];
+  /** The speaker's optional profile: where they're from, their words and usual topics. */
+  profile?(): SpeakerProfile;
   /** Optional genders of the speaker and (when there is exactly one) the reader, for grammar. */
   people?(): People;
   /** Reading styles wanted by this pipeline's readers right now. Both when not given. */
@@ -384,6 +386,7 @@ export class SpeakerPipeline {
       targetLang: this.reads!,
       context: this.host.context(),
       people: this.host.people?.(),
+      profile: this.host.profile?.(),
       signal: AbortSignal.timeout(STEADY_TIMEOUT_MS),
     }).then((text) => {
       u.steadyBusy = false;
@@ -503,6 +506,7 @@ export class SpeakerPipeline {
       targetLang: this.reads!,
       context: this.host.context(),
       people: this.host.people?.(),
+      profile: this.host.profile?.(),
       signal: AbortSignal.timeout(PREVIEW_TIMEOUT_MS),
       onPartial: show,
     }).then((text) => {
@@ -600,6 +604,7 @@ export class SpeakerPipeline {
       context,
       glossary: this.host.glossary(),
       people: this.host.people?.(),
+      profile: this.host.profile?.(),
       signal: abort.signal,
     }).then((refined) => {
       clearTimeout(deadline);

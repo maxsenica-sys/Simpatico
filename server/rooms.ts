@@ -1,7 +1,7 @@
 import { randomInt } from "node:crypto";
 import type { WebSocket } from "ws";
 import { baseLang, type ParticipantLang } from "../shared/lang";
-import type { CaptionStyle, Gender, PeerInfo, RoomKind, ServerMsg } from "../shared/protocol";
+import type { CaptionStyle, Gender, PeerInfo, RoomKind, ServerMsg, SpeakerProfile, Topic } from "../shared/protocol";
 import { log } from "./log";
 import { SpeakerPipeline, type ReaderMsg } from "./pipeline";
 import { append } from "./store";
@@ -53,6 +53,8 @@ export type Peer = {
   captionStyle: CaptionStyle;
   /** Optional, for grammatical gender in translations. */
   gender?: Gender;
+  /** Optional "Me" profile from their phone (memory only, gone with the room). */
+  profile: SpeakerProfile;
 };
 
 export type Room = {
@@ -135,6 +137,20 @@ function expired(room: Room) {
   return room.emptySince !== null && now - room.emptySince > EMPTY_TTL_MS;
 }
 
+const TOPICS: Topic[] = ["sport", "family", "work", "school", "travel", "food", "gaming", "music", "health", "faith"];
+
+/** Only short, plain values get through: it goes into prompts and speech-recognition context. */
+export function cleanProfile(raw: unknown): SpeakerProfile {
+  if (!raw || typeof raw !== "object") return {};
+  const r = raw as Record<string, unknown>;
+  const from = typeof r.from === "string" && /^[A-Z]{2}$/.test(r.from) ? r.from : undefined;
+  const words = Array.isArray(r.words)
+    ? [...new Set(r.words.filter((w): w is string => typeof w === "string").map((w) => w.replace(/[\u0000-\u001f<>"]/g, "").trim().slice(0, 40)).filter(Boolean))].slice(0, 30)
+    : [];
+  const topics = Array.isArray(r.topics) ? (r.topics.filter((t) => TOPICS.includes(t as Topic)) as Topic[]).slice(0, 10) : [];
+  return { from, words: words.length ? words : undefined, topics: topics.length ? topics : undefined };
+}
+
 function cleanName(name: unknown, label: string): string {
   const n = typeof name === "string" ? name.replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 40) : "";
   return n || `Guest ${label}`;
@@ -146,7 +162,7 @@ export function seat(
   peerId: string,
   lang: ParticipantLang,
   ws: WebSocket,
-  opts: { name?: string; inRoom?: boolean; device?: string; captionStyle?: unknown; gender?: unknown } = {},
+  opts: { name?: string; inRoom?: boolean; device?: string; captionStyle?: unknown; gender?: unknown; profile?: unknown } = {},
 ): { peer: Peer; fresh: boolean } | "room-full" {
   let peer = room.peers.get(peerId);
   let fresh = false;
@@ -159,7 +175,7 @@ export function seat(
     }
     const used = new Set([...room.peers.values()].map((p) => p.label));
     const label = [...LABELS].find((l) => !used.has(l)) ?? `P${room.peers.size + 1}`;
-    peer = { id: peerId, label, name: "", lang, inRoom: false, ws: null, graceTimer: null, pipelines: new Map(), primaryKey: null, speaking: false, captionStyle: "instant" };
+    peer = { id: peerId, label, name: "", lang, inRoom: false, ws: null, graceTimer: null, pipelines: new Map(), primaryKey: null, speaking: false, captionStyle: "instant", profile: {} };
     room.peers.set(peerId, peer);
     fresh = true;
   }
@@ -172,6 +188,7 @@ export function seat(
   peer.inRoom = room.kind === "group" && !!opts.inRoom;
   peer.captionStyle = opts.captionStyle === "steady" ? "steady" : "instant";
   peer.gender = opts.gender === "m" || opts.gender === "f" ? opts.gender : undefined;
+  peer.profile = cleanProfile(opts.profile);
   room.emptySince = null;
   const connected = [...room.peers.values()].filter((p) => p.ws).length;
   room.stats.people.add(peerId);
@@ -326,7 +343,9 @@ function makePipeline(room: Room, p: Peer, key: string): SpeakerPipeline {
     billed: (seconds) => {
       room.stats.captionSeconds += seconds;
     },
-    names: () => [...room.peers.values()].map((x) => x.name),
+    // Everyone's names and their own words: any of them may come up in this person's speech.
+    names: () => [...room.peers.values()].flatMap((x) => [x.name, ...(x.profile.words ?? [])]),
+    profile: () => p.profile,
     settled: (id, source, translation) => {
       room.recent.set(id, { from: p.id, source, translation, srcLang: p.lang.speaks, tgtLang: key === "same" ? p.lang.speaks : key });
       if (room.recent.size > RECENT_LINES) room.recent.delete(room.recent.keys().next().value!);

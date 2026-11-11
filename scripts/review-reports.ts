@@ -79,7 +79,7 @@ const res = await client.messages.parse({
 
 For each report decide what, if anything, would have prevented the mistake:
 - kind "term": a word or name speech recognition should know, spelled as it should be written (a person, character, brand, place, or a slang word it misheard). Only when the source looks misheard.
-- kind "slang": a phrase the translator should understand, written as "phrase = meaning" (e.g. "flat out = very busy"), for slang, idioms or regional expressions it translated literally or wrongly.
+- kind "slang": a phrase the translator should understand, written as "phrase = meaning" (e.g. "flat out = very busy"), for slang, idioms or regional expressions it translated literally or wrongly. When the meaning depends on region or context, say so instead of picking one (e.g. "footy = the local football code: AFL in most of Australia, rugby league in NSW and Queensland; follow the context").
 Skip reports where the translation was actually fine, or the problem was something else (a cut-off sentence, noise). Never add anything sensitive or personal (no private names except well-known people or characters). Keep each entry short. Don't repeat entries already in the current additions.`,
   messages: [
     {

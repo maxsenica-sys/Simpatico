@@ -1,6 +1,6 @@
 "use client";
 import type { ParticipantLang } from "@/shared/lang";
-import type { CaptionStage, CaptionState, CaptionStyle, Gender, ClientMsg, PeerInfo, PeerStatus, RoomKind, ServerMsg, SignalData } from "@/shared/protocol";
+import type { CaptionStage, CaptionState, CaptionStyle, Gender, SpeakerProfile, ClientMsg, PeerInfo, PeerStatus, RoomKind, ServerMsg, SignalData } from "@/shared/protocol";
 import { MicCapture } from "./audio";
 import { ScreenAwake } from "./wakeLock";
 import { getCameraTrack, getMicTrack, hasMultipleCameras, isMobileDevice } from "./media";
@@ -185,7 +185,7 @@ export class CallController {
     private lang: ParticipantLang,
     /** Our local stream. Its tracks change as the camera turns on/off or is recovered. */
     readonly local: MediaStream,
-    private opts: { audioOnly?: boolean; name?: string; inRoom?: boolean; captionStyle?: CaptionStyle; voiceFocus?: boolean; gender?: Gender } = {},
+    private opts: { audioOnly?: boolean; name?: string; inRoom?: boolean; captionStyle?: CaptionStyle; voiceFocus?: boolean; gender?: Gender; profile?: SpeakerProfile } = {},
   ) {
     const hasVideo = local.getVideoTracks().some((t) => t.readyState === "live");
     const audioOnly = !!opts.audioOnly;
@@ -579,6 +579,7 @@ export class CallController {
           name: this.opts.name,
           captionStyle: this.opts.captionStyle,
           gender: this.opts.gender,
+          profile: this.opts.profile,
           inRoom: this.state.inRoom,
         } satisfies ClientMsg),
       );

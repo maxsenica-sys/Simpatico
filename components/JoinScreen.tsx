@@ -5,6 +5,7 @@ import { useT } from "@/lib/i18n";
 import type { Gender } from "@/shared/protocol";
 import { LanguageLine } from "./LanguageLine";
 import { Logo } from "./Logo";
+import { initials } from "./ProfileScreen";
 
 const NAME_KEY = "talk.name";
 const GENDER_KEY = "talk.gender";
@@ -16,7 +17,12 @@ const readName = () => {
   }
 };
 
-export type JoinChoice = { audioOnly: boolean; name: string; inRoom?: boolean; gender?: Gender };
+export type JoinChoice = {
+  audioOnly: boolean;
+  name: string;
+  inRoom?: boolean;
+  gender?: Gender;
+};
 type GenderChoice = Gender | "x";
 
 export function JoinScreen({
@@ -54,7 +60,17 @@ export function JoinScreen({
     } catch {}
   };
   const nameRef = useRef<HTMLInputElement>(null);
-  useEffect(() => setName(readName()), []);
+  // Known from "Me" (or a previous call): show "Joining as Max · Change" instead of the form.
+  const [editing, setEditing] = useState(true);
+  useEffect(() => {
+    const n = readName();
+    setName(n);
+    let g: string | null = null;
+    try {
+      g = localStorage.getItem(GENDER_KEY);
+    } catch {}
+    setEditing(!(n.trim() && (g === "m" || g === "f" || g === "x")));
+  }, []);
   useEffect(() => {
     if (video.current && stream) {
       video.current.srcObject = stream;
@@ -67,6 +83,7 @@ export function JoinScreen({
   const join = (audioOnly: boolean) => {
     const n = name.trim();
     if (!n || !gender) {
+      setEditing(true);
       setMissing(!n);
       setMissingGender(!gender);
       (n ? genderRef.current : nameRef.current)?.focus();
@@ -75,61 +92,93 @@ export function JoinScreen({
     try {
       localStorage.setItem(NAME_KEY, n);
     } catch {}
-    onJoin({ audioOnly, name: n, inRoom: group ? inRoom : undefined, gender: gender === "x" ? undefined : gender });
+    onJoin({
+      audioOnly,
+      name: n,
+      inRoom: group ? inRoom : undefined,
+      gender: gender === "x" ? undefined : gender,
+    });
   };
 
   return (
     <main className="screen join">
       <header className="join-head">
         <Logo small />
-        {group && <span className="muted small group-tag">{t("groupCall")}</span>}
+        {group && (
+          <span className="muted small group-tag">{t("groupCall")}</span>
+        )}
       </header>
       <div className="preview">
-        {hasVideo ? <video ref={video} className="mirror" autoPlay playsInline muted /> : <div className="preview-empty">{stream ? "" : t("cameraStarting")}</div>}
+        {hasVideo ? (
+          <video ref={video} className="mirror" autoPlay playsInline muted />
+        ) : (
+          <div className="preview-empty">
+            {stream ? "" : t("cameraStarting")}
+          </div>
+        )}
       </div>
       <section className="join-panel">
         <LanguageLine />
         {/* Name and gender, side by side: both needed before joining. Gender is for languages
             that change words for "I" and "you" (Russian, Arabic, Portuguese, Hindi…). */}
-        <div className="who-row">
-          <label className={`field name-field ${missing ? "invalid" : ""}`}>
-            <span>{t("yourName")}</span>
-            <input
-              ref={nameRef}
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                if (e.target.value.trim()) setMissing(false);
-              }}
-              onKeyDown={(e) => e.key === "Enter" && join(!hasVideo)}
-              maxLength={40}
-              autoComplete="given-name"
-              enterKeyHint="go"
-              required
-              aria-invalid={missing}
-              aria-describedby={missing ? "name-error" : undefined}
-            />
-          </label>
-          <label className={`field gender-field ${missingGender ? "invalid" : ""}`}>
-            <span>{t("gender")}</span>
-            <select
-              ref={genderRef}
-              className="gender-select"
-              value={gender ?? ""}
-              onChange={(e) => pickGender(e.target.value as GenderChoice)}
-              required
-              aria-invalid={missingGender}
-              aria-describedby={missingGender ? "gender-error" : undefined}
+        {!editing && (
+          <div className="joining-as">
+            <span className="avatar" aria-hidden="true">
+              {initials(name)}
+            </span>
+            <span>{t("joiningAs", { name: name.trim() })}</span>
+            <button
+              type="button"
+              className="link"
+              onClick={() => setEditing(true)}
             >
-              <option value="" disabled>
-                {t("genderPick")}
-              </option>
-              <option value="m">{t("genderMale")}</option>
-              <option value="f">{t("genderFemale")}</option>
-              <option value="x">{t("genderNone")}</option>
-            </select>
-          </label>
-        </div>
+              {t("changeProfile")}
+            </button>
+          </div>
+        )}
+        {editing && (
+          <div className="who-row">
+            <label className={`field name-field ${missing ? "invalid" : ""}`}>
+              <span>{t("yourName")}</span>
+              <input
+                ref={nameRef}
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (e.target.value.trim()) setMissing(false);
+                }}
+                onKeyDown={(e) => e.key === "Enter" && join(!hasVideo)}
+                maxLength={40}
+                autoComplete="given-name"
+                enterKeyHint="go"
+                required
+                aria-invalid={missing}
+                aria-describedby={missing ? "name-error" : undefined}
+              />
+            </label>
+            <label
+              className={`field gender-field ${missingGender ? "invalid" : ""}`}
+            >
+              <span>{t("gender")}</span>
+              <select
+                ref={genderRef}
+                className="gender-select"
+                value={gender ?? ""}
+                onChange={(e) => pickGender(e.target.value as GenderChoice)}
+                required
+                aria-invalid={missingGender}
+                aria-describedby={missingGender ? "gender-error" : undefined}
+              >
+                <option value="" disabled>
+                  {t("genderPick")}
+                </option>
+                <option value="m">{t("genderMale")}</option>
+                <option value="f">{t("genderFemale")}</option>
+                <option value="x">{t("genderNone")}</option>
+              </select>
+            </label>
+          </div>
+        )}
         {missing && (
           <span id="name-error" className="field-error" role="alert">
             {t("nameRequired")}
@@ -143,7 +192,11 @@ export function JoinScreen({
         {group && (
           <>
             <label className="check">
-              <input type="checkbox" checked={inRoom} onChange={(e) => setInRoom(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={inRoom}
+                onChange={(e) => setInRoom(e.target.checked)}
+              />
               <span>
                 {t("inRoomLabel")}
                 <small className="muted">{t("inRoomHint")}</small>
@@ -153,15 +206,27 @@ export function JoinScreen({
         )}
         {hasVideo ? (
           <>
-            <button className="btn primary big" disabled={!stream} onClick={() => join(false)}>
+            <button
+              className="btn primary big"
+              disabled={!stream}
+              onClick={() => join(false)}
+            >
               {t("joinVideo")}
             </button>
-            <button className="btn big secondary" disabled={!stream} onClick={() => join(true)}>
+            <button
+              className="btn big secondary"
+              disabled={!stream}
+              onClick={() => join(true)}
+            >
               {t("joinAudio")}
             </button>
           </>
         ) : (
-          <button className="btn primary big" disabled={!stream} onClick={() => join(true)}>
+          <button
+            className="btn primary big"
+            disabled={!stream}
+            onClick={() => join(true)}
+          >
             {t("join")}
           </button>
         )}

@@ -67,6 +67,8 @@ export function slangFor(sourceLang: string, targetLang: string, extra: Extra = 
   const added = codes.flatMap((c) => (extra[c] ?? []).map((l) => `${c}: ${l}`));
   if (added.length) parts.push(`Added from real calls:\n${added.join("\n")}`);
   parts.push(...RULES);
+  parts.push("Regional words and shortenings (servo, arvo, brekkie, kanka) become the listener's own everyday word (petrol station, afternoon, breakfast, mate), not kept as they are; brand names (Tim Tam, Maccas) stay.");
+  parts.push("This reference is only for understanding. The reply is the subtitle alone: never explain a word, never mention this list, never correct yourself in the reply.");
   return `<spoken_language_reference>\n${parts.join("\n")}\n</spoken_language_reference>`;
 }
 

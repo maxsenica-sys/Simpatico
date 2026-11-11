@@ -132,6 +132,9 @@ const SYSTEM = `You write the subtitles for a live, face-to-face video call betw
  * second-guess itself in the visible reply ("Wait, the target is English…"). Keep the final
  * subtitle line and drop anything that reads as a note to itself.
  */
+/** Signs that a reply is the model talking to itself rather than a subtitle. */
+const SELF_TALK = /(["”»]\s*[—–-]+\s*(no|wait|actually|hmm|or)\b|\b(is an exclamation|is a nickname|is slang for|literally means|here means|so the (subtitle|translation)|the translation (is|would be))\b|,\s*so:\s*["“])/i;
+
 export function subtitleOnly(text: string): string {
   const lines = text
     .split(/\n+/)
@@ -141,6 +144,12 @@ export function subtitleOnly(text: string): string {
   const line = lines.length > 1 ? lines[lines.length - 1] : (lines[0] ?? "");
   // A continuation sometimes opens with "..." — the screen shows it joined to what came before.
   let out = line.replace(/^(\.\.\.|…)\s*/u, "").trim();
+  // Thinking out loud on one line ('"Oh come on…" — no, "oha" is an exclamation…, so: "No way…"'):
+  // keep only the final quoted subtitle; with nothing quoted to keep, show nothing (it's retried).
+  if (SELF_TALK.test(out)) {
+    const quoted = [...out.matchAll(/["“„«]([^"“”„«»]{2,})["”»]/gu)].map((m) => m[1].trim());
+    out = quoted.length ? quoted[quoted.length - 1] : "";
+  }
   // A subtitle wrapped in quotes as a whole: drop the quotes (quotes inside are kept).
   const q = out.match(/^["“„«'‘](.+)["”»'’]$/su);
   if (q && !/["“”«»]/u.test(q[1])) out = q[1].trim();

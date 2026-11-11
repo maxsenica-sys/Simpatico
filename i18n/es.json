@@ -192,5 +192,9 @@
   "inviteTextAnon": "Te invitaron a una videollamada en Simpatico. Toca para unirte: no necesitas instalar ninguna app y verás subtítulos en tu idioma.",
   "typePlaceholder": "Escribe un mensaje…",
   "typeSend": "Enviar",
-  "joinedTitle": "{name} se unió"
+  "joinedTitle": "{name} se unió",
+  "tileCallSub": "Videollamada uno a uno",
+  "tileGroupSub": "Hasta 12 personas",
+  "tileLinkSub": "Compártelo una vez, llama cuando quieras",
+  "myLinkShort": "Compártelo una vez. Ábrelo cuando quieras para llamar, sin enlaces nuevos."
 }

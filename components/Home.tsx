@@ -7,7 +7,7 @@ import { useT } from "@/lib/i18n";
 import { loadProfile, myCallCode } from "@/lib/profile";
 import { Logo } from "./Logo";
 import { initials } from "./ProfileScreen";
-import { ShareLink } from "./ShareLink";
+import { LinkSheet } from "./LinkSheet";
 
 type InstallEvent = Event & { prompt: () => Promise<void> };
 
@@ -48,36 +48,57 @@ export function Home() {
   };
 
   return (
-    <main className="screen center home">
-      <Link href="/profile" className="me-btn" aria-label={t("openProfile")}>
-        <span className="avatar" aria-hidden="true">
-          {initials(name) || <PersonIcon />}
-        </span>
-        <span className="me-label">{t("profileTitle")}</span>
-      </Link>
-      <div className="hero">
-        <Logo />
-        {name && <p className="hello">{t("hiName", { name: name.split(/\s+/)[0] })}</p>}
+    <main className="screen home2">
+      <header className="home-top">
+        <Logo small />
+        <Link href="/profile" className="me-btn" aria-label={t("openProfile")}>
+          <span className="avatar" aria-hidden="true">
+            {initials(name) || <PersonIcon />}
+          </span>
+          <span className="me-label">{t("profileTitle")}</span>
+        </Link>
+      </header>
+
+      <section className="home-hero">
+        {name && <p className="hello">{t("hiName", { name: name.split(/\s+/)[0] })} 👋</p>}
         <h1 className="slogan">{t("slogan")}</h1>
-        <button className="btn primary big" onClick={() => start("pair")} disabled={busy}>
-          {busy ? t("starting") : t("startCall")}
+      </section>
+
+      <nav className="home-actions">
+        <button className="htile primary" onClick={() => start("pair")} disabled={busy}>
+          <span className="htile-icon" aria-hidden="true">
+            <VideoIcon />
+          </span>
+          <span className="htile-text">
+            <b>{busy ? t("starting") : t("startCall")}</b>
+            <small>{t("tileCallSub")}</small>
+          </span>
+          <span className="htile-chev" aria-hidden="true">
+            ›
+          </span>
         </button>
-        <button className="btn big secondary" onClick={() => start("group")} disabled={busy}>
-          {t("startGroup")}
-        </button>
-        <button className={`mylink-toggle ${showLink ? "open" : ""}`} onClick={() => setShowLink((v) => !v)} aria-expanded={showLink}>
-          <span aria-hidden="true">🔗</span> {t("myLinkBtn")}
-        </button>
-        {showLink && myLink && (
-          <section className="mylink" aria-label={t("myLinkTitle")}>
-            <p className="small">{t("myLinkHint")}</p>
-            <ShareLink url={myLink} compact />
-            <button className="btn big primary" onClick={() => router.push(new URL(myLink).pathname)}>
-              {t("myLinkOpen")}
-            </button>
-          </section>
-        )}
-      </div>
+        <div className="htile-row">
+          <button className="htile" onClick={() => start("group")} disabled={busy}>
+            <span className="htile-icon" aria-hidden="true">
+              <PeopleIcon />
+            </span>
+            <span className="htile-text">
+              <b>{t("startGroup")}</b>
+              <small>{t("tileGroupSub")}</small>
+            </span>
+          </button>
+          <button className="htile" onClick={() => setShowLink(true)} disabled={!myLink}>
+            <span className="htile-icon mint" aria-hidden="true">
+              <LinkIcon />
+            </span>
+            <span className="htile-text">
+              <b>{t("myLinkBtn")}</b>
+              <small>{t("tileLinkSub")}</small>
+            </span>
+          </button>
+        </div>
+      </nav>
+
       <footer className="home-foot">
         {install ? (
           <button
@@ -92,11 +113,44 @@ export function Home() {
         ) : iosHint ? (
           <span className="muted small">{t("installIos")}</span>
         ) : null}
-        <div className="small" style={{ marginTop: 10 }}>
-          <Link href="/privacy">{t("privacy")}</Link>
-        </div>
+        <Link className="small" href="/privacy">
+          {t("privacy")}
+        </Link>
       </footer>
+
+      {showLink && myLink && <LinkSheet url={myLink} onClose={() => setShowLink(false)} onOpen={() => router.push(new URL(myLink).pathname)} />}
     </main>
+  );
+}
+
+const ICON = { viewBox: "0 0 24 24", width: 26, height: 26, fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
+
+function VideoIcon() {
+  return (
+    <svg {...ICON}>
+      <rect x="2.5" y="6" width="13" height="12" rx="3" />
+      <path d="M15.5 10.5 21 7.5v9l-5.5-3" />
+    </svg>
+  );
+}
+
+function PeopleIcon() {
+  return (
+    <svg {...ICON}>
+      <circle cx="9" cy="8.5" r="3.5" />
+      <path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" />
+      <circle cx="17" cy="9" r="2.6" />
+      <path d="M17.5 14c2.4.3 4 2.2 4 5" />
+    </svg>
+  );
+}
+
+function LinkIcon() {
+  return (
+    <svg {...ICON}>
+      <path d="M10 13.5a4.5 4.5 0 0 0 6.4.4l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2" />
+      <path d="M14 10.5a4.5 4.5 0 0 0-6.4-.4l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2" />
+    </svg>
   );
 }
 

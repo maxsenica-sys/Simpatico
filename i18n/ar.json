@@ -192,5 +192,9 @@
   "inviteTextAnon": "أنت مدعو إلى مكالمة فيديو على Simpatico. اضغط للانضمام: لا حاجة إلى تثبيت أي تطبيق، وسترى الترجمة بلغتك.",
   "typePlaceholder": "اكتب رسالة…",
   "typeSend": "إرسال",
-  "joinedTitle": "انضم {name}"
+  "joinedTitle": "انضم {name}",
+  "tileCallSub": "مكالمة فيديو فردية",
+  "tileGroupSub": "حتى 12 شخصًا",
+  "tileLinkSub": "شاركه مرة واتصل في أي وقت",
+  "myLinkShort": "شاركه مرة واحدة. افتحه في أي وقت للاتصال، دون رابط جديد."
 }

@@ -192,5 +192,9 @@
   "inviteTextAnon": "Você foi convidado para uma chamada de vídeo no Simpatico. Toque para entrar: não precisa de app, e você vai ver legendas no seu idioma.",
   "typePlaceholder": "Digite uma mensagem…",
   "typeSend": "Enviar",
-  "joinedTitle": "{name} entrou"
+  "joinedTitle": "{name} entrou",
+  "tileCallSub": "Videochamada a dois",
+  "tileGroupSub": "Até 12 pessoas",
+  "tileLinkSub": "Compartilhe uma vez, ligue quando quiser",
+  "myLinkShort": "Compartilhe uma vez. Abra quando quiser para ligar, sem link novo."
 }

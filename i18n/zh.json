@@ -192,5 +192,9 @@
   "inviteTextAnon": "有人邀请你在 Simpatico 上视频通话。点按即可加入：无需安装 App，还能看到你所用语言的字幕。",
   "typePlaceholder": "输入消息…",
   "typeSend": "发送",
-  "joinedTitle": "{name} 已加入"
+  "joinedTitle": "{name} 已加入",
+  "tileCallSub": "一对一视频通话",
+  "tileGroupSub": "最多 12 人",
+  "tileLinkSub": "分享一次，随时通话",
+  "myLinkShort": "分享一次。随时打开即可通话，无需新链接。"
 }

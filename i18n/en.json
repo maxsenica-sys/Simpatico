@@ -192,5 +192,9 @@
   "inviteTextAnon": "You're invited to a video call on Simpatico. Tap to join: no app needed, and you'll see captions in your language.",
   "typePlaceholder": "Type a message…",
   "typeSend": "Send",
-  "joinedTitle": "{name} joined"
+  "joinedTitle": "{name} joined",
+  "tileCallSub": "One-to-one video call",
+  "tileGroupSub": "Up to 12 people",
+  "tileLinkSub": "Share once, call any time",
+  "myLinkShort": "Share it once. Open it any time to call — no new link needed."
 }

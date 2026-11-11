@@ -192,5 +192,9 @@
   "inviteTextAnon": "Kamu diundang ke panggilan video di Simpatico. Ketuk untuk gabung: tanpa perlu aplikasi, dan kamu akan melihat teks dalam bahasamu.",
   "typePlaceholder": "Ketik pesan…",
   "typeSend": "Kirim",
-  "joinedTitle": "{name} bergabung"
+  "joinedTitle": "{name} bergabung",
+  "tileCallSub": "Panggilan video empat mata",
+  "tileGroupSub": "Hingga 12 orang",
+  "tileLinkSub": "Bagikan sekali, telepon kapan saja",
+  "myLinkShort": "Bagikan sekali. Buka kapan saja untuk menelepon, tanpa tautan baru."
 }

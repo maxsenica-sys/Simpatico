@@ -192,5 +192,9 @@
   "inviteTextAnon": "Tu es invité·e à un appel vidéo sur Simpatico. Touche pour rejoindre : aucune app à installer, et tu verras les sous-titres dans ta langue.",
   "typePlaceholder": "Écris un message…",
   "typeSend": "Envoyer",
-  "joinedTitle": "{name} a rejoint l’appel"
+  "joinedTitle": "{name} a rejoint l’appel",
+  "tileCallSub": "Appel vidéo en tête-à-tête",
+  "tileGroupSub": "Jusqu'à 12 personnes",
+  "tileLinkSub": "Partagez-le une fois, appelez quand vous voulez",
+  "myLinkShort": "Partagez-le une fois. Ouvrez-le quand vous voulez pour appeler, sans nouveau lien."
 }

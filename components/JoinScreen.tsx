@@ -103,6 +103,9 @@ export function JoinScreen({
   return (
     <main className="screen join">
       <header className="join-head">
+        <Link href="/" className="round-btn join-back" aria-label={t("backHome")}>
+          <BackIcon />
+        </Link>
         <Logo small />
         {group && (
           <span className="muted small group-tag">{t("groupCall")}</span>
@@ -238,5 +241,13 @@ export function JoinScreen({
         </p>
       </section>
     </main>
+  );
+}
+
+function BackIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M15 5l-7 7 7 7" />
+    </svg>
   );
 }

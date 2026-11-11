@@ -264,6 +264,13 @@ export class CallController {
     this.set({ phase: "ended", participants: [], selfVideo: null, endedAt: Date.now() });
   }
 
+  /** Leave before anyone answered: same as leave() for the server, but no end-of-call screen. */
+  cancel() {
+    this.send({ t: "leave" });
+    this.shutdown();
+    this.releaseDevices();
+  }
+
   /** Room code and my languages, for the end-of-call feedback. */
   get info() {
     return { room: this.room, lang: this.lang };

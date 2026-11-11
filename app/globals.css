@@ -529,3 +529,9 @@ p { margin: 0; line-height: 1.5; }
   .bsheet { border-radius: 28px; border-bottom: 1px solid var(--line); }
 }
 @media (max-height: 640px) { .home-hero { min-height: 120px; } .home2 .slogan { font-size: 2.1rem; } }
+
+/* ways back out: join screen back arrow, cancel while nobody has answered */
+.join-head { position: relative; min-height: 44px; padding-inline: 56px; }
+.join-back { position: absolute; inset-inline-start: 0; top: 50%; transform: translateY(-50%); color: var(--text); text-decoration: none; background: rgba(255, 255, 255, 0.06); }
+[dir="rtl"] .join-back svg { transform: scaleX(-1); }
+.call-status .cancel-wait { margin-top: 4px; min-width: 200px; pointer-events: auto; }

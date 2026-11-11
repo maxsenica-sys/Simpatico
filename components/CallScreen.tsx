@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { worst, type CallController, type CallState, type Participant } from "@/lib/call";
 import { CAPTION_SIZES, loadCaptionPrefs, saveCaptionPrefs, type CaptionPrefs } from "@/lib/captionPrefs";
@@ -50,6 +51,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const [fit, setFit] = useState<"cover" | "contain">("cover");
   const [now, setNow] = useState(() => Date.now());
   const [connectedAt, setConnectedAt] = useState<number | null>(null);
+  const router = useRouter();
   const [videoLostAt, setVideoLostAt] = useState<number | null>(null);
   const [firstOwnAt, setFirstOwnAt] = useState<number | null>(null);
   const [prefs, setPrefs] = useState<CaptionPrefs>({ size: "m", box: false, style: "instant", focus: true });
@@ -158,6 +160,12 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
     );
 
   const connected = s.phase === "connected";
+  // Nobody has answered yet (e.g. a call started by accident): ending just goes back home.
+  const neverConnected = connectedAt === null;
+  const goHome = () => {
+    call.cancel();
+    router.push("/");
+  };
   const status =
     s.phase === "waiting"
       ? s.peerLeft
@@ -306,6 +314,11 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
           <div className="spinner" aria-hidden="true" />
           <p>{status}</p>
           {s.phase === "waiting" && <ShareLink url={shareUrl} qr={group || wide} />}
+          {s.phase === "waiting" && neverConnected && (
+            <button className="btn secondary cancel-wait" onClick={goHome}>
+              {t("cancelCall")}
+            </button>
+          )}
         </div>
       )}
 
@@ -378,7 +391,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
             <Ctrl label={t("lblText")} title={t("showTranscript")} onClick={() => setTranscript(true)}>
               <TextIcon />
             </Ctrl>
-            <Ctrl label={t("lblEnd")} title={t("endCall")} danger onClick={() => call.leave()}>
+            <Ctrl label={t("lblEnd")} title={t("endCall")} danger onClick={() => (neverConnected ? goHome() : call.leave())}>
               <HangupIcon />
             </Ctrl>
           </div>

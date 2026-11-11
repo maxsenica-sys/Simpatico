@@ -60,7 +60,6 @@ export function Home() {
       </header>
 
       <section className="home-hero">
-        {name && <p className="hello">{t("hiName", { name: name.split(/\s+/)[0] })} 👋</p>}
         <h1 className="slogan">{t("slogan")}</h1>
       </section>
 

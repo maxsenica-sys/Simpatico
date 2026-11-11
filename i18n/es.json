@@ -196,5 +196,6 @@
   "tileCallSub": "Videollamada uno a uno",
   "tileGroupSub": "Hasta 12 personas",
   "tileLinkSub": "Compártelo una vez, llama cuando quieras",
-  "myLinkShort": "Compártelo una vez. Ábrelo cuando quieras para llamar, sin enlaces nuevos."
+  "myLinkShort": "Compártelo una vez. Ábrelo cuando quieras para llamar, sin enlaces nuevos.",
+  "cancelCall": "Cancelar llamada"
 }

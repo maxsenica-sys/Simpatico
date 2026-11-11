@@ -196,5 +196,6 @@
   "tileCallSub": "Appel vidéo en tête-à-tête",
   "tileGroupSub": "Jusqu'à 12 personnes",
   "tileLinkSub": "Partagez-le une fois, appelez quand vous voulez",
-  "myLinkShort": "Partagez-le une fois. Ouvrez-le quand vous voulez pour appeler, sans nouveau lien."
+  "myLinkShort": "Partagez-le une fois. Ouvrez-le quand vous voulez pour appeler, sans nouveau lien.",
+  "cancelCall": "Annuler l'appel"
 }

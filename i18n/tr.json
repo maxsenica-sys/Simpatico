@@ -196,5 +196,6 @@
   "tileCallSub": "Bire bir görüntülü arama",
   "tileGroupSub": "12 kişiye kadar",
   "tileLinkSub": "Bir kez paylaş, istediğin zaman ara",
-  "myLinkShort": "Bir kez paylaş. İstediğin zaman aç ve ara — yeni bağlantıya gerek yok."
+  "myLinkShort": "Bir kez paylaş. İstediğin zaman aç ve ara — yeni bağlantıya gerek yok.",
+  "cancelCall": "Aramayı iptal et"
 }

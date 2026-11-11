@@ -196,5 +196,6 @@
   "tileCallSub": "One-to-one video call",
   "tileGroupSub": "Up to 12 people",
   "tileLinkSub": "Share once, call any time",
-  "myLinkShort": "Share it once. Open it any time to call — no new link needed."
+  "myLinkShort": "Share it once. Open it any time to call — no new link needed.",
+  "cancelCall": "Cancel call"
 }

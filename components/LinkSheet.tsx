@@ -5,7 +5,7 @@ import { useT } from "@/lib/i18n";
 import { canShareLink, shareLink } from "@/lib/native";
 import { loadProfile } from "@/lib/profile";
 
-/** "My call link": a bottom sheet with the QR code, Share / Copy, and Open my call room. */
+/** "My call card": a bottom sheet with the QR code, Share / Copy, and Open my call room. */
 export function LinkSheet({ url, onClose, onOpen }: { url: string; onClose: () => void; onOpen: () => void }) {
   const t = useT();
   const [svg, setSvg] = useState<string | null>(null);

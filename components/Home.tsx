@@ -95,7 +95,7 @@ export function Home() {
           </button>
           <button className="htile" onClick={() => setShowLink(true)} disabled={!myLink}>
             <span className="htile-icon mint" aria-hidden="true">
-              <LinkIcon />
+              <CardIcon />
             </span>
             <span className="htile-text">
               <b>{t("myLinkBtn")}</b>
@@ -166,11 +166,12 @@ function PeopleIcon() {
   );
 }
 
-function LinkIcon() {
+function CardIcon() {
   return (
     <svg {...ICON}>
-      <path d="M10 13.5a4.5 4.5 0 0 0 6.4.4l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2" />
-      <path d="M14 10.5a4.5 4.5 0 0 0-6.4-.4l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2" />
+      <rect x="2.5" y="5" width="19" height="14" rx="3" />
+      <circle cx="8.5" cy="11" r="2.2" />
+      <path d="M5.5 16c.6-1.5 1.7-2.3 3-2.3s2.4.8 3 2.3M14 10h4.5M14 13.5h3" />
     </svg>
   );
 }

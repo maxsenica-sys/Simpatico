@@ -548,6 +548,9 @@ export class CallController {
     const live = this.liveVideo();
     if (live && !live.muted) return true;
     if (this.cameraBusy) return !!live;
+    // Phones refuse the camera to a page in the background (NotAllowedError); asking then only
+    // fails. Coming back to the app brings it back (onVisible -> recoverLocalTracks).
+    if (document.visibilityState !== "visible") return !!live;
     this.cameraBusy = true;
     try {
       this.dropLocalVideo();
@@ -568,7 +571,7 @@ export class CallController {
   }
 
   private async recoverLocalTracks() {
-    if (this.stopped) return;
+    if (this.stopped || document.visibilityState !== "visible") return;
     const audio = this.local.getAudioTracks()[0];
     // No mic because they refused it: only a tap on Mic asks again, never a surprise prompt.
     if (!this.state.noMic && (!audio || audio.readyState === "ended")) {

@@ -237,5 +237,9 @@
   "a2hsTitle": "Pasang Simpatico di Layar Utama",
   "a2hsBody": "Buka dengan sekali ketuk, dan dapat kabar saat ada yang menunggumu.",
   "a2hsIos": "Ketuk Bagikan di bawah, lalu “Tambah ke Layar Utama”.",
-  "a2hsAndroid": "Ketuk ⋮ di atas, lalu “Tambahkan ke Layar utama” atau “Instal aplikasi”."
+  "a2hsAndroid": "Ketuk ⋮ di atas, lalu “Tambahkan ke Layar utama” atau “Instal aplikasi”.",
+  "notifyTurnOn": "Aktifkan",
+  "crashTitle": "Terjadi kesalahan",
+  "crashBody": "Maaf. Data panggilanmu aman: ketuk di bawah untuk melanjutkan dari tadi.",
+  "crashRetry": "Coba lagi"
 }

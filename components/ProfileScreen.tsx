@@ -312,6 +312,14 @@ export function ProfileScreen() {
               ? t("notifyBlocked")
               : t("notifyHint")}
         </p>
+        {notify && perm === "default" && (
+          <button
+            className="btn small primary"
+            onClick={() => void setNotifyPush(true, t("waitingPush", { name: "{name}" })).then(() => setPerm(pushPermission()))}
+          >
+            {t("notifyTurnOn")}
+          </button>
+        )}
       </section>
 
       <section className="pcard">

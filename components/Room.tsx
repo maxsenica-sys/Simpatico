@@ -184,8 +184,9 @@ export function Room({ code }: { code: string }) {
       }
       group={room.kind === "group" ? { max: room.max } : null}
       onJoin={({ audioOnly, name, inRoom, gender }) => {
-        // From this tap: the phone may ask once about "someone's waiting" notifications.
-        void followCards(t("waitingPush", { name: "{name}" }), { ask: true, extra: code });
+        // Already allowed notifications? Follow this call card too. (Never ask here: on iPhones a
+        // system question popping up while the camera and mic start can interrupt them.)
+        void followCards(t("waitingPush", { name: "{name}" }), { ask: false, extra: code });
         const me = loadProfile();
         if (!(media instanceof MediaStream)) return;
         const c = new CallController(code, peerIdFor(code), callLang(lang, me), media, {

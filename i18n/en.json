@@ -237,5 +237,9 @@
   "a2hsTitle": "Put Simpatico on your Home Screen",
   "a2hsBody": "Open it in one tap, and get told when someone's waiting for you.",
   "a2hsIos": "Tap Share at the bottom, then “Add to Home Screen”.",
-  "a2hsAndroid": "Tap ⋮ at the top, then “Add to Home screen” or “Install app”."
+  "a2hsAndroid": "Tap ⋮ at the top, then “Add to Home screen” or “Install app”.",
+  "notifyTurnOn": "Turn on",
+  "crashTitle": "Something went wrong",
+  "crashBody": "Sorry about that. Your call details are safe: tap below to pick up where you left off.",
+  "crashRetry": "Try again"
 }

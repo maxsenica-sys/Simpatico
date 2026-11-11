@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { I18nProvider } from "@/lib/i18n";
+import { CrashGuard } from "./Crash";
 import { installErrorReporter } from "@/lib/errors";
 import { installNativeLinks } from "@/lib/native";
 import { loadLang, saveLang, uiCode } from "@/lib/prefs";
@@ -30,7 +31,9 @@ export function LangRoot({ children }: { children: ReactNode }) {
   };
   return (
     <LangCtx.Provider value={{ lang, setLang }}>
-      <I18nProvider code={uiCode(lang)}>{children}</I18nProvider>
+      <I18nProvider code={uiCode(lang)}>
+        <CrashGuard>{children}</CrashGuard>
+      </I18nProvider>
     </LangCtx.Provider>
   );
 }

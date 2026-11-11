@@ -659,3 +659,6 @@ p { margin: 0; line-height: 1.5; }
 .media-off-icon { display: flex; gap: 14px; color: var(--muted); letter-spacing: 0; }
 .notice-icon { color: var(--accent); }
 .photo-badge svg { display: block; }
+.a2hs-icon { color: var(--accent); }
+.a2hs-buttons { display: flex; align-items: center; gap: 14px; margin-top: 6px; }
+.a2hs-buttons .a2hs-later { grid-column: auto; }

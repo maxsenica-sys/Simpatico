@@ -237,5 +237,9 @@
   "a2hsTitle": "Simpatico'yu Ana Ekranına ekle",
   "a2hsBody": "Tek dokunuşla aç ve biri seni beklediğinde haberin olsun.",
   "a2hsIos": "Alttaki Paylaş simgesine, sonra “Ana Ekrana Ekle”ye dokun.",
-  "a2hsAndroid": "Üstteki ⋮ simgesine, sonra “Ana ekrana ekle” veya “Uygulamayı yükle”ye dokun."
+  "a2hsAndroid": "Üstteki ⋮ simgesine, sonra “Ana ekrana ekle” veya “Uygulamayı yükle”ye dokun.",
+  "notifyTurnOn": "Aç",
+  "crashTitle": "Bir şeyler ters gitti",
+  "crashBody": "Bunun için üzgünüz. Arama bilgilerin güvende: kaldığın yerden devam etmek için aşağıya dokun.",
+  "crashRetry": "Tekrar dene"
 }

@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { worst, type CallController, type CallState, type Participant } from "@/lib/call";
 import { CAPTION_SIZES, loadCaptionPrefs, saveCaptionPrefs, type CaptionPrefs } from "@/lib/captionPrefs";
@@ -15,6 +14,7 @@ import { SelfView, type SelfMode } from "./SelfView";
 import { ShareLink } from "./ShareLink";
 import { Transcript } from "./Transcript";
 import { detectEnv } from "@/lib/env";
+import { followCards, notifyEnabled, pushPermission } from "@/lib/push";
 import { noteCall, notePhoto, noteTime } from "@/lib/recent";
 import { Avatar } from "./Avatar";
 
@@ -54,7 +54,6 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const [fit, setFit] = useState<"cover" | "contain">("cover");
   const [now, setNow] = useState(() => Date.now());
   const [connectedAt, setConnectedAt] = useState<number | null>(null);
-  const router = useRouter();
 
   // "Recent" on the home screen: remember who we actually talked to, and for how long.
   const met = useRef(new Map<string, string>());
@@ -202,9 +201,20 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const connected = s.phase === "connected";
   // Nobody has answered yet (e.g. a call started by accident): ending just goes back home.
   const neverConnected = connectedAt === null;
+  // Always gets you home: even if something in the call has gone wrong, the page is replaced.
   const goHome = () => {
-    call.cancel();
-    router.push("/");
+    try {
+      call.cancel();
+    } catch {}
+    window.location.assign("/");
+  };
+  const end = () => {
+    if (neverConnected) return goHome();
+    try {
+      call.leave();
+    } catch {
+      goHome();
+    }
   };
   const status =
     s.phase === "waiting"
@@ -448,7 +458,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
             <Ctrl label={t("lblText")} title={t("showTranscript")} onClick={() => setTranscript(true)}>
               <TextIcon />
             </Ctrl>
-            <Ctrl label={t("lblEnd")} title={t("endCall")} danger onClick={() => (neverConnected ? goHome() : call.leave())}>
+            <Ctrl label={t("lblEnd")} title={t("endCall")} danger onClick={end}>
               <HangupIcon />
             </Ctrl>
           </div>
@@ -681,6 +691,7 @@ function EndScreen({ call, s, onSave, onRejoin }: { call: CallController; s: Cal
           )}
         </nav>
 
+        {hadCall && <NotifyCard room={call.info.room} />}
         {hadCall && <AddToHome />}
 
         {hadCall && (
@@ -871,5 +882,58 @@ function AddToHome() {
         {t("notNow")}
       </button>
     </section>
+  );
+}
+
+/**
+ * After a call: one tap to be told when someone's waiting on this call card (and your own).
+ * Asked here, not while a call is starting, because a system question on top of a starting
+ * camera and mic can interrupt them on iPhones. Already allowed: follows this card silently.
+ */
+function NotifyCard({ room }: { room: string }) {
+  const t = useT();
+  const [show, setShow] = useState(false);
+  const text = t("waitingPush", { name: "{name}" });
+  useEffect(() => {
+    if (!notifyEnabled()) return;
+    const perm = pushPermission();
+    if (perm === "granted") void followCards(text, { ask: false, extra: room });
+    else if (perm === "default") setShow(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room]);
+  if (!show) return null;
+  return (
+    <section className="a2hs" aria-label={t("notifyLabel")}>
+      <div className="a2hs-icon" aria-hidden="true">
+        <BellGlyph />
+      </div>
+      <div className="a2hs-text">
+        <b>{t("notifyLabel")}</b>
+        <p className="small muted">{t("notifyHint")}</p>
+        <div className="a2hs-buttons">
+          <button
+            className="btn small primary"
+            onClick={() => {
+              void followCards(text, { ask: true, extra: room });
+              setShow(false);
+            }}
+          >
+            {t("notifyTurnOn")}
+          </button>
+          <button className="link a2hs-later" onClick={() => setShow(false)}>
+            {t("notNow")}
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function BellGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" />
+      <path d="M10 20.5a2 2 0 0 0 4 0" />
+    </svg>
   );
 }

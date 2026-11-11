@@ -237,5 +237,9 @@
   "a2hsTitle": "Mettez Simpatico sur votre écran d'accueil",
   "a2hsBody": "Ouvrez-le d'un toucher et soyez prévenu quand quelqu'un vous attend.",
   "a2hsIos": "Touchez Partager en bas, puis « Sur l'écran d'accueil ».",
-  "a2hsAndroid": "Touchez ⋮ en haut, puis « Ajouter à l'écran d'accueil » ou « Installer l'application »."
+  "a2hsAndroid": "Touchez ⋮ en haut, puis « Ajouter à l'écran d'accueil » ou « Installer l'application ».",
+  "notifyTurnOn": "Activer",
+  "crashTitle": "Un problème est survenu",
+  "crashBody": "Désolé. Les informations de votre appel sont intactes : touchez ci-dessous pour reprendre où vous en étiez.",
+  "crashRetry": "Réessayer"
 }

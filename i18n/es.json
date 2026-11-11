@@ -237,5 +237,9 @@
   "a2hsTitle": "Pon Simpatico en tu pantalla de inicio",
   "a2hsBody": "Ábrelo con un toque y entérate cuando alguien te espere.",
   "a2hsIos": "Toca Compartir abajo y luego “Añadir a pantalla de inicio”.",
-  "a2hsAndroid": "Toca ⋮ arriba y luego “Añadir a pantalla de inicio” o “Instalar aplicación”."
+  "a2hsAndroid": "Toca ⋮ arriba y luego “Añadir a pantalla de inicio” o “Instalar aplicación”.",
+  "notifyTurnOn": "Activar",
+  "crashTitle": "Algo salió mal",
+  "crashBody": "Lo sentimos. Los datos de tu llamada están a salvo: toca abajo para seguir donde lo dejaste.",
+  "crashRetry": "Reintentar"
 }

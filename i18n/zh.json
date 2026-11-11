@@ -237,5 +237,9 @@
   "a2hsTitle": "把 Simpatico 放到主屏幕",
   "a2hsBody": "一点即开，有人等你时会收到通知。",
   "a2hsIos": "点底部的分享，再点“添加到主屏幕”。",
-  "a2hsAndroid": "点顶部的 ⋮，再点“添加到主屏幕”或“安装应用”。"
+  "a2hsAndroid": "点顶部的 ⋮，再点“添加到主屏幕”或“安装应用”。",
+  "notifyTurnOn": "开启",
+  "crashTitle": "出了点问题",
+  "crashBody": "抱歉。你的通话信息都还在：点下面的按钮从刚才的地方继续。",
+  "crashRetry": "重试"
 }

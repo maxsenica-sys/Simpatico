@@ -10,8 +10,9 @@
     "translate-ui": "tsx scripts/translate-ui.ts",
     "mock-soniox": "tsx test/mock-soniox.ts",
     "e2e": "node test/e2e.mjs",
-    "test": "ECHO_CHECK=off SONIOX_API_KEY=x SONIOX_URL=ws://localhost:3997 tsx test/pipeline.test.ts && tsx test/rooms.test.ts && tsx test/vad.test.ts",
-    "e2e:group": "node test/e2e-group.mjs"
+    "test": "ECHO_CHECK=off SONIOX_API_KEY=x SONIOX_URL=ws://localhost:3997 tsx test/pipeline.test.ts && tsx test/rooms.test.ts && tsx test/vad.test.ts && tsx test/push.test.ts",
+    "e2e:group": "node test/e2e-group.mjs",
+    "e2e:perms": "node test/e2e-perms.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.4.0",
@@ -20,6 +21,7 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "tsx": "^4.23.15",
+    "web-push": "^3.6.7",
     "ws": "^8.22.1"
   },
   "devDependencies": {
@@ -27,6 +29,7 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@types/web-push": "^3.6.4",
     "@types/ws": "^8.18.2",
     "typescript": "5.9"
   },

@@ -31,6 +31,8 @@ export type PeerStatus = {
   recvAudio: boolean | null;
   /** I switched to another app: my phone has paused my camera and mic, and I can't hear you. */
   away?: boolean;
+  /** My phone hasn't let me use my microphone yet (I can still hear you and read captions). */
+  noMic?: boolean;
 };
 
 export type SignalData =

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Avatar } from "./Avatar";
 import { loadPhoto, photoFromFile, savePhoto } from "@/lib/photo";
+import { notifyEnabled, pushPermission, setNotify as setNotifyPush } from "@/lib/push";
+import { detectEnv } from "@/lib/env";
 import { loadCaptionPrefs, saveCaptionPrefs, type CaptionPrefs } from "@/lib/captionPrefs";
 import { useT } from "@/lib/i18n";
 import { MAX_WORDS, TOPICS, clearProfile, countries, loadProfile, readTransfer, saveProfile, transferLink, type Profile, type Transfer } from "@/lib/profile";
@@ -37,6 +39,15 @@ export function ProfileScreen() {
   const [incoming, setIncoming] = useState<Transfer | null>(null);
   const [showTransfer, setShowTransfer] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [notify, setNotify] = useState(true);
+  const [perm, setPerm] = useState<ReturnType<typeof pushPermission>>("default");
+  const [iosBrowser, setIosBrowser] = useState(false);
+  useEffect(() => {
+    setNotify(notifyEnabled());
+    setPerm(pushPermission());
+    const env = detectEnv();
+    setIosBrowser(env.ios && !env.standalone && !env.nativeApp);
+  }, []);
   const [photo, setPhoto] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   useEffect(() => setPhoto(loadPhoto()), []);
@@ -276,6 +287,33 @@ export function ProfileScreen() {
             }}
           />
         </div>
+      </section>
+
+      <section className="pcard">
+        <h2>{t("notifyTitle")}</h2>
+        <label className="switch-row">
+          <span>{t("notifyLabel")}</span>
+          <input
+            type="checkbox"
+            role="switch"
+            className="switch"
+            checked={notify}
+            onChange={(e) => {
+              const on = e.target.checked;
+              setNotify(on);
+              void setNotifyPush(on, t("waitingPush", { name: "{name}" })).then(() => setPerm(pushPermission()));
+            }}
+          />
+        </label>
+        <p className="muted small">
+          {perm === "unsupported"
+            ? iosBrowser
+              ? t("notifyNeedsHome")
+              : t("notifyUnsupported")
+            : perm === "denied" && notify
+              ? t("notifyBlocked")
+              : t("notifyHint")}
+        </p>
       </section>
 
       <section className="pcard">

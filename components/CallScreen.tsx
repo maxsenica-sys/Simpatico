@@ -14,6 +14,7 @@ import { Notice } from "./Notice";
 import { SelfView, type SelfMode } from "./SelfView";
 import { ShareLink } from "./ShareLink";
 import { Transcript } from "./Transcript";
+import { detectEnv } from "@/lib/env";
 import { noteCall, notePhoto, noteTime } from "@/lib/recent";
 import { Avatar } from "./Avatar";
 
@@ -246,6 +247,11 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const names = Object.fromEntries(s.participants.map((p) => [p.id, p.name]));
   const anySpeaking = s.participants.some((p) => p.speaking);
 
+  const blockedSteps = (() => {
+    if (!s.problems.includes("mic-blocked") && !s.problems.includes("camera-blocked")) return "";
+    const env = detectEnv();
+    return env.nativeApp ? t("deniedApp") : env.ios ? t("deniedIos") : env.android ? t("deniedAndroid") : t("deniedDesktop");
+  })();
   const banners: { key: string; text: string; tone: "warn" | "info"; actions?: ReactNode }[] = [];
   if (connected) {
     for (const p of s.problems) {
@@ -277,6 +283,17 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
           ),
         });
       if (p === "they-cant-hear-you") banners.push({ key: p, tone: "warn", text: t("theyCantHearYou") });
+      if (p === "mic-blocked" || p === "camera-blocked")
+        banners.push({
+          key: p,
+          tone: "warn",
+          text: `${p === "mic-blocked" ? t("micBlocked") : t("cameraBlocked")} ${blockedSteps}`,
+          actions: (
+            <button className="btn small" onClick={() => call.dismissProblem(p)}>
+              {t("notNow")}
+            </button>
+          ),
+        });
       if (p === "camera-failed")
         banners.push({
           key: p,
@@ -307,9 +324,12 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
       });
     if (!group && stage?.partnerAudioOnly && s.camOn) banners.push({ key: "partner-audio", tone: "info", text: t("theyAreAudioOnly") });
     for (const p of s.participants) if (p.away) banners.push({ key: `away-${p.id}`, tone: "info", text: t("isAway", { name: p.name }) });
+    for (const p of s.participants) if (p.noMic && !p.away) banners.push({ key: `nomic-${p.id}`, tone: "info", text: t("peerNoMic", { name: p.name }) });
     if (ccState !== "ok")
       banners.push({ key: "cc", tone: "warn", text: ccState === "paused" ? t("captionsPaused") : t("captionsUnavailable") });
-    if (s.muted) banners.push({ key: "muted", tone: "info", text: t("muted") });
+    if (s.noMic) {
+      if (!s.problems.includes("mic-blocked")) banners.push({ key: "nomic", tone: "info", text: t("micOffTap") });
+    } else if (s.muted) banners.push({ key: "muted", tone: "info", text: t("muted") });
   }
 
   return (
@@ -661,6 +681,8 @@ function EndScreen({ call, s, onSave, onRejoin }: { call: CallController; s: Cal
           )}
         </nav>
 
+        {hadCall && <AddToHome />}
+
         {hadCall && (
           <section className="quick-rate" aria-label={t("quickRate")}>
             {!sent ? (
@@ -803,5 +825,51 @@ function HangupIcon() {
     <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
       <path d="M12 9c-3.2 0-6.2.9-8.6 2.6-.6.4-.8 1.2-.5 1.9l1.1 2.1c.3.6 1 .9 1.7.7l3-1c.5-.2.9-.7.9-1.3v-1.6a12 12 0 0 1 4.8 0V14c0 .6.4 1.1.9 1.3l3 1c.7.2 1.4-.1 1.7-.7l1.1-2.1c.3-.7.1-1.5-.5-1.9A15 15 0 0 0 12 9z" />
     </svg>
+  );
+}
+
+const A2HS_KEY = "talk.a2hs";
+const A2HS_AGAIN_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * After a real call, in a browser tab: suggest keeping Simpatico on the Home Screen. That's what
+ * lets an iPhone show "someone's waiting" notifications, and it opens in one tap. "Not now" hides
+ * it for a week.
+ */
+function AddToHome() {
+  const t = useT();
+  const [show, setShow] = useState<null | "ios" | "android" | "other">(null);
+  useEffect(() => {
+    const env = detectEnv();
+    if (env.standalone || env.nativeApp || env.inApp) return;
+    try {
+      const last = Number(localStorage.getItem(A2HS_KEY) ?? 0);
+      if (Date.now() - last < A2HS_AGAIN_MS) return;
+    } catch {}
+    setShow(env.ios ? "ios" : env.android ? "android" : "other");
+  }, []);
+  if (!show || show === "other") return null;
+  return (
+    <section className="a2hs" aria-label={t("a2hsTitle")}>
+      <div className="a2hs-icon" aria-hidden="true">
+        <LogoMark size={40} />
+      </div>
+      <div className="a2hs-text">
+        <b>{t("a2hsTitle")}</b>
+        <p className="small muted">{t("a2hsBody")}</p>
+        <p className="small a2hs-steps">{show === "ios" ? t("a2hsIos") : t("a2hsAndroid")}</p>
+      </div>
+      <button
+        className="link a2hs-later"
+        onClick={() => {
+          try {
+            localStorage.setItem(A2HS_KEY, String(Date.now()));
+          } catch {}
+          setShow(null);
+        }}
+      >
+        {t("notNow")}
+      </button>
+    </section>
   );
 }

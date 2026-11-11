@@ -84,6 +84,15 @@ export default function Privacy() {
           people you have called) is likewise kept only on your device. Removing someone from Recent, removing your photo, or &ldquo;Clear my profile&rdquo; deletes it
           from your device; a photo you have already shared stays on the other person&rsquo;s device until they remove you from their Recent or clear their profile.
         </p>
+        <h3>&ldquo;Someone&rsquo;s waiting&rdquo; notifications</h3>
+        <p>
+          If you allow notifications, your device gives our server a push address (a long random web address from Apple, Google or your browser maker) and we store it
+          with the call card codes your device follows: your own, and any you have joined, plus your device&rsquo;s random seat ID in each so you aren&rsquo;t notified
+          about yourself, and the notification wording in your language. We store no name, photo or call history with it. When someone opens one of those call cards,
+          we send that address a short message (&ldquo;Ezgi is waiting for you&rdquo;), encrypted so that only your device can read it; it travels through your
+          phone maker&rsquo;s push service. Turn it off any time on the Me page (&ldquo;Tell me when someone&rsquo;s waiting&rdquo;), which deletes the address from our
+          server; it is also deleted automatically if your device stops accepting notifications.
+        </p>
         <h3>Technical logs</h3>
         <p>
           Our server logs events such as the call room code, the languages chosen, whether the connection was direct, timings and errors. Logs contain no audio, video or

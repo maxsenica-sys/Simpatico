@@ -593,3 +593,61 @@ p { margin: 0; line-height: 1.5; }
 .photo-pick { position: relative; background: none; border: 0; padding: 0; cursor: pointer; border-radius: 50%; }
 .photo-pick .avatar.xl { width: 104px; height: 104px; }
 .profile-hero .photo-actions { margin: 4px 0 2px; }
+
+/* camera/mic refused: calm, with a way forward */
+.notice-icon { font-size: 2.6rem; margin-bottom: 6px; }
+.media-off { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; color: var(--text); }
+.media-off h2 { margin: 0; }
+.media-off p { max-width: 30ch; }
+.media-off-icon { font-size: 2rem; letter-spacing: 6px; }
+.media-off-steps { color: #ffd479; max-width: 32ch; }
+
+/* on/off switch */
+.switch-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; font-weight: 600; cursor: pointer; }
+.switch { appearance: none; -webkit-appearance: none; flex: none; width: 52px; height: 32px; border-radius: 999px; background: rgba(255, 255, 255, 0.16); position: relative; cursor: pointer; transition: background 0.2s ease; margin: 0; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff; transition: transform 0.2s ease; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); }
+.switch:checked { background: #34c759; }
+.switch:checked::after { transform: translateX(20px); }
+[dir="rtl"] .switch:checked::after { transform: translateX(-20px); }
+.switch:focus-visible { outline: 3px solid rgba(91, 140, 255, 0.6); outline-offset: 2px; }
+
+/* after a call: keep Simpatico on the Home Screen */
+.a2hs { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; align-items: start; width: 100%; padding: 16px; border-radius: 20px; text-align: start;
+  background: linear-gradient(135deg, rgba(91, 140, 255, 0.16), rgba(95, 224, 189, 0.1)); border: 1px solid rgba(91, 140, 255, 0.35); }
+.a2hs-icon { width: 52px; height: 52px; border-radius: 14px; background: #0b0d10; display: grid; place-items: center; border: 1px solid var(--line); }
+.a2hs-text { display: flex; flex-direction: column; gap: 4px; }
+.a2hs-text b { font-size: 1.02rem; }
+.a2hs-steps { color: var(--text); font-weight: 600; }
+.a2hs-later { grid-column: 2; justify-self: start; color: var(--muted); font-size: 0.9rem; }
+
+/* Home with Recent: use the whole screen. The slogan's space grows and shrinks with the phone,
+   everything else sits in a steady rhythm below it, and taller phones get bigger tiles. */
+.home2.has-recent { gap: 18px; }
+.has-recent .home-hero { flex: 1 1 auto; justify-content: center; padding: 8px 4px; }
+.has-recent .slogan { font-size: clamp(2.1rem, 9.8vw, 2.75rem); }
+.has-recent .home-foot { margin-top: 0; }
+.has-recent .recent-row { padding: 14px 6px; }
+@media (min-height: 700px) {
+  .has-recent .htile.primary { padding: 20px; }
+  .has-recent .htile.primary .htile-icon { width: 56px; height: 56px; }
+  .has-recent .htile-row .htile { flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px; }
+  .has-recent .htile-row .htile-icon { width: 44px; height: 44px; }
+  .has-recent .htile-row .htile-text small { display: block; }
+  .has-recent .rp-av { width: 58px; height: 58px; font-size: 1.2rem; }
+  .has-recent .recent-row { padding: 16px 6px; }
+}
+@media (min-height: 800px) {
+  .home2.has-recent { gap: 22px; }
+  .has-recent .rp-av { width: 62px; height: 62px; }
+  .has-recent .rp b { font-size: 0.9rem; }
+}
+@media (max-height: 620px) {
+  .home2.has-recent { gap: 12px; }
+  .has-recent .slogan { font-size: 1.75rem; }
+  .has-recent .home-hero { padding: 2px 4px; }
+  .has-recent .htile.primary { padding: 14px; }
+  .has-recent .htile.primary .htile-icon { width: 46px; height: 46px; }
+  .has-recent .htile-row .htile { padding: 12px; }
+  .has-recent .recent-row { padding: 10px 6px; }
+  .has-recent .rp-av { width: 48px; height: 48px; }
+}

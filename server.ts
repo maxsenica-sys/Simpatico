@@ -6,6 +6,7 @@ import { sanitizeLang } from "./shared/lang";
 import type { ClientMsg } from "./shared/protocol";
 import { clientError, dashboard, feedback } from "./server/admin";
 import { getIceServers } from "./server/ice";
+import { notifyWaiting, pushKey, pushSubscribe, pushUnsubscribe } from "./server/push";
 import { append, device } from "./server/store";
 
 /** Client events kept on disk to diagnose dropped calls: connection health only. */
@@ -34,6 +35,9 @@ const server = createServer((req, res) => {
   if (path === "/api/feedback" && req.method === "POST") return void feedback(req, res);
   if (path === "/api/client-error" && req.method === "POST") return void clientError(req, res);
   if (path === "/admin" && req.method === "GET") return dashboard(typeof url.query.token === "string" ? url.query.token : undefined, res);
+  if (path === "/api/push/key" && req.method === "GET") return pushKey(res);
+  if (path === "/api/push/subscribe" && req.method === "POST") return void pushSubscribe(req, res);
+  if (path === "/api/push/unsubscribe" && req.method === "POST") return void pushUnsubscribe(req, res);
   if (path === "/api/rooms" && req.method === "POST") {
     const kind = url.query.kind === "group" ? "group" : "pair";
     const room = createRoom(kind);
@@ -115,6 +119,8 @@ wss.on("connection", (ws, req) => {
       }
       // Everyone already here offers a connection to a newcomer.
       if (result.fresh) broadcast(room, { t: "peer-joined", peer: info(peer), offer: true }, peer);
+      // Call cards: let the phones that follow this card know someone is waiting.
+      if (result.fresh && room.kind === "pair") notifyWaiting(room.code, peer.name, new Set([...room.peers.values()].filter((p) => p.ws).map((p) => p.id)));
       log("peer_joined", { room: room.code, kind: room.kind, peer: peer.label, fresh: result.fresh, speaks: lang.speaks, reads: lang.reads, inRoom: peer.inRoom, others: rest.length });
       return;
     }

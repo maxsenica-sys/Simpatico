@@ -10,6 +10,7 @@ import { useT } from "@/lib/i18n";
 import { getLocalMedia, type MediaFailure } from "@/lib/media";
 import { peerIdFor } from "@/lib/prefs";
 import { loadPhoto } from "@/lib/photo";
+import { followCards } from "@/lib/push";
 import { CallScreen } from "./CallScreen";
 import { JoinScreen } from "./JoinScreen";
 import { useLang } from "./LangRoot";
@@ -25,6 +26,10 @@ export function Room({ code }: { code: string }) {
   const [room, setRoom] = useState<RoomCheck>("checking");
   const [media, setMedia] = useState<MediaStream | MediaFailure | null>(null);
   const [call, setCall] = useState<CallController | null>(null);
+  /** How many times the phone has said no to camera/mic (0 = not refused). */
+  const [refused, setRefused] = useState(0);
+  /** First visit: explain before the phone's own prompt, so "Don't Allow" isn't tapped by accident. */
+  const [explain, setExplain] = useState<boolean | null>(null);
   const mediaRef = useRef<MediaStream | null>(null);
   const callRef = useRef<CallController | null>(null);
 
@@ -36,22 +41,38 @@ export function Room({ code }: { code: string }) {
       .catch(() => setRoom("gone"));
   }, [code]);
 
+  useEffect(() => {
+    if (!env || env.inApp || !env.canCall || typeof room !== "object" || explain !== null) return;
+    needsExplainer().then(setExplain);
+  }, [env, room, explain]);
+
   // Ask for camera + mic as soon as we know the room is real, so the preview is live on arrival.
   useEffect(() => {
-    if (!env || env.inApp || !env.canCall || typeof room !== "object" || media) return;
+    if (!env || env.inApp || !env.canCall || typeof room !== "object" || media || explain !== false) return;
     let cancelled = false;
     getLocalMedia(env.ios).then((m) => {
       if (cancelled) {
         if (m instanceof MediaStream) m.getTracks().forEach((tr) => tr.stop());
         return;
       }
-      if (m instanceof MediaStream) mediaRef.current = m;
+      if (m instanceof MediaStream) {
+        mediaRef.current = m;
+        try {
+          localStorage.setItem(MEDIA_OK_KEY, "1");
+        } catch {}
+      }
+      // "Don't Allow" is not an error: carry on with no camera or mic, and offer to ask again.
+      if (m === "denied") {
+        setRefused((n) => n + 1);
+        setMedia(new MediaStream());
+        return;
+      }
       setMedia(m);
     });
     return () => {
       cancelled = true;
     };
-  }, [env, room, media]);
+  }, [env, room, media, explain]);
 
   // The call and the camera live as long as this page does.
   useEffect(
@@ -86,6 +107,26 @@ export function Room({ code }: { code: string }) {
       <Notice title={t("roomGone")}>
         <Link className="btn primary" href="/">
           {t("startNew")}
+        </Link>
+      </Notice>
+    );
+
+  if (explain)
+    return (
+      <Notice
+        title={t("permTitle")}
+        body={
+          <p>
+            {t("permBody")}
+          </p>
+        }
+        icon="🎥"
+      >
+        <button className="btn primary big" autoFocus onClick={() => setExplain(false)}>
+          {t("permContinue")}
+        </button>
+        <Link className="btn big secondary" href="/">
+          {t("backHome")}
         </Link>
       </Notice>
     );
@@ -127,8 +168,19 @@ export function Room({ code }: { code: string }) {
   return (
     <JoinScreen
       stream={media instanceof MediaStream ? media : null}
+      refused={
+        refused > 0 && media instanceof MediaStream && !media.getTracks().length
+          ? {
+              again: refused > 1,
+              steps: env.nativeApp ? t("deniedApp") : env.ios ? t("deniedIos") : env.android ? t("deniedAndroid") : t("deniedDesktop"),
+              onAllow: () => setMedia(null),
+            }
+          : null
+      }
       group={room.kind === "group" ? { max: room.max } : null}
       onJoin={({ audioOnly, name, inRoom, gender }) => {
+        // From this tap: the phone may ask once about "someone's waiting" notifications.
+        void followCards(t("waitingPush", { name: "{name}" }), { ask: true, extra: code });
         const me = loadProfile();
         if (!(media instanceof MediaStream)) return;
         const c = new CallController(code, peerIdFor(code), callLang(lang, me), media, {
@@ -147,4 +199,20 @@ export function Room({ code }: { code: string }) {
       }}
     />
   );
+}
+
+const MEDIA_OK_KEY = "talk.mediaOk";
+
+/** Show the "camera and microphone" explainer only before the phone has ever been asked. */
+async function needsExplainer(): Promise<boolean> {
+  try {
+    if (localStorage.getItem(MEDIA_OK_KEY)) return false;
+  } catch {}
+  try {
+    const q = (name: string) => navigator.permissions.query({ name } as unknown as PermissionDescriptor).then((r) => r.state);
+    const [cam, mic] = await Promise.all([q("camera"), q("microphone")]);
+    return cam === "prompt" || mic === "prompt";
+  } catch {
+    return false;
+  }
 }

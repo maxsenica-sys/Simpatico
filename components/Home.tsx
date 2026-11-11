@@ -10,6 +10,7 @@ import { initials } from "./ProfileScreen";
 import { LinkSheet } from "./LinkSheet";
 import { Avatar } from "./Avatar";
 import { loadPhoto } from "@/lib/photo";
+import { followCards } from "@/lib/push";
 import { PersonSheet, RecentRow } from "./Recent";
 import { loadRecent, type RecentPerson } from "@/lib/recent";
 
@@ -34,6 +35,8 @@ export function Home() {
     setMyLink(`${location.origin}/r/${myCallCode()}`);
     setRecent(loadRecent());
     setPhoto(loadPhoto());
+    // Keep this phone following its own call card (only if notifications are already allowed).
+    void followCards(t("waitingPush", { name: "{name}" }), { ask: false });
     const env = detectEnv();
     if (env.ios && !env.standalone && !env.inApp && !env.nativeApp) setIosHint(true);
     const onPrompt = (e: Event) => {

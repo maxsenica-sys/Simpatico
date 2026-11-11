@@ -29,10 +29,13 @@ type GenderChoice = Gender | "x";
 
 export function JoinScreen({
   stream,
+  refused,
   group,
   onJoin,
 }: {
   stream: MediaStream | null;
+  /** The phone said no to camera and mic: join anyway, or ask again. */
+  refused?: { again: boolean; steps: string; onAllow: () => void } | null;
   /** Set for group calls: asks for a name and whether you're in the same room. */
   group: { max: number } | null;
   onJoin: (choice: JoinChoice) => void;
@@ -118,6 +121,18 @@ export function JoinScreen({
       <div className="preview">
         {hasVideo ? (
           <video ref={video} className="mirror" autoPlay playsInline muted />
+        ) : refused ? (
+          <div className="preview-empty media-off">
+            <div className="media-off-icon" aria-hidden="true">
+              🎙️ 📷
+            </div>
+            <h2>{t("mediaOffTitle")}</h2>
+            <p className="muted small">{t("mediaOffBody")}</p>
+            <button className="btn primary" onClick={refused.onAllow}>
+              {t("allowMedia")}
+            </button>
+            {refused.again && <p className="small media-off-steps">{refused.steps}</p>}
+          </div>
         ) : (
           <div className="preview-empty">
             {stream ? "" : t("cameraStarting")}
@@ -209,7 +224,11 @@ export function JoinScreen({
             </label>
           </>
         )}
-        {hasVideo ? (
+        {refused ? (
+          <button className="btn big secondary" onClick={() => join(false)}>
+            {t("joinAnyway")}
+          </button>
+        ) : hasVideo ? (
           <>
             <button
               className="btn primary big"

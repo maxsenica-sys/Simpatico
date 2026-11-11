@@ -25,6 +25,8 @@ export type Problem =
   | "they-cant-see-you" // my camera is on but my video isn't arriving at someone's end
   | "they-cant-hear-you" // my audio isn't arriving at someone's end
   | "camera-failed" // couldn't (re)start my camera
+  | "camera-blocked" // the phone won't let us use the camera (permission refused)
+  | "mic-blocked" // the phone won't let us use the microphone (permission refused)
   | "weak-network"; // suggest audio only
 
 export type Participant = PeerInfo & {
@@ -39,6 +41,8 @@ export type Participant = PeerInfo & {
   partnerAudioOnly: boolean;
   /** They switched to another app (their phone paused their camera and mic). */
   away: boolean;
+  /** Their phone hasn't let them use their microphone yet. */
+  noMic: boolean;
   /** Their speech is being captioned right now. */
   speaking: boolean;
   captionStatus: CaptionState;
@@ -52,6 +56,8 @@ export type CallState = {
   max: number;
   /** Name of the last person to leave while we're now alone. */
   peerLeft: string | null;
+  /** I joined without a microphone (permission refused): tapping Mic asks again. */
+  noMic: boolean;
   reconnecting: boolean;
   participants: Participant[];
   /** Who is on the main stage: the last person to speak. */
@@ -183,6 +189,7 @@ export class CallController {
   private cpuOkChecks = 0;
   private lastHeal = 0;
   private weakDismissedAt = 0;
+  private cameraBlocked = false;
 
   constructor(
     private room: string,
@@ -200,6 +207,7 @@ export class CallController {
       kind: "pair",
       max: 2,
       peerLeft: null,
+      noMic: !local.getAudioTracks().length,
       reconnecting: false,
       participants: [],
       activeId: null,
@@ -207,7 +215,7 @@ export class CallController {
       transcript: [],
       captionStatus: "ok",
       myCaptionStatus: "ok",
-      muted: false,
+      muted: !local.getAudioTracks().length,
       camOn: hasVideo && !audioOnly,
       audioOnly,
       inRoom: !!opts.inRoom,
@@ -282,9 +290,33 @@ export class CallController {
   }
 
   setMuted(muted: boolean) {
+    if (!muted && this.state.noMic) return void this.enableMic();
     for (const t of this.local.getAudioTracks()) t.enabled = !muted;
     if (this.mic) this.mic.enabled = !muted;
     this.set({ muted });
+  }
+
+  /**
+   * Joined without a microphone (they tapped Don't Allow): ask the phone again. If it says yes,
+   * the mic goes live in the call straight away, captions included, with no reconnecting.
+   */
+  async enableMic(): Promise<boolean> {
+    try {
+      const track = await getMicTrack();
+      this.local.addTrack(track);
+      for (const l of this.links.values()) await l.audioSender?.replaceTrack(track).catch(() => {});
+      this.startMic(track);
+      this.watchLocalTracks();
+      this.set({ noMic: false, muted: false });
+      this.setProblem("mic-blocked", false);
+      this.sendAllStatus();
+      this.log("mic_enabled_late");
+      return true;
+    } catch (err) {
+      this.log("mic_still_blocked", { error: String(err) });
+      this.setProblem("mic-blocked", true);
+      return false;
+    }
   }
 
   /** Reconnect to everyone we aren't connected to. */
@@ -303,9 +335,11 @@ export class CallController {
   async setCamera(on: boolean) {
     if (on) {
       if (this.state.audioOnly) this.set({ audioOnly: false });
+      this.cameraBlocked = false;
       const ok = await this.ensureCamera();
       this.set({ camOn: ok });
-      this.setProblem("camera-failed", !ok);
+      this.setProblem("camera-blocked", !ok && this.cameraBlocked);
+      this.setProblem("camera-failed", !ok && !this.cameraBlocked);
     } else {
       this.dropLocalVideo();
       this.set({ camOn: false });
@@ -525,6 +559,8 @@ export class CallController {
       return true;
     } catch (err) {
       this.log("camera_start_failed", { error: String(err) });
+      const name = (err as DOMException)?.name;
+      if (name === "NotAllowedError" || name === "SecurityError") this.cameraBlocked = true;
       return false;
     } finally {
       this.cameraBusy = false;
@@ -534,7 +570,8 @@ export class CallController {
   private async recoverLocalTracks() {
     if (this.stopped) return;
     const audio = this.local.getAudioTracks()[0];
-    if (!audio || audio.readyState === "ended") {
+    // No mic because they refused it: only a tap on Mic asks again, never a surprise prompt.
+    if (!this.state.noMic && (!audio || audio.readyState === "ended")) {
       try {
         const track = await getMicTrack();
         if (audio) this.local.removeTrack(audio);
@@ -656,6 +693,7 @@ export class CallController {
       videoOk: false,
       partnerAudioOnly: false,
       away: false,
+      noMic: false,
       speaking: false,
       captionStatus: "ok",
       photo: this.participant(info.id)?.photo ?? null,
@@ -811,6 +849,8 @@ export class CallController {
     link.pc = pc;
     const audio = this.local.getAudioTracks()[0];
     if (audio) link.audioSender = pc.addTrack(audio, this.local);
+    // No mic yet: still negotiate a two-way audio slot so the mic can be added later.
+    else if (offerer) link.audioSender = pc.addTransceiver("audio", { direction: "sendrecv", streams: [this.local] }).sender;
     if (offerer) {
       // Always negotiate a two-way video slot, even with the camera off, so the camera can be
       // turned on later (or recovered) with replaceTrack and no renegotiation.
@@ -891,6 +931,13 @@ export class CallController {
         await pc.setRemoteDescription({ type: "offer", sdp: data.sdp });
         if (fresh) {
           // Answerer: open our side of the offered video slot so we can send now or later.
+          if (!link!.audioSender) {
+            const a = pc.getTransceivers().find((x) => x.receiver.track.kind === "audio");
+            if (a) {
+              a.direction = "sendrecv";
+              link!.audioSender = a.sender;
+            }
+          }
           const t = pc.getTransceivers().find((x) => x.receiver.track.kind === "video");
           if (t) {
             t.direction = "sendrecv";
@@ -1063,6 +1110,7 @@ export class CallController {
         recvVideo: recv?.video ?? (p?.videoOk || null),
         recvAudio: recv?.audio ?? null,
         away: this.hidden,
+        noMic: this.state.noMic || undefined,
       },
     });
   }
@@ -1204,6 +1252,7 @@ export class CallController {
     }
     if (s.cam !== p.remoteCam) this.patchParticipant(from, { remoteCam: s.cam });
     if (!!s.away !== p.away) this.patchParticipant(from, { away: !!s.away });
+    if (!!s.noMic !== p.noMic) this.patchParticipant(from, { noMic: !!s.noMic });
     if (s.away) return; // their phone isn't measuring anything while they're in another app
 
     // "They can't see you": I'm sending them video but frames aren't arriving there.

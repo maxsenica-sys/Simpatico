@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n";
 import { canShareLink, shareLink } from "@/lib/native";
+import { loadProfile } from "@/lib/profile";
 
 export function ShareLink({
   url,
@@ -10,6 +11,7 @@ export function ShareLink({
   qr = false,
   caption,
   hideUrl = false,
+  invite = true,
 }: {
   url: string;
   compact?: boolean;
@@ -19,6 +21,8 @@ export function ShareLink({
   caption?: string;
   /** Don't print the link (long links, e.g. a profile transfer). */
   hideUrl?: boolean;
+  /** Share with a friendly invitation in front of the link (call links). */
+  invite?: boolean;
 }) {
   const t = useT();
   const [copied, setCopied] = useState(false);
@@ -64,7 +68,10 @@ export function ShareLink({
       )}
       <div className="share-actions">
         {canShare && (
-          <button className="btn primary" onClick={() => void shareLink(url)}>
+          <button className="btn primary" onClick={() => {
+              const name = loadProfile().name.trim().split(/\s+/)[0];
+              void shareLink(url, invite ? (name ? t("inviteText", { name }) : t("inviteTextAnon")) : undefined);
+            }}>
             {t("share")}
           </button>
         )}

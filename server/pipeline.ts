@@ -34,6 +34,8 @@ const STEADY_MIN_WORDS = tuned("STEADY_MIN_WORDS", 4);
 const STEADY_MAX_WORDS = tuned("STEADY_MAX_WORDS", 8);
 const STEADY_PAUSE_MS = tuned("STEADY_PAUSE_MS", 700);
 const STEADY_TIMEOUT_MS = 3000;
+/** Type to talk: nobody is waiting on speech, so a typed message can take a little longer. */
+const TYPED_TIMEOUT_MS = 5000;
 /** Live readers' faint preview of the words not yet in a phrase. */
 const PREVIEW_MIN_WORDS = tuned("PREVIEW_MIN_WORDS", 2);
 const PREVIEW_EVERY_MS = tuned("PREVIEW_EVERY_MS", 350);
@@ -183,6 +185,44 @@ export class SpeakerPipeline {
   /** Client-side voice activity ended (after its hangover): finalize instead of waiting for the endpoint. */
   speechEnded() {
     if (this.open && (this.open.origFinal || this.open.origLive)) this.stream?.finalize();
+  }
+
+  /**
+   * Type to talk: a typed message goes out like a finished sentence, translated with the
+   * conversation as context (or as typed, for readers of the same language). `primary` is
+   * the one pipeline that also records it and shows it to the speaker and same-language readers.
+   */
+  typed(text: string, primary: boolean) {
+    if (!this.speaks || !this.reads) return;
+    const id = `${this.host.ref}-${this.epoch}-t${++this.seq}`;
+    const context = this.host.context();
+    if (primary) {
+      this.host.record({ who: this.host.label, lang: this.speaks, text });
+      this.host.toSpeaker({ t: "own", id, text, final: true });
+      this.host.toOriginal?.({ t: "caption", id: `${id}-src`, stage: "final", text });
+    }
+    if (!this.translating) {
+      this.host.toReader({ t: "caption", id, stage: "final", text, style: "all" });
+      return;
+    }
+    refine({
+      source: text,
+      sourceLang: this.speaks,
+      targetLang: this.reads,
+      speaker: this.host.label,
+      context,
+      glossary: this.host.glossary(),
+      people: this.host.people?.(),
+      profile: this.host.profile?.(),
+      callNames: this.host.callNames?.(),
+      speakerName: this.host.speakerName?.(),
+      signal: AbortSignal.timeout(TYPED_TIMEOUT_MS),
+    }).then((out) => {
+      // If translation fails, the reader still gets the message as typed rather than nothing.
+      const shown = out ?? text;
+      this.host.toReader({ t: "caption", id, stage: "final", text: shown, style: "all" });
+      if (out) this.host.settled?.(id, text, out);
+    });
   }
 
   /** Participant gone, or reader gone. Closes upstream immediately. */

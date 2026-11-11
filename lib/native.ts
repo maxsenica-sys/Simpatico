@@ -21,10 +21,11 @@ export function canShareLink(): boolean {
   return !!plugins()?.Share || (typeof navigator !== "undefined" && !!navigator.share);
 }
 
-export async function shareLink(url: string): Promise<void> {
+/** Share a link, with an optional friendly message in front of it. */
+export async function shareLink(url: string, text?: string): Promise<void> {
   const native = plugins()?.Share;
-  if (native) return void (await native.share({ url }).catch(() => {}));
-  await navigator.share?.({ url }).catch(() => {});
+  if (native) return void (await native.share({ url, text }).catch(() => {}));
+  await navigator.share?.(text ? { text, url } : { url }).catch(() => {});
 }
 
 /** iPhone app only: opens iOS's microphone mode picker (Voice Isolation keeps just your voice). */

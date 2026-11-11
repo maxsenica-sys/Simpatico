@@ -183,5 +183,14 @@
   "importTitle": "Bu profil bu telefona kopyalansın mı?",
   "importBody": "Bu telefondaki profil, diğer telefondaki {name} profiliyle değiştirilecek.",
   "importYes": "Bu telefona kopyala",
-  "transferScan": "Diğer telefonunla tarat"
+  "transferScan": "Diğer telefonunla tarat",
+  "myLinkBtn": "Arama bağlantım",
+  "myLinkTitle": "Arama bağlantın",
+  "myLinkHint": "Sık aradığın biriyle bir kez paylaş. İkiniz de açtığınızda aramadasınız: her seferinde yeni bağlantı gerekmez.",
+  "myLinkOpen": "Arama odamı aç",
+  "inviteText": "{name} seni Simpatico'da görüntülü aramaya davet etti. Katılmak için dokun: uygulama gerekmez, altyazılar kendi dilinde.",
+  "inviteTextAnon": "Simpatico'da görüntülü aramaya davetlisin. Katılmak için dokun: uygulama gerekmez, altyazılar kendi dilinde.",
+  "typePlaceholder": "Mesaj yaz…",
+  "typeSend": "Gönder",
+  "joinedTitle": "{name} katıldı"
 }

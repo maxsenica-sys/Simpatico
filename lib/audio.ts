@@ -135,6 +135,31 @@ export class MicCapture {
     this.onChunk(gainDb > 0.5 ? boost(pcm, gainDb) : pcm, db);
   }
 
+  /**
+   * A short chime when someone joins (two rising notes) or leaves (two falling, softer), so a
+   * phone left on the table while waiting says when the call starts. Uses the audio context
+   * the Join tap already unlocked.
+   */
+  chime(kind: "join" | "leave") {
+    try {
+      const t0 = this.ctx.currentTime + 0.02;
+      const notes = kind === "join" ? [660, 880] : [587, 440];
+      notes.forEach((freq, i) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        const start = t0 + i * 0.14;
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(kind === "join" ? 0.18 : 0.1, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.22);
+        osc.connect(gain).connect(this.ctx.destination);
+        osc.start(start);
+        osc.stop(start + 0.25);
+      });
+    } catch {}
+  }
+
   stop() {
     this.node?.port.close();
     this.node?.disconnect();

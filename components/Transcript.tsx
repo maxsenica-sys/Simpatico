@@ -13,6 +13,7 @@ export function Transcript({
   onSave,
   onClose,
   onReport,
+  onType,
 }: {
   lines: TranscriptLine[];
   names: Record<string, string> | null;
@@ -22,12 +23,15 @@ export function Transcript({
   onClose: () => void;
   /** "Not right?" on a received line: send it to improve translations. */
   onReport?: (id: string) => void;
+  /** Type to talk; returns false when it couldn't be sent. */
+  onType?: (text: string) => boolean;
 }) {
   const t = useT();
   const end = useRef<HTMLDivElement>(null);
   const closeBtn = useRef<HTMLButtonElement>(null);
   const [settings, setSettings] = useState(false);
   const [reported, setReported] = useState<Set<string>>(() => new Set());
+  const [draft, setDraft] = useState("");
   useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
   }, [lines.length]);
@@ -117,13 +121,35 @@ export function Transcript({
         ))}
         <div ref={end} />
       </div>
-      {lines.some((l) => l.final) && (
-        <footer className="sheet-foot">
-          <button className="btn" onClick={onSave}>
+      <footer className="sheet-foot">
+        {onType && (
+          <form
+            className="type-row"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (draft.trim() && onType(draft)) setDraft("");
+            }}
+          >
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder={t("typePlaceholder")}
+              aria-label={t("typePlaceholder")}
+              maxLength={300}
+              enterKeyHint="send"
+              autoComplete="off"
+            />
+            <button className="btn primary small" type="submit" disabled={!draft.trim()}>
+              {t("typeSend")}
+            </button>
+          </form>
+        )}
+        {lines.some((l) => l.final) && (
+          <button className="btn small" onClick={onSave}>
             {t("saveTranscript")}
           </button>
-        </footer>
-      )}
+        )}
+      </footer>
     </div>
   );
 }

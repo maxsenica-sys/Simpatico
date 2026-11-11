@@ -121,3 +121,19 @@ export function readTransfer(hash: string): Transfer | null {
     return null;
   }
 }
+
+/**
+ * Your personal call link (/r/<code>): made once on this phone and kept. Share it once; whenever
+ * you both open it you're in a call, with no new link each time (server: PERSONAL_CODE).
+ */
+const MY_LINK_KEY = "talk.mylink";
+const LINK_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
+export function myCallCode(): string {
+  let code = get(MY_LINK_KEY);
+  if (!code || !/^[a-z0-9]{10}$/.test(code)) {
+    const bytes = crypto.getRandomValues(new Uint8Array(10));
+    code = Array.from(bytes, (b) => LINK_ALPHABET[b % LINK_ALPHABET.length]).join("");
+    set(MY_LINK_KEY, code);
+  }
+  return code;
+}

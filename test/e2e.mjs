@@ -44,6 +44,12 @@ const b = await (await browserB.newContext({ locale: "tr-TR", viewport: { width:
 for (const [n, p] of [["A", a], ["B", b]]) p.on("pageerror", (e) => console.log(`[${n} pageerror]`, e.message));
 
 try {
+  step("Personal call links open a room on demand; unknown short codes still don't");
+  const personal = await fetch(BASE.replace(/\/$/, "") + "/api/rooms/k7mzq2wx4p");
+  if (personal.status !== 200) throw new Error("personal link should open a room, got " + personal.status);
+  const unknown = await fetch(BASE.replace(/\/$/, "") + "/api/rooms/zzzzzz");
+  if (unknown.status !== 404) throw new Error("unknown short code should be 404, got " + unknown.status);
+
   step("A opens home and starts a call");
   await a.goto(BASE);
   await a.getByRole("button", { name: "Start a call" }).click();
@@ -123,6 +129,17 @@ try {
   await b.locator(".controls").getByRole("button", { name: "Konuşma dökümünü göster" }).click();
   await b.getByRole("heading", { name: "Konuşma dökümü" }).waitFor();
   if (await b.getByRole("radiogroup", { name: "Altyazı boyutu" }).count()) throw new Error("caption settings should start hidden");
+  await b.getByRole("button", { name: "Altyazı ayarları" }).click();
+  await b.getByRole("radiogroup", { name: "Altyazı boyutu" }).waitFor();
+
+  step("Type to talk: A types a message, B gets it as a caption in Turkish");
+  await b.getByRole("button", { name: "Kapat", exact: true }).click().catch(() => {});
+  await a.locator(".controls").getByRole("button", { name: "Show transcript" }).click();
+  await a.getByPlaceholder("Type a message…").fill("my flat is number 12");
+  await a.getByRole("button", { name: "Send", exact: true }).click();
+  await b.waitForFunction(() => [...document.querySelectorAll(".cap")].some((e) => e.textContent.includes("(Turkish) my flat is number 12")), null, { timeout: 10000 });
+  await a.getByRole("button", { name: "Close", exact: true }).click();
+  await b.locator(".controls").getByRole("button", { name: "Konuşma dökümünü göster" }).click();
   await b.getByRole("button", { name: "Altyazı ayarları" }).click();
   await b.getByRole("radiogroup", { name: "Altyazı boyutu" }).waitFor();
 

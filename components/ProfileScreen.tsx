@@ -228,7 +228,7 @@ export function ProfileScreen() {
         <h2>{t("transferTitle")}</h2>
         <p className="muted small">{t("transferHint")}</p>
         {showTransfer ? (
-          <ShareLink url={transferLink(location.origin, { profile: p, captions: prefs, speaks: baseLang(lang.speaks) ?? undefined })} compact qr hideUrl caption={t("transferScan")} />
+          <ShareLink url={transferLink(location.origin, { profile: p, captions: prefs, speaks: baseLang(lang.speaks) ?? undefined })} compact qr hideUrl invite={false} caption={t("transferScan")} />
         ) : (
           <button className="btn small" onClick={() => setShowTransfer(true)}>
             {t("transferShow")}

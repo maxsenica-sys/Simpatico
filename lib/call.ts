@@ -326,6 +326,20 @@ export class CallController {
     this.send({ t: "set-caption-style", style });
   }
 
+  /** Join / leave chime, plus a buzz on phones that can (Android). */
+  chime(kind: "join" | "leave") {
+    this.mic?.chime(kind);
+    if (kind === "join") navigator.vibrate?.(180);
+  }
+
+  /** Type to talk: the others see it as a caption in their language. */
+  sendTyped(text: string): boolean {
+    const t = text.trim();
+    if (!t || this.ws?.readyState !== WebSocket.OPEN) return false;
+    this.send({ t: "typed", text: t.slice(0, 300) });
+    return true;
+  }
+
   /** "Not right?" on a caption line: the server saves that line so translations can be improved. */
   report(id: string) {
     this.send({ t: "report", id });

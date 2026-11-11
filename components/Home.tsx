@@ -4,9 +4,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { detectEnv } from "@/lib/env";
 import { useT } from "@/lib/i18n";
-import { loadProfile } from "@/lib/profile";
+import { loadProfile, myCallCode } from "@/lib/profile";
 import { Logo } from "./Logo";
 import { initials } from "./ProfileScreen";
+import { ShareLink } from "./ShareLink";
 
 type InstallEvent = Event & { prompt: () => Promise<void> };
 
@@ -17,10 +18,13 @@ export function Home() {
   const [install, setInstall] = useState<InstallEvent | null>(null);
   const [iosHint, setIosHint] = useState(false);
   const [name, setName] = useState("");
+  const [showLink, setShowLink] = useState(false);
+  const [myLink, setMyLink] = useState<string | null>(null);
 
   useEffect(() => {
     navigator.serviceWorker?.register("/sw.js").catch(() => {});
     setName(loadProfile().name);
+    setMyLink(`${location.origin}/r/${myCallCode()}`);
     const env = detectEnv();
     if (env.ios && !env.standalone && !env.inApp && !env.nativeApp) setIosHint(true);
     const onPrompt = (e: Event) => {
@@ -61,6 +65,18 @@ export function Home() {
         <button className="btn big secondary" onClick={() => start("group")} disabled={busy}>
           {t("startGroup")}
         </button>
+        <button className={`mylink-toggle ${showLink ? "open" : ""}`} onClick={() => setShowLink((v) => !v)} aria-expanded={showLink}>
+          <span aria-hidden="true">🔗</span> {t("myLinkBtn")}
+        </button>
+        {showLink && myLink && (
+          <section className="mylink" aria-label={t("myLinkTitle")}>
+            <p className="small">{t("myLinkHint")}</p>
+            <ShareLink url={myLink} compact />
+            <button className="btn big primary" onClick={() => router.push(new URL(myLink).pathname)}>
+              {t("myLinkOpen")}
+            </button>
+          </section>
+        )}
       </div>
       <footer className="home-foot">
         {install ? (

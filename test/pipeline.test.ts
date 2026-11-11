@@ -187,9 +187,24 @@ await until(() => steady.some((m) => m.style === "steady" && m.stage === "final"
 const short = steady.filter((m) => m.style === "steady");
 assert.equal(short.length, 1, "one settled line, no intermediate guesses");
 assert.equal(short[0].text, "TAM-CEVIRI");
+console.log("✓ steady captions: a short sentence appears once, already idiomatic");
+
+// 6d. Type to talk: the speaker sees their line, the reader gets it translated, once.
+steady.length = 0;
+const own: any[] = [];
+const pt = new SpeakerPipeline({
+  ref: "test-T", label: "A", toReader: (m) => steady.push(m), toSpeaker: (m) => own.push(m), context: () => [], record: () => {}, glossary: () => ({}),
+});
+pt.setLanguages("en-AU", "tr-TR");
+pt.typed("my address is 12 Smith Street", true);
+await until(() => steady.some((m) => m.stage === "final"), 4000);
+assert.equal(steady.filter((m) => m.t === "caption").length, 1);
+assert.equal(steady[0].text, "TAM-CEVIRI");
+assert.ok(own.some((m) => m.t === "own" && m.final && m.text === "my address is 12 Smith Street"));
+pt.stop();
 ps.stop();
 llm.close();
-console.log("✓ steady captions: a short sentence appears once, already idiomatic");
+console.log("✓ type to talk: translated once for the reader, shown to the speaker");
 
 // 7. Anti-flicker edit-distance rule
 assert.equal(isTrivialEdit("Bunu yarın yaparız.", "bunu yarın yaparız"), true);

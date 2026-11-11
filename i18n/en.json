@@ -183,5 +183,14 @@
   "importTitle": "Copy this profile to this phone?",
   "importBody": "This replaces the profile on this phone with {name}'s from the other phone.",
   "importYes": "Copy to this phone",
-  "transferScan": "Scan with your other phone"
+  "transferScan": "Scan with your other phone",
+  "myLinkBtn": "My call link",
+  "myLinkTitle": "Your call link",
+  "myLinkHint": "Share it once with someone you call often. Whenever you both open it, you're in a call together: no new link each time.",
+  "myLinkOpen": "Open my call room",
+  "inviteText": "{name} invited you to a video call on Simpatico. Tap to join: no app needed, and you'll see captions in your language.",
+  "inviteTextAnon": "You're invited to a video call on Simpatico. Tap to join: no app needed, and you'll see captions in your language.",
+  "typePlaceholder": "Type a message…",
+  "typeSend": "Send",
+  "joinedTitle": "{name} joined"
 }

@@ -90,11 +90,13 @@ export function info(p: Peer): PeerInfo {
   return { id: p.id, name: p.name, lang: p.lang, inRoom: p.inRoom };
 }
 
-export function createRoom(kind: RoomKind = "pair"): Room | null {
+export function createRoom(kind: RoomKind = "pair", fixedCode?: string): Room | null {
   if (rooms.size >= MAX_ROOMS) return null;
   let code: string;
-  do code = Array.from({ length: 6 }, () => ALPHABET[randomInt(ALPHABET.length)]).join("");
-  while (rooms.has(code));
+  if (fixedCode) code = fixedCode;
+  else
+    do code = Array.from({ length: 6 }, () => ALPHABET[randomInt(ALPHABET.length)]).join("");
+    while (rooms.has(code));
   const room: Room = {
     code,
     kind,
@@ -112,6 +114,18 @@ export function createRoom(kind: RoomKind = "pair"): Room | null {
   rooms.set(code, room);
   log("room_created", { room: code, kind });
   return room;
+}
+
+/**
+ * Personal call links: a 10-character code made once on someone's phone ("My call link").
+ * Its room is opened whenever someone visits it and closes when empty like any other, so the
+ * same link works for every call with that person. 36^10 codes: not guessable.
+ */
+export const PERSONAL_CODE = /^[a-z0-9]{10}$/;
+
+export function ensureRoom(code: string): Room | undefined {
+  const c = code.toLowerCase();
+  return getRoom(c) ?? (PERSONAL_CODE.test(c) ? (createRoom("pair", c) ?? undefined) : undefined);
 }
 
 export function getRoom(code: string): Room | undefined {
@@ -212,6 +226,18 @@ export function reportLine(room: Room, peer: Peer, id: unknown) {
   if (!line || line.from === peer.id) return;
   append("reports", { source: line.source, translation: line.translation, from: line.srcLang, to: line.tgtLang, readerReads: peer.lang.reads, kind: room.kind });
   log("translation_reported", { room: room.code, from: line.srcLang, to: line.tgtLang });
+}
+
+/** Type to talk: at most one message a second, 300 characters, plain text. */
+const lastTyped = new WeakMap<Peer, number>();
+export function typedText(room: Room, peer: Peer, raw: unknown) {
+  if (typeof raw !== "string") return;
+  const text = raw.replace(/[\u0000-\u001f]/g, " ").trim().slice(0, 300);
+  const now = Date.now();
+  if (!text || now - (lastTyped.get(peer) ?? 0) < 1000) return;
+  lastTyped.set(peer, now);
+  for (const [key, pl] of peer.pipelines) pl.typed(text, key === peer.primaryKey);
+  log("typed_message", { room: room.code, peer: peer.label, chars: text.length });
 }
 
 export function setCaptionStyle(peer: Peer, style: unknown) {

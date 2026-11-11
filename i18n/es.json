@@ -183,5 +183,14 @@
   "importTitle": "¿Copiar este perfil a este teléfono?",
   "importBody": "Esto reemplaza el perfil de este teléfono por el de {name} del otro teléfono.",
   "importYes": "Copiar a este teléfono",
-  "transferScan": "Escanea con tu otro teléfono"
+  "transferScan": "Escanea con tu otro teléfono",
+  "myLinkBtn": "Mi enlace de llamada",
+  "myLinkTitle": "Tu enlace de llamada",
+  "myLinkHint": "Compártelo una sola vez con alguien a quien llamas seguido. Cada vez que los dos lo abran, estarán en una llamada juntos, sin necesidad de un enlace nuevo cada vez.",
+  "myLinkOpen": "Abrir mi sala de llamadas",
+  "inviteText": "{name} te invitó a una videollamada en Simpatico. Toca para unirte: no necesitas instalar ninguna app y verás subtítulos en tu idioma.",
+  "inviteTextAnon": "Te invitaron a una videollamada en Simpatico. Toca para unirte: no necesitas instalar ninguna app y verás subtítulos en tu idioma.",
+  "typePlaceholder": "Escribe un mensaje…",
+  "typeSend": "Enviar",
+  "joinedTitle": "{name} se unió"
 }

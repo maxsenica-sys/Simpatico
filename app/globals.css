@@ -335,7 +335,11 @@ p { margin: 0; line-height: 1.5; }
 .round-btn:last-child { font-size: 1.5rem; font-weight: 500; }
 .round-btn.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
 .sheet-foot { padding: 10px 16px calc(12px + var(--safe-b)); border-top: 1px solid var(--line); display: flex; }
-.sheet-foot .btn { flex: 1; }
+.sheet-foot { flex-direction: column; gap: 8px; }
+.sheet-foot > .btn { width: 100%; }
+.type-row { display: flex; gap: 8px; width: 100%; }
+.type-row input { flex: 1; min-width: 0; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.type-row input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .kbd-hint { width: 100%; margin: 0; }
 @media (hover: none) { .kbd-hint { display: none; } }
 
@@ -379,7 +383,7 @@ p { margin: 0; line-height: 1.5; }
 }
 
 /* ---------------------------------------------------------------- "Me" (profile) */
-.home { position: relative; }
+.home { position: relative; padding-top: calc(64px + var(--safe-t)); }
 .me-btn {
   position: absolute; top: calc(12px + var(--safe-t)); right: 16px; display: flex; align-items: center; gap: 8px;
   padding: 4px 12px 4px 4px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--text);
@@ -446,3 +450,9 @@ p { margin: 0; line-height: 1.5; }
 .thanks-row { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
 .more { width: 100%; display: flex; flex-direction: column; gap: 8px; }
 .more textarea { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; resize: vertical; }
+
+/* ---------------------------------------------------------------- my call link (home) */
+.mylink-toggle { background: none; border: 0; color: var(--accent); font: inherit; font-weight: 650; cursor: pointer; padding: 6px 10px; border-radius: 999px; }
+.mylink-toggle.open { background: rgba(91, 140, 255, 0.12); }
+.mylink { width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); text-align: start; animation: rise 0.2s ease; }
+.mylink p { margin: 0; }

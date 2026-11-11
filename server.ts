@@ -12,7 +12,7 @@ import { append, device } from "./server/store";
 const CONN_EVENTS = new Set(["ice_connected", "ice_failed", "connect_timeout", "heal", "signal_failed", "offer_failed", "weak_network", "socket_back", "away", "back", "reconnected", "gave_up"]);
 import { log } from "./server/log";
 import { refineConfigured } from "./server/refine";
-import { broadcast, createRoom, disconnect, getRoom, info, others, removePeer, seat, send, reportLine, setCaptionStyle, setInRoom, speakerAudio, stopSpeaking, type Peer, type Room } from "./server/rooms";
+import { broadcast, createRoom, disconnect, ensureRoom, info, others, removePeer, seat, send, reportLine, setCaptionStyle, typedText, setInRoom, speakerAudio, stopSpeaking, type Peer, type Room } from "./server/rooms";
 import { sonioxConfigured } from "./server/soniox";
 
 const dev = process.env.NODE_ENV !== "production";
@@ -39,9 +39,9 @@ const server = createServer((req, res) => {
     const room = createRoom(kind);
     return room ? json(res, 201, { code: room.code, kind: room.kind, max: room.max }) : json(res, 503, { error: "busy" });
   }
-  const m = path.match(/^\/api\/rooms\/([a-z0-9]{6})$/i);
+  const m = path.match(/^\/api\/rooms\/([a-z0-9]{6}|[a-z0-9]{10})$/i);
   if (m && req.method === "GET") {
-    const room = getRoom(m[1]);
+    const room = ensureRoom(m[1]);
     return json(res, room ? 200 : 404, room ? { code: room.code, peers: room.peers.size, kind: room.kind, max: room.max } : { error: "not-found" });
   }
   handle(req, res, url);
@@ -94,7 +94,7 @@ wss.on("connection", (ws, req) => {
       if (typeof msg.room !== "string" || typeof msg.peerId !== "string" || !/^[\w-]{8,64}$/.test(msg.peerId) || !lang) {
         return send(ws, { t: "error", code: "bad-request" });
       }
-      room = getRoom(msg.room);
+      room = ensureRoom(msg.room);
       if (!room) return send(ws, { t: "error", code: "room-not-found" });
       const result = seat(room, msg.peerId, lang, ws, { name: msg.name, inRoom: msg.inRoom, device: devName, captionStyle: msg.captionStyle, gender: msg.gender, profile: msg.profile });
       if (result === "room-full") return send(ws, { t: "error", code: "room-full" });
@@ -142,6 +142,9 @@ wss.on("connection", (ws, req) => {
         break;
       case "report":
         reportLine(room, peer, msg.id);
+        break;
+      case "typed":
+        typedText(room, peer, msg.text);
         break;
       case "log": {
         const event = String(msg.event).slice(0, 40);

@@ -6,6 +6,7 @@ import { CAPTION_SIZES, loadCaptionPrefs, saveCaptionPrefs, type CaptionPrefs } 
 import { saveTranscript, transcriptText } from "@/lib/transcriptFile";
 import { langInfo } from "@/shared/lang";
 import { useT } from "@/lib/i18n";
+import { BRAND } from "@/shared/brand";
 import { Captions } from "./Captions";
 import { LogoMark } from "./Logo";
 import { Notice } from "./Notice";
@@ -19,6 +20,28 @@ const NO_VIDEO_GRACE_MS = 4000;
 export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController; shareUrl: string; onRejoin: () => void }) {
   const t = useT();
   const s = useSyncExternalStore(call.subscribe, call.getState, call.getState);
+  // Someone joined (first connection) or left: chime, buzz, and say so in the tab title when
+  // the page is in the background, so a phone left on the table tells you the call started.
+  const announced = useRef(new Set<string>());
+  useEffect(() => {
+    const ids = new Set(s.participants.map((p) => p.id));
+    for (const p of s.participants) {
+      if (!p.connected || announced.current.has(p.id)) continue;
+      announced.current.add(p.id);
+      call.chime("join");
+      if (document.visibilityState !== "visible") document.title = `● ${t("joinedTitle", { name: p.name || "?" })}`;
+    }
+    for (const id of [...announced.current]) {
+      if (ids.has(id)) continue;
+      announced.current.delete(id);
+      call.chime("leave");
+    }
+  }, [s.participants, call, t]);
+  useEffect(() => {
+    const restore = () => document.visibilityState === "visible" && (document.title = BRAND.appName);
+    document.addEventListener("visibilitychange", restore);
+    return () => document.removeEventListener("visibilitychange", restore);
+  }, []);
   const stageRef = useRef<HTMLVideoElement>(null);
   const [blocked, setBlocked] = useState<Set<string>>(new Set());
   const [selfView, setSelfView] = useState(true);
@@ -424,7 +447,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
       <Captions captions={s.captions} names={names} lang={call.info.lang.reads} speaking={connected && anySpeaking} />
 
       {transcript && (
-        <Transcript lines={s.transcript} names={s.names} prefs={prefs} onPrefs={changePrefs} onSave={save} onClose={() => setTranscript(false)} onReport={(id) => call.report(id)} />
+        <Transcript lines={s.transcript} names={s.names} prefs={prefs} onPrefs={changePrefs} onSave={save} onClose={() => setTranscript(false)} onReport={(id) => call.report(id)} onType={(text) => call.sendTyped(text)} />
       )}
       {invite && (
         <div className="sheet invite-sheet" role="dialog" aria-modal="true" aria-label={t("inviteMore")} onClick={(e) => e.stopPropagation()}>

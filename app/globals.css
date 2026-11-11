@@ -696,3 +696,8 @@ p { margin: 0; line-height: 1.5; }
 .has-waiting .slogan { font-size: clamp(1.8rem, 8vw, 2.2rem) !important; }
 .has-waiting .home-hero { padding: 0 4px; }
 .home2.has-waiting { gap: 14px; }
+/* "Active now": they have Simpatico open */
+.rp-ring { position: relative; }
+.rp-dot { position: absolute; right: 1px; bottom: 1px; width: 15px; height: 15px; border-radius: 50%; background: #34c759; border: 3px solid #15181d; }
+.rp.active small { color: #7ee2a0; font-weight: 650; }
+.rp { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }

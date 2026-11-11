@@ -38,6 +38,7 @@ const server = createServer((req, res) => {
   if (path === "/admin" && req.method === "GET") return dashboard(typeof url.query.token === "string" ? url.query.token : undefined, res);
   if (path === "/api/push/key" && req.method === "GET") return pushKey(res);
   if (path === "/api/leave" && req.method === "POST") return void leaveBeacon(req, res);
+  if (path === "/api/active" && req.method === "POST") return void markActive(req, res);
   if (path === "/api/waiting" && req.method === "GET") return presence(typeof url.query.codes === "string" ? url.query.codes : "", res);
   if (path === "/api/push/subscribe" && req.method === "POST") return void pushSubscribe(req, res);
   if (path === "/api/push/unsubscribe" && req.method === "POST") return void pushUnsubscribe(req, res);
@@ -208,17 +209,53 @@ async function leaveBeacon(req: import("node:http").IncomingMessage, res: import
 }
 
 /**
- * GET /api/waiting?codes=a,b — who is sitting in these call card rooms right now (first names),
- * for "Waiting now" on the home screen. Only codes the phone already holds (its own card and
- * cards it has joined); never opens a room. Call card codes are 10 random characters.
+ * "Active now": phones with Simpatico open on the home screen say so every 20 s, for the
+ * private rooms they share with people (lib/pair.ts). Kept in memory for 45 s, never stored.
+ */
+const active = new Map<string, Map<string, { name: string; at: number }>>();
+const ACTIVE_MS = 45_000;
+const CODE = /^[a-z0-9]{10}$/;
+const SEAT_ID = /^[\w-]{8,64}$/;
+
+/** POST /api/active { name, rooms: [{code, seat}], gone?: true } */
+async function markActive(req: import("node:http").IncomingMessage, res: import("node:http").ServerResponse) {
+  const b = (await readBody(req, 8192)) as { name?: unknown; rooms?: unknown; gone?: unknown } | null;
+  const name = typeof b?.name === "string" ? b.name.replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 40) : "";
+  const rooms = Array.isArray(b?.rooms) ? (b.rooms as { code?: unknown; seat?: unknown }[]).slice(0, 50) : [];
+  const now = Date.now();
+  for (const r of rooms) {
+    if (typeof r?.code !== "string" || !CODE.test(r.code) || typeof r.seat !== "string" || !SEAT_ID.test(r.seat)) continue;
+    let m = active.get(r.code);
+    if (b?.gone === true) {
+      m?.delete(r.seat);
+      continue;
+    }
+    if (!name) continue;
+    if (!m) active.set(r.code, (m = new Map()));
+    m.set(r.seat, { name, at: now });
+  }
+  if (active.size > 50_000) for (const [c, m] of active) if (![...m.values()].some((x) => now - x.at < ACTIVE_MS)) active.delete(c);
+  res.writeHead(204);
+  res.end();
+}
+
+/**
+ * GET /api/waiting?codes=code:seat,... — for each room code this phone holds: who is sitting in
+ * that room now ("waiting"), and who else has the app open for it ("active"). The seat says
+ * which one is me, so I'm not listed. Never opens a room.
  */
 function presence(codes: string, res: import("node:http").ServerResponse) {
-  const out: Record<string, string[]> = {};
-  for (const code of codes.split(",").slice(0, 20)) {
-    if (!/^[a-z0-9]{10}$/.test(code)) continue;
+  const waiting: Record<string, string[]> = {};
+  const here: Record<string, string[]> = {};
+  const now = Date.now();
+  for (const item of codes.split(",").slice(0, 50)) {
+    const [code, seat] = item.split(":");
+    if (!CODE.test(code ?? "")) continue;
     const room = getRoom(code);
-    const here = room ? [...room.peers.values()].filter((p) => p.ws).map((p) => p.name) : [];
-    if (here.length) out[code] = here;
+    const inRoom = room ? [...room.peers.values()].filter((p) => p.ws && p.id !== seat).map((p) => p.name) : [];
+    if (inRoom.length) waiting[code] = inRoom;
+    const on = [...(active.get(code)?.entries() ?? [])].filter(([s, x]) => s !== seat && now - x.at < ACTIVE_MS).map(([, x]) => x.name);
+    if (on.length) here[code] = on;
   }
-  return json(res, 200, { waiting: out });
+  return json(res, 200, { waiting, active: here });
 }

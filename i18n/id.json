@@ -199,7 +199,7 @@
   "myLinkShort": "Bagikan sekali. Buka kapan saja untuk menelepon, tanpa tautan baru.",
   "cancelCall": "Batalkan panggilan",
   "recentTitle": "Terbaru",
-  "recentHint": "Ketuk untuk menelepon lagi",
+  "recentHint": "Ketuk untuk menelepon · tahan untuk detail",
   "callPerson": "Telepon {name}",
   "callPersonHint": "Membuka ruang panggilanmu dan mengirim pesan “Gabung yuk” ke {name} dalam bahasanya.",
   "removeRecent": "Hapus dari Terbaru",
@@ -249,5 +249,7 @@
   "camOk": "Kamera berfungsi",
   "micOk": "Mik berfungsi",
   "micSaySomething": "Ucapkan halo untuk tes",
-  "testSound": "Tes suara"
+  "testSound": "Tes suara",
+  "activeNow": "Aktif sekarang",
+  "callPairHint": "Memulai panggilanmu dengan {name}. Dia diberi tahu bahwa kamu menunggu."
 }

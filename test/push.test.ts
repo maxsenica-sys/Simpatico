@@ -72,6 +72,16 @@ await tick();
 assert.equal(sent.length, 0);
 console.log("✓ cards nobody follows notify nobody");
 
+// A private room of two (nobody owns it): when one opens it, the other is told.
+sent.length = 0;
+const PAIR = "pairroom77", MAX_P = "max-pair-seat1", EZGI_P = "ezgi-pair-seat";
+assert.equal(await call(pushSubscribe, { subscription: sub(5), rooms: { [PAIR]: { seat: EZGI_P, own: false } }, text: TR }), 200);
+assert.equal(await call(pushSubscribe, { subscription: sub(6), rooms: { [PAIR]: { seat: MAX_P, own: false } }, text: EN }), 200);
+notifyWaiting(PAIR, "Max", MAX_P, new Set([MAX_P]));
+await tick();
+assert.deepEqual(sent, [{ endpoint: sub(5).endpoint, body: "Max seni bekliyor. Katılmak için dokun." }]);
+console.log("✓ private room of two: Max opens it, Ezgi is told (and not Max)");
+
 await call(pushUnsubscribe, { endpoint: sub(1).endpoint });
 notifyWaiting(CARD, "Someone", "x-seat-000001", new Set(["x-seat-000001"]));
 await tick();

@@ -264,7 +264,8 @@ try {
 
   step("Recent: A's home screen now shows Ayşe with her photo, and her card offers to call her again");
   await a.goto(BASE);
-  await a.getByRole("button", { name: "Call Ayşe" }).click();
+  // A tap calls her straight away (their own room); holding opens her details.
+  await a.getByRole("button", { name: "Call Ayşe" }).click({ button: "right" });
   await a.getByText("Speaks Turkish").waitFor();
   await a.getByText("1 call", { exact: true }).waitFor();
   const photoShown = await a.locator(".pc-av img").count();

@@ -199,7 +199,7 @@
   "myLinkShort": "Share it once. Open it any time to call — no new link needed.",
   "cancelCall": "Cancel call",
   "recentTitle": "Recent",
-  "recentHint": "Tap to call again",
+  "recentHint": "Tap to call · hold for details",
   "callPerson": "Call {name}",
   "callPersonHint": "Opens your call room and sends {name} a “Join me” message in their language.",
   "removeRecent": "Remove from Recent",
@@ -249,5 +249,7 @@
   "camOk": "Camera works",
   "micOk": "Mic works",
   "micSaySomething": "Say hi to test",
-  "testSound": "Test sound"
+  "testSound": "Test sound",
+  "activeNow": "Active now",
+  "callPairHint": "Starts your call with {name}. They're told you're waiting."
 }

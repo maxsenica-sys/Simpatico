@@ -35,7 +35,7 @@ function b64ToBytes(b64: string): Uint8Array {
  * Follow call cards: always my own, plus `extra` (a call card I'm joining). With `ask`, call it
  * straight from a tap: the phone's permission question must come from one.
  */
-export async function followCards(text: string, opts: { ask: boolean; extra?: string }) {
+export async function followCards(text: string, opts: { ask: boolean; extra?: string | string[] }) {
   if (!pushSupported() || !notifyEnabled()) return;
   try {
     if (Notification.permission === "default") {
@@ -46,7 +46,8 @@ export async function followCards(text: string, opts: { ask: boolean; extra?: st
     const rooms: Record<string, { seat: string; own: boolean }> = {};
     const mine = myCallCode();
     rooms[mine] = { seat: peerIdFor(mine), own: true };
-    if (opts.extra && opts.extra !== mine && /^[a-z0-9]{10}$/.test(opts.extra)) rooms[opts.extra] = { seat: peerIdFor(opts.extra), own: false };
+    for (const code of [opts.extra ?? []].flat())
+      if (code !== mine && /^[a-z0-9]{10}$/.test(code)) rooms[code] = { seat: peerIdFor(code), own: false };
     await navigator.serviceWorker.register("/sw.js");
     const reg = await navigator.serviceWorker.ready;
     let sub = await reg.pushManager.getSubscription();

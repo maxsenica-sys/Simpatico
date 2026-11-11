@@ -20,6 +20,8 @@ export type RecentPerson = {
   photo?: string | null;
   /** The call card room we last talked in, if it was one (for "Waiting now"). */
   room?: string;
+  /** Our own private room (see lib/pair.ts): tapping them in Recent goes straight there. */
+  pair?: string;
 };
 
 const norm = (name: string) => name.trim().toLocaleLowerCase();
@@ -64,6 +66,16 @@ export function notePhoto(name: string, photo: string | null) {
   const hit = list.find((r) => norm(r.name) === norm(name));
   if (!hit || hit.photo === photo) return;
   hit.photo = photo;
+  save(list);
+}
+
+/** Their phone and mine worked out our shared room during the call. */
+export function notePair(name: string, code: string) {
+  if (!/^[a-z0-9]{10}$/.test(code)) return;
+  const list = loadRecent();
+  const hit = list.find((r) => norm(r.name) === norm(name));
+  if (!hit || hit.pair === code) return;
+  hit.pair = code;
   save(list);
 }
 

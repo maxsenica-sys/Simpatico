@@ -13,7 +13,8 @@ import { loadPhoto } from "@/lib/photo";
 import { followCards } from "@/lib/push";
 import { PersonSheet, RecentRow } from "./Recent";
 import { loadRecent, type RecentPerson } from "@/lib/recent";
-import { useWaiting } from "@/lib/waiting";
+import { usePresence } from "@/lib/waiting";
+import { samePerson } from "@/lib/recent";
 
 type InstallEvent = Event & { prompt: () => Promise<void> };
 
@@ -37,7 +38,7 @@ export function Home() {
     setRecent(loadRecent());
     setPhoto(loadPhoto());
     // Keep this phone following its own call card (only if notifications are already allowed).
-    void followCards(t("waitingPush", { name: "{name}" }), { ask: false });
+    void followCards(t("waitingPush", { name: "{name}" }), { ask: false, extra: loadRecent().flatMap((r) => (r.pair ? [r.pair] : [])) });
     const env = detectEnv();
     if (env.ios && !env.standalone && !env.inApp && !env.nativeApp) setIosHint(true);
     const onPrompt = (e: Event) => {
@@ -48,7 +49,7 @@ export function Home() {
     return () => window.removeEventListener("beforeinstallprompt", onPrompt);
   }, []);
 
-  const waiting = useWaiting(recent, name);
+  const { waiting, active } = usePresence(recent, name);
   const first = waiting[0];
 
   const start = async (kind: "pair" | "group") => {
@@ -130,11 +131,16 @@ export function Home() {
         <RecentRow
           people={recent}
           waiting={waiting}
+          active={active}
           onPick={(p, color) => {
-            const w = waiting.find((x) => x.person === p);
+            // Straight into a call with them: their waiting room, else our own room. Only people
+            // from before this existed (no shared room yet) get the card with an invite.
+            const w = waiting.find((x) => x.person && samePerson(x.person.name, p.name));
             if (w) router.push(`/r/${w.room}`);
+            else if (p.pair) router.push(`/r/${p.pair}`);
             else setPerson({ p, color });
           }}
+          onDetails={(p, color) => setPerson({ p, color })}
         />
       )}
 
@@ -163,7 +169,7 @@ export function Home() {
           color={person.color}
           link={myLink}
           onClose={() => setPerson(null)}
-          onCalling={() => router.push(new URL(myLink).pathname)}
+          onCalling={() => router.push(person.p.pair ? `/r/${person.p.pair}` : new URL(myLink).pathname)}
           onRemoved={() => {
             setPerson(null);
             setRecent(loadRecent());

@@ -10,6 +10,7 @@ import { useT } from "@/lib/i18n";
 import { getLocalMedia, type MediaFailure } from "@/lib/media";
 import { peerIdFor } from "@/lib/prefs";
 import { loadPhoto } from "@/lib/photo";
+import { myKey } from "@/lib/pair";
 import { CallScreen } from "./CallScreen";
 import { JoinScreen } from "./JoinScreen";
 import { useLang } from "./LangRoot";
@@ -192,6 +193,7 @@ export function Room({ code }: { code: string }) {
           gender,
           profile: speakerProfile(me),
           photo: loadPhoto(),
+          key: myKey(),
           captionStyle: loadCaptionPrefs().style,
           voiceFocus: loadCaptionPrefs().focus,
         });

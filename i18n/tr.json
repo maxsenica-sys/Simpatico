@@ -199,7 +199,7 @@
   "myLinkShort": "Bir kez paylaş. İstediğin zaman aç ve ara — yeni bağlantıya gerek yok.",
   "cancelCall": "Aramayı iptal et",
   "recentTitle": "Son aramalar",
-  "recentHint": "Tekrar aramak için dokun",
+  "recentHint": "Aramak için dokun · ayrıntı için basılı tut",
   "callPerson": "{name} adlı kişiyi ara",
   "callPersonHint": "Arama odanı açar ve {name} adlı kişiye kendi dilinde “Bana katıl” mesajı gönderir.",
   "removeRecent": "Son aramalardan kaldır",
@@ -249,5 +249,7 @@
   "camOk": "Kamera çalışıyor",
   "micOk": "Mikrofon çalışıyor",
   "micSaySomething": "Denemek için merhaba de",
-  "testSound": "Sesi dene"
+  "testSound": "Sesi dene",
+  "activeNow": "Şu an aktif",
+  "callPairHint": "{name} ile aramanı başlatır. Beklediğin ona bildirilir."
 }

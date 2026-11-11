@@ -4,7 +4,7 @@ import { loadStrings, type Strings } from "@/i18n";
 import { useT } from "@/lib/i18n";
 import { canShareLink, shareLink } from "@/lib/native";
 import { loadProfile } from "@/lib/profile";
-import { forgetRecent, type RecentPerson } from "@/lib/recent";
+import { forgetRecent, samePerson, type RecentPerson } from "@/lib/recent";
 import type { Waiting } from "@/lib/waiting";
 import { baseLang } from "@/shared/lang";
 import { Avatar } from "./Avatar";
@@ -58,9 +58,23 @@ function languageName(tag: string) {
   }
 }
 
-/** The home screen's row of the last five people you called. */
-export function RecentRow({ people, waiting = [], onPick }: { people: RecentPerson[]; waiting?: Waiting[]; onPick: (p: RecentPerson, color: string) => void }) {
+/** The home screen's row of the last five people you called. Tap: call them. Hold: details. */
+export function RecentRow({
+  people,
+  waiting = [],
+  active = [],
+  onPick,
+  onDetails,
+}: {
+  people: RecentPerson[];
+  waiting?: Waiting[];
+  active?: RecentPerson[];
+  onPick: (p: RecentPerson, color: string) => void;
+  onDetails: (p: RecentPerson, color: string) => void;
+}) {
   const t = useT();
+  const held = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   return (
     <section className="recent" aria-label={t("recentTitle")}>
       <div className="recent-head">
@@ -69,14 +83,39 @@ export function RecentRow({ people, waiting = [], onPick }: { people: RecentPers
       </div>
       <div className="recent-row">
         {people.slice(0, 5).map((p, i) => {
-          const isWaiting = waiting.some((w) => w.person === p);
+          const isWaiting = waiting.some((w) => w.person && samePerson(w.person.name, p.name));
+          const isActive = !isWaiting && active.some((a) => samePerson(a.name, p.name));
+          const color = gradient(i);
           return (
-            <button key={p.name} className={`rp ${isWaiting ? "waiting" : ""}`} onClick={() => onPick(p, gradient(i))} aria-label={isWaiting ? t("waitingBanner", { name: p.name }) : t("callPerson", { name: p.name })}>
+            <button
+              key={p.name}
+              className={`rp ${isWaiting ? "waiting" : ""} ${isActive ? "active" : ""}`}
+              onPointerDown={() => {
+                held.current = false;
+                timer.current = setTimeout(() => {
+                  held.current = true;
+                  onDetails(p, color);
+                }, 550);
+              }}
+              onPointerUp={() => timer.current && clearTimeout(timer.current)}
+              onPointerLeave={() => timer.current && clearTimeout(timer.current)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                if (!held.current) onDetails(p, color);
+                held.current = true;
+              }}
+              onClick={() => {
+                if (held.current) return void (held.current = false);
+                onPick(p, color);
+              }}
+              aria-label={isWaiting ? t("waitingBanner", { name: p.name }) : t("callPerson", { name: p.name })}
+            >
               <span className="rp-ring">
-                <Avatar className="rp-av" photo={p.photo} fallback={initials(p.name)} style={{ background: gradient(i) }} />
+                <Avatar className="rp-av" photo={p.photo} fallback={initials(p.name)} style={{ background: color }} />
+                {isActive && <span className="rp-dot" aria-hidden="true" />}
               </span>
               <b>{p.name}</b>
-              <small>{isWaiting ? t("waitingNow") : when(p.at)}</small>
+              <small>{isWaiting ? t("waitingNow") : isActive ? t("activeNow") : when(p.at)}</small>
             </button>
           );
         })}
@@ -106,6 +145,7 @@ export function PersonSheet({ person, color, link, onClose, onCalling, onRemoved
   }, []);
 
   const call = async () => {
+    if (person.pair) return onCalling();
     const me = loadProfile().name.trim().split(/\s+/)[0];
     const fill = (s: string) => s.replace(/\{name\}/g, me);
     const text = theirs ? (me ? fill(theirs.inviteText) : theirs.inviteTextAnon) : me ? t("inviteText", { name: me }) : t("inviteTextAnon");
@@ -138,7 +178,7 @@ export function PersonSheet({ person, color, link, onClose, onCalling, onRemoved
           <button className="btn primary big" onClick={() => void call()}>
             <PhoneGlyph /> {t("callPerson", { name: person.name })}
           </button>
-          <p className="pc-note">{t("callPersonHint", { name: person.name })}</p>
+          <p className="pc-note">{person.pair ? t("callPairHint", { name: person.name }) : t("callPersonHint", { name: person.name })}</p>
           <button
             className="link pc-remove"
             onClick={() => {

@@ -84,6 +84,14 @@ export default function Privacy() {
           people you have called) is likewise kept only on your device. Removing someone from Recent, removing your photo, or &ldquo;Clear my profile&rdquo; deletes it
           from your device; a photo you have already shared stays on the other person&rsquo;s device until they remove you from their Recent or clear their profile.
         </p>
+        <h3>Calling people again, &ldquo;Active now&rdquo; and &ldquo;Waiting now&rdquo;</h3>
+        <p>
+          When two people have been in a call together, their devices agree on a private room of their own, so either can call the other again from Recent without
+          sending a link. Each device has a random key kept only on that device; the two devices swap keys over the call&rsquo;s own encrypted connection and work
+          out the same room code from them. Our server never sees the keys. While the Simpatico home screen is open, your device tells our server, for each of those
+          private rooms, that you are available (your first name), and asks who else is available or already waiting in those rooms, and in your call card room.
+          This is kept only in memory and forgotten after 45 seconds; only people who share that private room with you can see it.
+        </p>
         <h3>&ldquo;Someone&rsquo;s waiting&rdquo; notifications</h3>
         <p>
           If you allow notifications, your device gives our server a push address (a long random web address from Apple, Google or your browser maker) and we store it

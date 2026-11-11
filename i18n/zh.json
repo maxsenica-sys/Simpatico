@@ -199,7 +199,7 @@
   "myLinkShort": "分享一次。随时打开即可通话，无需新链接。",
   "cancelCall": "取消通话",
   "recentTitle": "最近通话",
-  "recentHint": "点按再次通话",
+  "recentHint": "点按通话 · 长按查看详情",
   "callPerson": "呼叫{name}",
   "callPersonHint": "打开你的通话房间，并用对方的语言给{name}发送“来加入我”的消息。",
   "removeRecent": "从最近通话中移除",
@@ -249,5 +249,7 @@
   "camOk": "摄像头正常",
   "micOk": "麦克风正常",
   "micSaySomething": "说句话试试",
-  "testSound": "测试声音"
+  "testSound": "测试声音",
+  "activeNow": "在线",
+  "callPairHint": "开始与{name}的通话，对方会收到你在等待的通知。"
 }

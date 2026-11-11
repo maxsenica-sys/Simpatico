@@ -193,7 +193,8 @@ export async function pushSubscribe(req: IncomingMessage, res: ServerResponse) {
       else if (owner !== f.seat) own = false;
     }
     // Following someone else's card: only from a seat that has really been in that room.
-    if (!own && !seen.get(code)?.includes(f.seat)) continue;
+    // (Rooms nobody owns are two people's private rooms: their code is known only to them.)
+    if (!own && owners.has(code) && !seen.get(code)?.includes(f.seat)) continue;
     delete sub.rooms[code];
     sub.rooms[code] = { seat: f.seat, own };
   }
@@ -226,7 +227,9 @@ export function notifyWaiting(code: string, name: string, joinerSeat: string, pr
       const f = sub.rooms[code];
       if (!f || present.has(f.seat)) continue;
       const isOwner = f.own && owner === f.seat;
-      if (!isOwner && !ownerOpened) continue;
+      // A call card: its owner is told about anyone; its callers only when the owner opens it.
+      // A private room of two (no owner): the other person is told.
+      if (owner && !isOwner && !ownerOpened) continue;
       const key = `${sub.endpoint}|${code}`;
       if (now - (lastSent.get(key) ?? 0) < QUIET_MS) continue;
       lastSent.set(key, now);

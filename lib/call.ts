@@ -1,6 +1,7 @@
 "use client";
 import type { ParticipantLang } from "@/shared/lang";
 import { validPhoto } from "./photo";
+import { validKey } from "./pair";
 import type { CaptionStage, CaptionState, CaptionStyle, Gender, SpeakerProfile, ClientMsg, PeerInfo, PeerStatus, RoomKind, ServerMsg, SignalData } from "@/shared/protocol";
 import { MicCapture } from "./audio";
 import { ScreenAwake } from "./wakeLock";
@@ -48,6 +49,8 @@ export type Participant = PeerInfo & {
   captionStatus: CaptionState;
   /** Their profile photo, sent straight from their phone over our connection (data URL). */
   photo: string | null;
+  /** Their phone's private key (for our shared "call again" room); never sent to the server. */
+  key: string | null;
 };
 
 export type CallState = {
@@ -200,7 +203,7 @@ export class CallController {
     private lang: ParticipantLang,
     /** Our local stream. Its tracks change as the camera turns on/off or is recovered. */
     readonly local: MediaStream,
-    private opts: { audioOnly?: boolean; name?: string; inRoom?: boolean; captionStyle?: CaptionStyle; voiceFocus?: boolean; gender?: Gender; profile?: SpeakerProfile; photo?: string | null } = {},
+    private opts: { audioOnly?: boolean; name?: string; inRoom?: boolean; captionStyle?: CaptionStyle; voiceFocus?: boolean; gender?: Gender; profile?: SpeakerProfile; photo?: string | null; key?: string } = {},
   ) {
     const hasVideo = local.getVideoTracks().some((t) => t.readyState === "live");
     const audioOnly = !!opts.audioOnly;
@@ -780,6 +783,7 @@ export class CallController {
       speaking: false,
       captionStatus: "ok",
       photo: this.participant(info.id)?.photo ?? null,
+      key: this.participant(info.id)?.key ?? null,
     };
   }
 
@@ -976,10 +980,12 @@ export class CallController {
       dc.onopen = () => this.sendHello(dc);
       dc.onmessage = (e) => {
         try {
-          const msg = JSON.parse(String(e.data)) as { t?: string; photo?: unknown };
+          const msg = JSON.parse(String(e.data)) as { t?: string; photo?: unknown; key?: unknown };
           if (msg.t !== "hello") return;
           const photo = validPhoto(msg.photo) ? msg.photo : null;
-          if (this.participant(link.id)?.photo !== photo) this.patchParticipant(link.id, { photo });
+          const key = validKey(msg.key) ? msg.key : null;
+          const p = this.participant(link.id);
+          if (p && (p.photo !== photo || p.key !== key)) this.patchParticipant(link.id, { photo, key });
         } catch {}
       };
     } catch {
@@ -990,7 +996,7 @@ export class CallController {
   private sendHello(dc: RTCDataChannel) {
     if (dc.readyState !== "open") return;
     try {
-      dc.send(JSON.stringify({ t: "hello", photo: this.opts.photo ?? null }));
+      dc.send(JSON.stringify({ t: "hello", photo: this.opts.photo ?? null, key: this.opts.key || undefined }));
     } catch {}
   }
 

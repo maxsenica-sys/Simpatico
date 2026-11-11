@@ -15,7 +15,8 @@ import { ShareLink } from "./ShareLink";
 import { Transcript } from "./Transcript";
 import { detectEnv } from "@/lib/env";
 import { followCards, notifyEnabled, pushPermission } from "@/lib/push";
-import { noteCall, notePhoto, noteTime } from "@/lib/recent";
+import { noteCall, notePair, notePhoto, noteTime } from "@/lib/recent";
+import { myKey, pairCode } from "@/lib/pair";
 import { Avatar } from "./Avatar";
 
 const OWN_LINE_MS = 5000;
@@ -70,6 +71,21 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
     void followCards(t("waitingPush", { name: "{name}" }), { ask: false, extra: call.info.room });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s.phase]);
+  // Our own room with each person (lib/pair.ts): remembered in Recent, followed for "waiting".
+  const paired = useRef(new Set<string>());
+  useEffect(() => {
+    const me = myKey();
+    for (const p of s.participants) {
+      if (!p.connected || !p.key || !me || paired.current.has(p.id)) continue;
+      paired.current.add(p.id);
+      const name = p.name;
+      void pairCode(me, p.key).then((code) => {
+        notePair(name, code);
+        if (pushPermission() === "granted") void followCards(t("waitingPush", { name: "{name}" }), { ask: false, extra: code });
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s.participants]);
   useEffect(() => {
     for (const p of s.participants)
       if (p.connected && !met.current.has(p.id)) {

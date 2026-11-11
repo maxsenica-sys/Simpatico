@@ -199,7 +199,7 @@
   "myLinkShort": "Compartilhe uma vez. Abra quando quiser para ligar, sem link novo.",
   "cancelCall": "Cancelar chamada",
   "recentTitle": "Recentes",
-  "recentHint": "Toque para ligar de novo",
+  "recentHint": "Toque para ligar · segure para detalhes",
   "callPerson": "Ligar para {name}",
   "callPersonHint": "Abre sua sala de chamada e envia a {name} uma mensagem “Entre comigo” no idioma da pessoa.",
   "removeRecent": "Remover dos recentes",
@@ -249,5 +249,7 @@
   "camOk": "Câmera funcionando",
   "micOk": "Microfone funcionando",
   "micSaySomething": "Diga oi para testar",
-  "testSound": "Testar som"
+  "testSound": "Testar som",
+  "activeNow": "Ativo agora",
+  "callPairHint": "Inicia sua chamada com {name}. A pessoa é avisada de que você está esperando."
 }

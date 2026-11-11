@@ -6,6 +6,7 @@ import { canShareLink, shareLink } from "@/lib/native";
 import { loadProfile } from "@/lib/profile";
 import { forgetRecent, type RecentPerson } from "@/lib/recent";
 import { baseLang } from "@/shared/lang";
+import { Avatar } from "./Avatar";
 import { initials } from "./ProfileScreen";
 
 const GRADIENTS = [
@@ -68,9 +69,7 @@ export function RecentRow({ people, onPick }: { people: RecentPerson[]; onPick: 
       <div className="recent-row">
         {people.slice(0, 5).map((p, i) => (
           <button key={p.name} className="rp" onClick={() => onPick(p, gradient(i))} aria-label={t("callPerson", { name: p.name })}>
-            <span className="rp-av" style={{ background: gradient(i) }} aria-hidden="true">
-              {initials(p.name)}
-            </span>
+            <Avatar className="rp-av" photo={p.photo} fallback={initials(p.name)} style={{ background: gradient(i) }} />
             <b>{p.name}</b>
             <small>{when(p.at)}</small>
           </button>
@@ -119,9 +118,7 @@ export function PersonSheet({ person, color, link, onClose, onCalling, onRemoved
         <button ref={closeBtn} className="round-btn bsheet-close" aria-label={t("close")} onClick={onClose}>
           ×
         </button>
-        <div className="pc-av" style={{ background: color }} aria-hidden="true">
-          {initials(person.name)}
-        </div>
+        <Avatar className="pc-av" photo={person.photo} fallback={initials(person.name)} style={{ background: color }} />
         <h2>{person.name}</h2>
         <div className="pc-facts">
           <span>{t("speaksLang", { lang: languageName(person.lang) })}</span>

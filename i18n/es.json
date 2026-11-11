@@ -207,9 +207,13 @@
   "oneCall": "1 llamada",
   "nCalls": "{n} llamadas",
   "clearTitle": "¿Borrar este teléfono?",
-  "clearWhat": "Se borrarán de este teléfono tu nombre, género, palabras, ajustes de subtítulos y la lista de Recientes.",
+  "clearWhat": "Se borrarán de este teléfono tu nombre, foto, género, palabras, ajustes de subtítulos y la lista de Recientes.",
   "clearNewLink": "Darme también un nuevo enlace de llamada",
   "clearNewLinkWarn": "Tu enlace antiguo dejará de llegar a ti. Quien lo tenga necesitará el nuevo.",
   "clearDo": "Borrar",
-  "cancel": "Cancelar"
+  "cancel": "Cancelar",
+  "addPhoto": "Añadir una foto",
+  "changePhoto": "Cambiar foto",
+  "removePhoto": "Quitar",
+  "photoHint": "Las personas a las que llamas ven tu foto en su lista de Recientes. Va directamente de tu teléfono al suyo, nunca pasa por nuestros servidores."
 }

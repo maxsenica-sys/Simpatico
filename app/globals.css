@@ -578,3 +578,18 @@ p { margin: 0; line-height: 1.5; }
   .has-recent .slogan { font-size: 1.7rem; }
   .home2.has-recent { gap: 12px; }
 }
+
+/* profile photos */
+.has-photo { overflow: hidden; padding: 0; background: #1b2232; }
+.has-photo > img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit; }
+.photo-edit { display: flex; gap: 14px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.photo-wrap { position: relative; }
+.photo-badge {
+  position: absolute; right: -2px; bottom: -2px; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--accent); color: #fff; border: 3px solid var(--bg); cursor: pointer; font-size: 0.95rem;
+}
+.photo-actions { display: flex; gap: 10px; justify-content: center; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.photo-pick { position: relative; background: none; border: 0; padding: 0; cursor: pointer; border-radius: 50%; }
+.photo-pick .avatar.xl { width: 104px; height: 104px; }
+.profile-hero .photo-actions { margin: 4px 0 2px; }

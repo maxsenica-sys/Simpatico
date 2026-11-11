@@ -207,9 +207,13 @@
   "oneCall": "1 panggilan",
   "nCalls": "{n} panggilan",
   "clearTitle": "Hapus data di ponsel ini?",
-  "clearWhat": "Nama, gender, kata, pengaturan teks, dan daftar Terbaru akan dihapus dari ponsel ini.",
+  "clearWhat": "Nama, foto, gender, kata, pengaturan teks, dan daftar Terbaru akan dihapus dari ponsel ini.",
   "clearNewLink": "Beri saya tautan panggilan baru juga",
   "clearNewLinkWarn": "Tautan lamamu tidak akan menjangkaumu lagi. Siapa pun yang memilikinya perlu yang baru.",
   "clearDo": "Hapus",
-  "cancel": "Batal"
+  "cancel": "Batal",
+  "addPhoto": "Tambah foto",
+  "changePhoto": "Ganti foto",
+  "removePhoto": "Hapus",
+  "photoHint": "Orang yang kamu telepon melihat fotomu di daftar Terbaru mereka. Foto langsung dikirim dari ponselmu ke ponsel mereka, tidak pernah lewat server kami."
 }

@@ -76,6 +76,14 @@ export default function Privacy() {
           Anthropic (with the sentence being translated). Nothing of your profile is stored by us after the call. &ldquo;Clear my profile&rdquo; removes it from your
           device.
         </p>
+        <h3>Profile photo and Recent</h3>
+        <p>
+          If you add a profile photo, it is kept only on your device. During a call it is sent directly from your device to the other people&rsquo;s devices over the
+          call&rsquo;s own encrypted connection; it does not pass through or get stored on our servers (if a direct connection isn&rsquo;t possible, it travels encrypted
+          through a relay that cannot read it, the same as your video). The &ldquo;Recent&rdquo; list on the home screen (the names, languages, call times and photos of
+          people you have called) is likewise kept only on your device. Removing someone from Recent, removing your photo, or &ldquo;Clear my profile&rdquo; deletes it
+          from your device; a photo you have already shared stays on the other person&rsquo;s device until they remove you from their Recent or clear their profile.
+        </p>
         <h3>Technical logs</h3>
         <p>
           Our server logs events such as the call room code, the languages chosen, whether the connection was direct, timings and errors. Logs contain no audio, video or

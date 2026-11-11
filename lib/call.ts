@@ -1,5 +1,6 @@
 "use client";
 import type { ParticipantLang } from "@/shared/lang";
+import { validPhoto } from "./photo";
 import type { CaptionStage, CaptionState, CaptionStyle, Gender, SpeakerProfile, ClientMsg, PeerInfo, PeerStatus, RoomKind, ServerMsg, SignalData } from "@/shared/protocol";
 import { MicCapture } from "./audio";
 import { ScreenAwake } from "./wakeLock";
@@ -41,6 +42,8 @@ export type Participant = PeerInfo & {
   /** Their speech is being captioned right now. */
   speaking: boolean;
   captionStatus: CaptionState;
+  /** Their profile photo, sent straight from their phone over our connection (data URL). */
+  photo: string | null;
 };
 
 export type CallState = {
@@ -142,6 +145,8 @@ type Link = {
   wasConnected: boolean;
   /** When the connection dropped, while it is down. */
   lostAt: number | null;
+  /** Phone-to-phone side channel on this connection (profile photo). */
+  dc: RTCDataChannel | null;
 };
 
 /**
@@ -185,7 +190,7 @@ export class CallController {
     private lang: ParticipantLang,
     /** Our local stream. Its tracks change as the camera turns on/off or is recovered. */
     readonly local: MediaStream,
-    private opts: { audioOnly?: boolean; name?: string; inRoom?: boolean; captionStyle?: CaptionStyle; voiceFocus?: boolean; gender?: Gender; profile?: SpeakerProfile } = {},
+    private opts: { audioOnly?: boolean; name?: string; inRoom?: boolean; captionStyle?: CaptionStyle; voiceFocus?: boolean; gender?: Gender; profile?: SpeakerProfile; photo?: string | null } = {},
   ) {
     const hasVideo = local.getVideoTracks().some((t) => t.readyState === "live");
     const audioOnly = !!opts.audioOnly;
@@ -653,6 +658,7 @@ export class CallController {
       away: false,
       speaking: false,
       captionStatus: "ok",
+      photo: this.participant(info.id)?.photo ?? null,
     };
   }
 
@@ -787,6 +793,7 @@ export class CallController {
         localVideoBad: 0,
         wasConnected: false,
         lostAt: null,
+        dc: null,
       };
       this.links.set(id, link);
     }
@@ -820,6 +827,7 @@ export class CallController {
       this.updateMicRemote();
     };
     pc.onconnectionstatechange = () => this.onPcState(link, pc);
+    this.openSideChannel(link, pc);
     pc.oniceconnectionstatechange = () => {
       // Safari reports some transitions only on the ICE state.
       if (pc.iceConnectionState === "failed") this.onPcState(link, pc, "failed");
@@ -828,6 +836,35 @@ export class CallController {
     this.armConnectTimeout(link);
     this.recomputePhase();
     return link;
+  }
+
+  /**
+   * A data channel both sides create with the same fixed id (no extra negotiation), used to
+   * hand over each person's profile photo directly, phone to phone, encrypted like the call.
+   */
+  private openSideChannel(link: Link, pc: RTCPeerConnection) {
+    try {
+      const dc = pc.createDataChannel("hello", { negotiated: true, id: 0, ordered: true });
+      link.dc = dc;
+      dc.onopen = () => this.sendHello(dc);
+      dc.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(String(e.data)) as { t?: string; photo?: unknown };
+          if (msg.t !== "hello") return;
+          const photo = validPhoto(msg.photo) ? msg.photo : null;
+          if (this.participant(link.id)?.photo !== photo) this.patchParticipant(link.id, { photo });
+        } catch {}
+      };
+    } catch {
+      link.dc = null;
+    }
+  }
+
+  private sendHello(dc: RTCDataChannel) {
+    if (dc.readyState !== "open") return;
+    try {
+      dc.send(JSON.stringify({ t: "hello", photo: this.opts.photo ?? null }));
+    } catch {}
   }
 
   private async makeOffer(id: string, iceRestart = false) {
@@ -979,6 +1016,8 @@ export class CallController {
     link.pending = [];
     if (link.pc) {
       link.pc.onicecandidate = link.pc.ontrack = link.pc.onconnectionstatechange = link.pc.oniceconnectionstatechange = null;
+      if (link.dc) link.dc.onopen = link.dc.onmessage = null;
+      link.dc = null;
       link.pc.close();
     }
     this.links.delete(id);

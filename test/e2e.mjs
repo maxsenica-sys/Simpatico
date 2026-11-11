@@ -100,6 +100,15 @@ try {
   await b.screenshot({ path: OUT + "2-guest-join-tr.png" });
   await b.locator(".field input").fill("Ayşe");
   await b.locator(".gender-select").selectOption("f");
+  // Ayşe has a profile photo: it should reach Max's phone directly and land in his Recent.
+  await b.evaluate(() => {
+    const c = document.createElement("canvas");
+    c.width = c.height = 192;
+    const g = c.getContext("2d");
+    g.fillStyle = "#e0457b";
+    g.fillRect(0, 0, 192, 192);
+    localStorage.setItem("talk.photo", c.toDataURL("image/jpeg", 0.8));
+  });
   await b.getByRole("button", { name: "Görüntülü katıl" }).click();
 
   step("WebRTC connects both ways");
@@ -253,11 +262,14 @@ try {
   await b.getByText("Max aramadan ayrıldı.").waitFor({ timeout: 10000 });
   await b.screenshot({ path: OUT + "6-guest-peer-left.png" });
 
-  step("Recent: A's home screen now shows Ayşe, and her card offers to call her again");
+  step("Recent: A's home screen now shows Ayşe with her photo, and her card offers to call her again");
   await a.goto(BASE);
   await a.getByRole("button", { name: "Call Ayşe" }).click();
   await a.getByText("Speaks Turkish").waitFor();
   await a.getByText("1 call", { exact: true }).waitFor();
+  const photoShown = await a.locator(".pc-av img").count();
+  if (!photoShown) throw new Error("Ayşe's photo didn't reach Max's Recent");
+  console.log("  Ayşe's photo arrived phone-to-phone and shows in Recent");
   await a.screenshot({ path: OUT + "7-recent.png" });
 
   console.log("\nE2E PASSED");

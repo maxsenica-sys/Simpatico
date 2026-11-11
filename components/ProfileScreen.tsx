@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Avatar } from "./Avatar";
+import { loadPhoto, photoFromFile, savePhoto } from "@/lib/photo";
 import { loadCaptionPrefs, saveCaptionPrefs, type CaptionPrefs } from "@/lib/captionPrefs";
 import { useT } from "@/lib/i18n";
 import { MAX_WORDS, TOPICS, clearProfile, countries, loadProfile, readTransfer, saveProfile, transferLink, type Profile, type Transfer } from "@/lib/profile";
@@ -35,6 +37,9 @@ export function ProfileScreen() {
   const [incoming, setIncoming] = useState<Transfer | null>(null);
   const [showTransfer, setShowTransfer] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [photo, setPhoto] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  useEffect(() => setPhoto(loadPhoto()), []);
   const [newLink, setNewLink] = useState(false);
   useEffect(() => {
     setP(loadProfile());
@@ -45,6 +50,10 @@ export function ProfileScreen() {
   const countryList = useMemo(() => countries(ui), [ui]);
   if (!p || !prefs) return <div className="boot" />;
 
+  const flashSaved = () => {
+    setSaved(true);
+    window.setTimeout(() => setSaved(false), 1500);
+  };
   const update = (next: Profile) => {
     setP(next);
     saveProfile(next);
@@ -106,9 +115,52 @@ export function ProfileScreen() {
       )}
 
       <div className="profile-hero">
-        <div className="avatar xl" aria-hidden="true">
-          {initials(p.name) || "🙂"}
+        <div className="photo-wrap">
+          <button type="button" className="photo-pick" onClick={() => fileRef.current?.click()} aria-label={photo ? t("changePhoto") : t("addPhoto")}>
+            <Avatar className="avatar xl" photo={photo} fallback={initials(p.name) || "🙂"} />
+            <span className="photo-badge" aria-hidden="true">
+              📷
+            </span>
+          </button>
         </div>
+        <input
+          ref={fileRef}
+          className="visually-hidden"
+          type="file"
+          accept="image/*"
+          tabIndex={-1}
+          aria-hidden="true"
+          onChange={async (e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (!f) return;
+            try {
+              const url = await photoFromFile(f);
+              savePhoto(url);
+              setPhoto(url);
+              flashSaved();
+            } catch {}
+          }}
+        />
+        <div className="photo-actions">
+          <button type="button" className="btn small" onClick={() => fileRef.current?.click()}>
+            {photo ? t("changePhoto") : t("addPhoto")}
+          </button>
+          {photo && (
+            <button
+              type="button"
+              className="btn small"
+              onClick={() => {
+                savePhoto(null);
+                setPhoto(null);
+                flashSaved();
+              }}
+            >
+              {t("removePhoto")}
+            </button>
+          )}
+        </div>
+        <p className="muted small">{t("photoHint")}</p>
         <p className="muted small">{t("profileIntro")}</p>
       </div>
 
@@ -260,6 +312,7 @@ export function ProfileScreen() {
                   clearProfile(newLink);
                   setP(loadProfile());
                   setPrefs(loadCaptionPrefs());
+                  setPhoto(null);
                   setClearing(false);
                   setNewLink(false);
                 }}

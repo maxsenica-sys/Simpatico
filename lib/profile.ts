@@ -60,7 +60,7 @@ export function saveProfile(p: Profile) {
 
 /** Wipe what this phone knows about you. Your call link is kept unless you ask for a new one. */
 export function clearProfile(newLink = false) {
-  for (const k of [NAME_KEY, GENDER_KEY, KEY, "talk.captions.v1", "talk.selfCorner", "talk.recent.v1"]) set(k, null);
+  for (const k of [NAME_KEY, GENDER_KEY, KEY, "talk.captions.v1", "talk.selfCorner", "talk.recent.v1", "talk.photo"]) set(k, null);
   if (newLink) set(MY_LINK_KEY, null);
 }
 

@@ -9,5 +9,5 @@ export const BRAND = {
   /** The legal entity that runs the service (the "controller" under GDPR / KVKK). */
   operator: "[Business name to be added]",
   contactEmail: "[contact email to be added]",
-  policyUpdated: "10 November 2026",
+  policyUpdated: "11 November 2026",
 };

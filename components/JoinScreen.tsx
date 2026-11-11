@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import { Avatar } from "./Avatar";
+import { loadPhoto } from "@/lib/photo";
 import { useEffect, useRef, useState } from "react";
 import { useT } from "@/lib/i18n";
 import type { Gender } from "@/shared/protocol";
@@ -38,6 +40,8 @@ export function JoinScreen({
   const t = useT();
   const video = useRef<HTMLVideoElement>(null);
   const [name, setName] = useState("");
+  const [photo, setPhoto] = useState<string | null>(null);
+  useEffect(() => setPhoto(loadPhoto()), []);
   const [inRoom, setInRoom] = useState(false);
   const [missing, setMissing] = useState(false);
   // Languages like Russian, Arabic or Portuguese need it even for "I" and "you".
@@ -126,9 +130,7 @@ export function JoinScreen({
             that change words for "I" and "you" (Russian, Arabic, Portuguese, Hindi…). */}
         {!editing && (
           <div className="joining-as">
-            <span className="avatar" aria-hidden="true">
-              {initials(name)}
-            </span>
+            <Avatar photo={photo} fallback={initials(name)} />
             <span>{t("joiningAs", { name: name.trim() })}</span>
             <button
               type="button"

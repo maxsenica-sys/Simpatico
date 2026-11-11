@@ -8,6 +8,8 @@ import { loadProfile, myCallCode } from "@/lib/profile";
 import { Logo } from "./Logo";
 import { initials } from "./ProfileScreen";
 import { LinkSheet } from "./LinkSheet";
+import { Avatar } from "./Avatar";
+import { loadPhoto } from "@/lib/photo";
 import { PersonSheet, RecentRow } from "./Recent";
 import { loadRecent, type RecentPerson } from "@/lib/recent";
 
@@ -23,6 +25,7 @@ export function Home() {
   const [showLink, setShowLink] = useState(false);
   const [myLink, setMyLink] = useState<string | null>(null);
   const [recent, setRecent] = useState<RecentPerson[]>([]);
+  const [photo, setPhoto] = useState<string | null>(null);
   const [person, setPerson] = useState<{ p: RecentPerson; color: string } | null>(null);
 
   useEffect(() => {
@@ -30,6 +33,7 @@ export function Home() {
     setName(loadProfile().name);
     setMyLink(`${location.origin}/r/${myCallCode()}`);
     setRecent(loadRecent());
+    setPhoto(loadPhoto());
     const env = detectEnv();
     if (env.ios && !env.standalone && !env.inApp && !env.nativeApp) setIosHint(true);
     const onPrompt = (e: Event) => {
@@ -57,9 +61,7 @@ export function Home() {
       <header className="home-top">
         <Logo small />
         <Link href="/profile" className="me-btn" aria-label={t("openProfile")}>
-          <span className="avatar" aria-hidden="true">
-            {initials(name) || <PersonIcon />}
-          </span>
+          <Avatar photo={photo} fallback={initials(name) || <PersonIcon />} />
           <span className="me-label">{t("profileTitle")}</span>
         </Link>
       </header>

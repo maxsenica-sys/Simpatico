@@ -16,6 +16,8 @@ export type RecentPerson = {
   seconds: number;
   /** Length of the most recent call. */
   last?: number;
+  /** Their profile photo as their phone last sent it (updates on every call). */
+  photo?: string | null;
 };
 
 const norm = (name: string) => name.trim().toLocaleLowerCase();
@@ -46,6 +48,15 @@ export function noteCall(name: string, lang: string) {
     hit.lang = lang;
     hit.name = name.trim();
   } else list.push({ name: name.trim(), lang, at: Date.now(), calls: 1, seconds: 0 });
+  save(list);
+}
+
+/** Their phone sent its profile photo during the call: keep the newest one. */
+export function notePhoto(name: string, photo: string | null) {
+  const list = loadRecent();
+  const hit = list.find((r) => norm(r.name) === norm(name));
+  if (!hit || hit.photo === photo) return;
+  hit.photo = photo;
   save(list);
 }
 

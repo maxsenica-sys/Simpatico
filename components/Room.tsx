@@ -9,6 +9,7 @@ import { detectEnv, systemBrowserUrl, type BrowserEnv } from "@/lib/env";
 import { useT } from "@/lib/i18n";
 import { getLocalMedia, type MediaFailure } from "@/lib/media";
 import { peerIdFor } from "@/lib/prefs";
+import { loadPhoto } from "@/lib/photo";
 import { CallScreen } from "./CallScreen";
 import { JoinScreen } from "./JoinScreen";
 import { useLang } from "./LangRoot";
@@ -136,6 +137,7 @@ export function Room({ code }: { code: string }) {
           inRoom,
           gender,
           profile: speakerProfile(me),
+          photo: loadPhoto(),
           captionStyle: loadCaptionPrefs().style,
           voiceFocus: loadCaptionPrefs().focus,
         });

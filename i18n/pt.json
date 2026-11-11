@@ -207,9 +207,13 @@
   "oneCall": "1 chamada",
   "nCalls": "{n} chamadas",
   "clearTitle": "Limpar este celular?",
-  "clearWhat": "Seu nome, gênero, palavras, ajustes de legenda e a lista de recentes serão apagados deste celular.",
+  "clearWhat": "Seu nome, foto, gênero, palavras, ajustes de legenda e a lista de recentes serão apagados deste celular.",
   "clearNewLink": "Também quero um novo link de chamada",
   "clearNewLinkWarn": "Seu link antigo deixará de chegar até você. Quem tiver ele vai precisar do novo.",
   "clearDo": "Limpar",
-  "cancel": "Cancelar"
+  "cancel": "Cancelar",
+  "addPhoto": "Adicionar foto",
+  "changePhoto": "Trocar foto",
+  "removePhoto": "Remover",
+  "photoHint": "Quem você chama vê sua foto na lista de recentes. Ela vai direto do seu celular para o da pessoa, nunca passa pelos nossos servidores."
 }

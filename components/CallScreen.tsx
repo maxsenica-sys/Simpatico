@@ -14,7 +14,8 @@ import { Notice } from "./Notice";
 import { SelfView, type SelfMode } from "./SelfView";
 import { ShareLink } from "./ShareLink";
 import { Transcript } from "./Transcript";
-import { noteCall, noteTime } from "@/lib/recent";
+import { noteCall, notePhoto, noteTime } from "@/lib/recent";
+import { Avatar } from "./Avatar";
 
 const OWN_LINE_MS = 5000;
 const NO_VIDEO_GRACE_MS = 4000;
@@ -56,6 +57,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
 
   // "Recent" on the home screen: remember who we actually talked to, and for how long.
   const met = useRef(new Map<string, string>());
+  const photos = useRef(new Map<string, string | null>());
   const timed = useRef(false);
   const latest = useRef(s);
   latest.current = s;
@@ -64,6 +66,11 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
       if (p.connected && !met.current.has(p.id)) {
         met.current.set(p.id, p.name);
         noteCall(p.name, p.lang.speaks);
+      }
+    for (const p of s.participants)
+      if (met.current.has(p.id) && photos.current.get(p.id) !== p.photo && (p.photo || photos.current.has(p.id))) {
+        photos.current.set(p.id, p.photo);
+        notePhoto(p.name, p.photo);
       }
   }, [s.participants]);
   useEffect(() => {
@@ -326,10 +333,8 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
 
       {placeholder !== null && stage && (
         <div className="no-video">
-          {group ? (
-            <div className={`avatar big ${stage.speaking ? "speaking" : ""}`} aria-hidden="true">
-              {initials(stage.name)}
-            </div>
+          {group || stage.photo ? (
+            <Avatar className={`avatar big ${stage.speaking ? "speaking" : ""}`} photo={stage.photo} fallback={initials(stage.name)} />
           ) : (
             <div className="no-video-icon" aria-hidden="true">
               {stageAudioOnly ? <AudioOnlyIcon size={44} /> : <CameraIcon off size={44} />}
@@ -535,7 +540,13 @@ function PersonTile({ p, active, showVideo }: { p: Participant; active: boolean;
   }, [p.stream, showVideo]);
   return (
     <div className={`person ${p.speaking ? "speaking" : ""} ${active ? "active" : ""} ${p.connected ? "" : "pending"}`} title={p.name}>
-      <div className="avatar">{showVideo && p.stream ? <video ref={ref} autoPlay playsInline muted /> : initials(p.name)}</div>
+      {showVideo && p.stream ? (
+        <div className="avatar">
+          <video ref={ref} autoPlay playsInline muted />
+        </div>
+      ) : (
+        <Avatar photo={p.photo} fallback={initials(p.name)} />
+      )}
       <span className="person-name" dir="auto">
         {p.name}
       </span>

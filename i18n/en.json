@@ -207,9 +207,13 @@
   "oneCall": "1 call",
   "nCalls": "{n} calls",
   "clearTitle": "Clear this phone?",
-  "clearWhat": "Your name, gender, words, caption settings and Recent list will be removed from this phone.",
+  "clearWhat": "Your name, photo, gender, words, caption settings and Recent list will be removed from this phone.",
   "clearNewLink": "Also give me a new call link",
   "clearNewLinkWarn": "Your old link will stop reaching you. Anyone who has it will need the new one.",
   "clearDo": "Clear",
-  "cancel": "Cancel"
+  "cancel": "Cancel",
+  "addPhoto": "Add a photo",
+  "changePhoto": "Change photo",
+  "removePhoto": "Remove",
+  "photoHint": "People you call see your photo in their Recent list. It goes straight from your phone to theirs, never through our servers."
 }

@@ -207,9 +207,13 @@
   "oneCall": "1 arama",
   "nCalls": "{n} arama",
   "clearTitle": "Bu telefon temizlensin mi?",
-  "clearWhat": "Adın, cinsiyetin, kelimelerin, altyazı ayarların ve son aramalar listen bu telefondan silinecek.",
+  "clearWhat": "Adın, fotoğrafın, cinsiyetin, kelimelerin, altyazı ayarların ve son aramalar listen bu telefondan silinecek.",
   "clearNewLink": "Bana yeni bir arama bağlantısı da ver",
   "clearNewLinkWarn": "Eski bağlantın artık sana ulaşmayacak. Onu kimde varsa yenisine ihtiyaç duyacak.",
   "clearDo": "Temizle",
-  "cancel": "İptal"
+  "cancel": "İptal",
+  "addPhoto": "Fotoğraf ekle",
+  "changePhoto": "Fotoğrafı değiştir",
+  "removePhoto": "Kaldır",
+  "photoHint": "Aradığın kişiler fotoğrafını son aramalar listelerinde görür. Fotoğraf sunucularımızdan geçmeden doğrudan telefonundan onlarınkine gider."
 }

@@ -43,10 +43,10 @@ export async function followCards(text: string, opts: { ask: boolean; extra?: st
       if ((await Notification.requestPermission()) !== "granted") return;
     }
     if (Notification.permission !== "granted") return;
-    const rooms: Record<string, string> = {};
+    const rooms: Record<string, { seat: string; own: boolean }> = {};
     const mine = myCallCode();
-    rooms[mine] = peerIdFor(mine);
-    if (opts.extra && /^[a-z0-9]{10}$/.test(opts.extra)) rooms[opts.extra] = peerIdFor(opts.extra);
+    rooms[mine] = { seat: peerIdFor(mine), own: true };
+    if (opts.extra && opts.extra !== mine && /^[a-z0-9]{10}$/.test(opts.extra)) rooms[opts.extra] = { seat: peerIdFor(opts.extra), own: false };
     await navigator.serviceWorker.register("/sw.js");
     const reg = await navigator.serviceWorker.ready;
     let sub = await reg.pushManager.getSubscription();
@@ -74,6 +74,18 @@ export async function setNotify(on: boolean, text: string) {
   try {
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();
+    if (!sub) return;
+    await fetch("/api/push/unsubscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ endpoint: sub.endpoint }) });
+    await sub.unsubscribe();
+  } catch {}
+}
+
+/** "Clear my profile": the server forgets this phone's notification address and cards. */
+export async function forgetPush() {
+  if (!pushSupported()) return;
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    const sub = await reg?.pushManager.getSubscription();
     if (!sub) return;
     await fetch("/api/push/unsubscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ endpoint: sub.endpoint }) });
     await sub.unsubscribe();

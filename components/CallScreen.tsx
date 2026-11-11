@@ -61,6 +61,15 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const timed = useRef(false);
   const latest = useRef(s);
   latest.current = s;
+  // Notifications already allowed: once really in a call card's room, follow that card too.
+  // (Never ask from here: a system question while the camera and mic start can interrupt them.)
+  const followed = useRef(false);
+  useEffect(() => {
+    if (s.phase !== "connected" || followed.current) return;
+    followed.current = true;
+    void followCards(t("waitingPush", { name: "{name}" }), { ask: false, extra: call.info.room });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s.phase]);
   useEffect(() => {
     for (const p of s.participants)
       if (p.connected && !met.current.has(p.id)) {
@@ -200,7 +209,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
 
   const connected = s.phase === "connected";
   // Nobody has answered yet (e.g. a call started by accident): ending just goes back home.
-  const neverConnected = connectedAt === null;
+  const neverConnected = s.startedAt === null;
   // Always gets you home: even if something in the call has gone wrong, the page is replaced.
   const goHome = () => {
     try {
@@ -340,6 +349,32 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
     if (s.noMic) {
       if (!s.problems.includes("mic-blocked")) banners.push({ key: "nomic", tone: "info", text: t("micOffTap") });
     } else if (s.muted) banners.push({ key: "muted", tone: "info", text: t("muted") });
+  } else {
+    // Waiting or connecting: a Mic or Camera tap that the phone refuses still says why.
+    for (const p of s.problems) {
+      if (p === "mic-blocked" || p === "camera-blocked")
+        banners.push({
+          key: p,
+          tone: "warn",
+          text: `${p === "mic-blocked" ? t("micBlocked") : t("cameraBlocked")} ${blockedSteps}`,
+          actions: (
+            <button className="btn small" onClick={() => call.dismissProblem(p)}>
+              {t("notNow")}
+            </button>
+          ),
+        });
+      if (p === "camera-failed")
+        banners.push({
+          key: p,
+          tone: "warn",
+          text: t("cameraFailed"),
+          actions: (
+            <button className="btn small" onClick={() => call.dismissProblem("camera-failed")}>
+              {t("notNow")}
+            </button>
+          ),
+        });
+    }
   }
 
   return (

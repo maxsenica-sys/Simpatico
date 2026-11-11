@@ -38,8 +38,11 @@ function save(list: RecentPerson[]) {
 }
 
 /** A call with this person just connected. */
+/** Names the server gives people who didn't type one ("Guest A"): not a person to remember. */
+const DEFAULT_NAME = /^Guest [A-Z0-9]+$/;
+
 export function noteCall(name: string, lang: string) {
-  if (!name.trim()) return;
+  if (!name.trim() || DEFAULT_NAME.test(name.trim())) return;
   const list = loadRecent();
   const hit = list.find((r) => norm(r.name) === norm(name));
   if (hit) {

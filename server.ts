@@ -6,7 +6,8 @@ import { sanitizeLang } from "./shared/lang";
 import type { ClientMsg } from "./shared/protocol";
 import { clientError, dashboard, feedback } from "./server/admin";
 import { getIceServers } from "./server/ice";
-import { notifyWaiting, pushKey, pushSubscribe, pushUnsubscribe } from "./server/push";
+import { noteSeat, notifyWaiting, pushKey, pushSubscribe, pushUnsubscribe, readBody } from "./server/push";
+import { getRoom } from "./server/rooms";
 import { append, device } from "./server/store";
 
 /** Client events kept on disk to diagnose dropped calls: connection health only. */
@@ -36,6 +37,7 @@ const server = createServer((req, res) => {
   if (path === "/api/client-error" && req.method === "POST") return void clientError(req, res);
   if (path === "/admin" && req.method === "GET") return dashboard(typeof url.query.token === "string" ? url.query.token : undefined, res);
   if (path === "/api/push/key" && req.method === "GET") return pushKey(res);
+  if (path === "/api/leave" && req.method === "POST") return void leaveBeacon(req, res);
   if (path === "/api/push/subscribe" && req.method === "POST") return void pushSubscribe(req, res);
   if (path === "/api/push/unsubscribe" && req.method === "POST") return void pushUnsubscribe(req, res);
   if (path === "/api/rooms" && req.method === "POST") {
@@ -93,6 +95,8 @@ wss.on("connection", (ws, req) => {
       return;
     }
 
+    if (msg.t === "ping") return send(ws, { t: "pong" });
+
     if (msg.t === "join") {
       const lang = sanitizeLang(msg.lang);
       if (typeof msg.room !== "string" || typeof msg.peerId !== "string" || !/^[\w-]{8,64}$/.test(msg.peerId) || !lang) {
@@ -119,8 +123,10 @@ wss.on("connection", (ws, req) => {
       }
       // Everyone already here offers a connection to a newcomer.
       if (result.fresh) broadcast(room, { t: "peer-joined", peer: info(peer), offer: true }, peer);
-      // Call cards: let the phones that follow this card know someone is waiting.
-      if (result.fresh && room.kind === "pair") notifyWaiting(room.code, peer.name, new Set([...room.peers.values()].filter((p) => p.ws).map((p) => p.id)));
+      // Call cards: remember who has been here (only they may follow it), and tell the phones
+      // that follow this card that someone is waiting.
+      if (room.kind === "pair") noteSeat(room.code, peer.id);
+      if (result.fresh && room.kind === "pair") notifyWaiting(room.code, peer.name, peer.id, new Set([...room.peers.values()].filter((p) => p.ws).map((p) => p.id)));
       log("peer_joined", { room: room.code, kind: room.kind, peer: peer.label, fresh: result.fresh, speaks: lang.speaks, reads: lang.reads, inRoom: peer.inRoom, others: rest.length });
       return;
     }
@@ -182,4 +188,20 @@ for (const sig of ["SIGINT", "SIGTERM"] as const) {
     server.close();
     setTimeout(() => process.exit(0), 500).unref();
   });
+}
+
+/**
+ * POST /api/leave {room, peerId}: the same as a "leave" over the socket, sent with sendBeacon
+ * when someone hangs up or leaves the page, so it arrives even if the socket is dead. The seat
+ * id is a random secret only that phone knows.
+ */
+async function leaveBeacon(req: import("node:http").IncomingMessage, res: import("node:http").ServerResponse) {
+  const b = (await readBody(req, 2048)) as { room?: unknown; peerId?: unknown } | null;
+  if (typeof b?.room === "string" && typeof b.peerId === "string" && /^[\w-]{8,64}$/.test(b.peerId)) {
+    const room = getRoom(b.room);
+    const peer = room?.peers.get(b.peerId);
+    if (room && peer) removePeer(room, peer, "left");
+  }
+  res.writeHead(204);
+  res.end();
 }

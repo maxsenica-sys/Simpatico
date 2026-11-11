@@ -22,18 +22,14 @@ self.addEventListener("push", (e) => {
   );
 });
 
-// Tap the notification: open the call card (reuse an open Simpatico window if there is one).
+// Tap the notification: go to that call card. A window already there is focused; any other
+// window (it may be in another call) is left alone and the card opens fresh.
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
   const url = new URL((e.notification.data && e.notification.data.url) || "/", self.location.origin).href;
   e.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
-      for (const w of wins) {
-        if ("focus" in w) {
-          w.navigate?.(url);
-          return w.focus();
-        }
-      }
+      for (const w of wins) if (w.url.split("?")[0] === url && "focus" in w) return w.focus();
       return self.clients.openWindow(url);
     }),
   );

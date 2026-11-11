@@ -55,7 +55,9 @@ export type ClientMsg =
   /** "Not right?" on a caption line: the server saves that one line to improve translations. */
   | { t: "report"; id: string }
   | { t: "log"; event: string; detail?: Record<string, unknown> }
-  | { t: "leave" };
+  | { t: "leave" }
+  /** App-level heartbeat: iOS can keep a dead socket "open" after the app was in the background. */
+  | { t: "ping" };
 
 /**
  * How a person likes to read captions. Both show settled phrases that are never rewritten.
@@ -88,6 +90,7 @@ export type CaptionStage =
 export type CaptionState = "ok" | "paused" | "unavailable";
 
 export type ServerMsg =
+  | { t: "pong" }
   | { t: "joined"; selfId: string; fresh: boolean; kind: RoomKind; max: number; peers: PeerInfo[]; iceServers: RTCIceServer[] }
   | { t: "peer-joined"; peer: PeerInfo; offer: boolean }
   | { t: "peer-left"; peerId: string }

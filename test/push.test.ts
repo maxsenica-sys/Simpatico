@@ -16,54 +16,66 @@ const sent: { endpoint: string; body: string }[] = [];
   sent.push({ endpoint: sub.endpoint, body: JSON.parse(payload).body });
   return { statusCode: 201 };
 };
-const { pushSubscribe, notifyWaiting, pushUnsubscribe } = await import("../server/push");
+const { pushSubscribe, notifyWaiting, pushUnsubscribe, noteSeat } = await import("../server/push");
 
+let ip = 0;
 async function call(fn: typeof pushSubscribe, body: unknown) {
   const req = Readable.from([Buffer.from(JSON.stringify(body))]) as unknown as import("node:http").IncomingMessage;
+  (req as unknown as { headers: object; socket: object }).headers = { "fly-client-ip": `10.0.0.${ip++}` };
+  (req as unknown as { socket: object }).socket = {};
   let status = 0;
   const res = { writeHead: (s: number) => (status = s), end: () => {} } as unknown as import("node:http").ServerResponse;
   await fn(req, res);
   return status;
 }
-const sub = (n: number) => ({ endpoint: `https://push.example.com/send/${n}`, keys: { p256dh: "BPk" + "x".repeat(80), auth: "a".repeat(22) } });
-const MAX_CARD = "maxcard222", EZGI_SEAT_IN_MAX = "ezgi-seat-0001", MAX_SEAT = "max-seat-00001";
+const tick = () => new Promise((r) => setTimeout(r, 10));
+const sub = (n: number) => ({ endpoint: `https://web.push.apple.com/QGx${n}abcdef`, keys: { p256dh: "BPk" + "x".repeat(80), auth: "a".repeat(22) } });
+const CARD = "maxcard222";
+const MAX = "max-seat-00001", EZGI = "ezgi-seat-0001", SAM = "sam-seat-00001";
+const EN = "{name} is waiting for you. Tap to join.", TR = "{name} seni bekliyor. Katılmak için dokun.";
 
-// Max's phone follows his own card; Ezgi's phone follows Max's card (she joined it before).
-assert.equal(await call(pushSubscribe, { subscription: sub(1), rooms: { [MAX_CARD]: MAX_SEAT }, text: "{name} is waiting for you. Tap to join." }), 200);
-assert.equal(await call(pushSubscribe, { subscription: sub(2), rooms: { [MAX_CARD]: EZGI_SEAT_IN_MAX }, text: "{name} seni bekliyor. Katılmak için dokun." }), 200);
-assert.equal(await call(pushSubscribe, { subscription: { endpoint: "http://insecure" }, rooms: {} }), 400, "bad subscriptions are refused");
+// Max owns his card; Ezgi and Sam have each called it before (the server saw their seats).
+noteSeat(CARD, MAX);
+noteSeat(CARD, EZGI);
+noteSeat(CARD, SAM);
+assert.equal(await call(pushSubscribe, { subscription: sub(1), rooms: { [CARD]: { seat: MAX, own: true } }, text: EN }), 200);
+assert.equal(await call(pushSubscribe, { subscription: sub(2), rooms: { [CARD]: { seat: EZGI, own: false } }, text: TR }), 200);
+assert.equal(await call(pushSubscribe, { subscription: sub(3), rooms: { [CARD]: { seat: SAM, own: false } }, text: EN }), 200);
+assert.equal(await call(pushSubscribe, { subscription: { endpoint: "https://attacker.example/x", keys: sub(9).keys }, rooms: {} }), 400, "only real push services");
+console.log("✓ subscriptions accepted only for real push services");
 
-// Ezgi opens Max's card: only Max's phone is told, in his language.
-notifyWaiting(MAX_CARD, "Ezgi", new Set([EZGI_SEAT_IN_MAX]));
-await new Promise((r) => setTimeout(r, 10));
+// Someone else can't take over Max's card.
+assert.equal(await call(pushSubscribe, { subscription: sub(4), rooms: { [CARD]: { seat: "thief-seat-001", own: true } }, text: EN }), 200);
+
+// Ezgi opens Max's card: only Max is told, in his language. Not Sam, not the would-be thief.
+notifyWaiting(CARD, "Ezgi", EZGI, new Set([EZGI]));
+await tick();
 assert.deepEqual(sent, [{ endpoint: sub(1).endpoint, body: "Ezgi is waiting for you. Tap to join." }]);
-console.log("✓ Ezgi opens Max's card: Max's phone is told, not Ezgi's own");
+console.log("✓ someone opens Max's card: only Max is told (not his other contacts)");
 
-// Again a minute later: no repeat (quiet period).
-notifyWaiting(MAX_CARD, "Ezgi", new Set([EZGI_SEAT_IN_MAX]));
-await new Promise((r) => setTimeout(r, 10));
+notifyWaiting(CARD, "Ezgi", EZGI, new Set([EZGI]));
+await tick();
 assert.equal(sent.length, 1);
 console.log("✓ no repeat notifications within a few minutes");
 
-// Max opens his own card: Ezgi's phone is told, in Turkish.
+// Max opens his own card: the people who've called it are told (Ezgi in Turkish).
 sent.length = 0;
-notifyWaiting(MAX_CARD, "Max", new Set([MAX_SEAT]));
-await new Promise((r) => setTimeout(r, 10));
-assert.deepEqual(sent, [{ endpoint: sub(2).endpoint, body: "Max seni bekliyor. Katılmak için dokun." }]);
-console.log("✓ Max opens his card: Ezgi is told, in her language");
+notifyWaiting(CARD, "Max", MAX, new Set([MAX]));
+await tick();
+assert.deepEqual(sent.map((s) => s.body).sort(), ["Max is waiting for you. Tap to join.", "Max seni bekliyor. Katılmak için dokun."]);
+assert.ok(!sent.some((s) => s.endpoint === sub(4).endpoint), "a fake owner claim isn't the owner");
+console.log("✓ Max opens his card: people who've called it are told, each in their language");
 
-// Someone already in the room isn't told; other rooms tell nobody.
 sent.length = 0;
-notifyWaiting("othercard1", "Sam", new Set());
-await new Promise((r) => setTimeout(r, 10));
+notifyWaiting("othercard1", "Sam", SAM, new Set([SAM]));
+await tick();
 assert.equal(sent.length, 0);
-console.log("✓ rooms nobody follows notify nobody");
+console.log("✓ cards nobody follows notify nobody");
 
-// Turning it off forgets the phone.
-await call(pushUnsubscribe, { endpoint: sub(2).endpoint });
-notifyWaiting(MAX_CARD, "Someone", new Set(["x-seat-000001"]));
-await new Promise((r) => setTimeout(r, 10));
-assert.ok(!sent.some((s) => s.endpoint === sub(2).endpoint), "unsubscribed phone not told");
+await call(pushUnsubscribe, { endpoint: sub(1).endpoint });
+notifyWaiting(CARD, "Someone", "x-seat-000001", new Set(["x-seat-000001"]));
+await tick();
+assert.ok(!sent.some((s) => s.endpoint === sub(1).endpoint));
 console.log("✓ switching it off stops notifications");
 
 console.log("\nPUSH TESTS PASSED");

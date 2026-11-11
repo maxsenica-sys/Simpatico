@@ -10,7 +10,6 @@ import { useT } from "@/lib/i18n";
 import { getLocalMedia, type MediaFailure } from "@/lib/media";
 import { peerIdFor } from "@/lib/prefs";
 import { loadPhoto } from "@/lib/photo";
-import { followCards } from "@/lib/push";
 import { CallScreen } from "./CallScreen";
 import { JoinScreen } from "./JoinScreen";
 import { useLang } from "./LangRoot";
@@ -184,9 +183,6 @@ export function Room({ code }: { code: string }) {
       }
       group={room.kind === "group" ? { max: room.max } : null}
       onJoin={({ audioOnly, name, inRoom, gender }) => {
-        // Already allowed notifications? Follow this call card too. (Never ask here: on iPhones a
-        // system question popping up while the camera and mic start can interrupt them.)
-        void followCards(t("waitingPush", { name: "{name}" }), { ask: false, extra: code });
         const me = loadProfile();
         if (!(media instanceof MediaStream)) return;
         const c = new CallController(code, peerIdFor(code), callLang(lang, me), media, {

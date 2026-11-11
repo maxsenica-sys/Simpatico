@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Avatar } from "./Avatar";
 import { loadPhoto, photoFromFile, savePhoto } from "@/lib/photo";
-import { notifyEnabled, pushPermission, setNotify as setNotifyPush } from "@/lib/push";
+import { forgetPush, notifyEnabled, pushPermission, setNotify as setNotifyPush } from "@/lib/push";
 import { detectEnv } from "@/lib/env";
 import { loadCaptionPrefs, saveCaptionPrefs, type CaptionPrefs } from "@/lib/captionPrefs";
 import { useT } from "@/lib/i18n";
@@ -354,6 +354,7 @@ export function ProfileScreen() {
                 className="btn small danger"
                 onClick={() => {
                   clearProfile(newLink);
+                  void forgetPush();
                   setP(loadProfile());
                   setPrefs(loadCaptionPrefs());
                   setPhoto(null);

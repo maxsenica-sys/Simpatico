@@ -190,6 +190,9 @@ export class CallController {
   private lastHeal = 0;
   private weakDismissedAt = 0;
   private cameraBlocked = false;
+  private pingTimer: ReturnType<typeof setInterval> | null = null;
+  private pongTimer: ReturnType<typeof setTimeout> | null = null;
+  private micBusy = false;
 
   constructor(
     private room: string,
@@ -266,12 +269,14 @@ export class CallController {
     this.startMic(this.local.getAudioTracks()[0]);
     this.watchLocalTracks();
     document.addEventListener("visibilitychange", this.onVisible);
+    window.addEventListener("pageshow", this.onReturn);
+    window.addEventListener("focus", this.onReturn);
     this.connectSocket();
     hasMultipleCameras().then((m) => this.set({ canSwitchCamera: m }));
   }
 
   leave() {
-    this.send({ t: "leave" });
+    this.sendLeave();
     this.shutdown();
     this.releaseDevices();
     this.set({ phase: "ended", participants: [], selfVideo: null, endedAt: Date.now() });
@@ -279,7 +284,7 @@ export class CallController {
 
   /** Leave before anyone answered: same as leave() for the server, but no end-of-call screen. */
   cancel() {
-    this.send({ t: "leave" });
+    this.sendLeave();
     this.shutdown();
     this.releaseDevices();
   }
@@ -301,8 +306,14 @@ export class CallController {
    * the mic goes live in the call straight away, captions included, with no reconnecting.
    */
   async enableMic(): Promise<boolean> {
+    if (this.micBusy) return false;
+    this.micBusy = true;
     try {
-      const track = await getMicTrack();
+      const track = await withTimeout(getMicTrack(), 15_000);
+      if (this.stopped) {
+        track.stop();
+        return false;
+      }
       this.local.addTrack(track);
       for (const l of this.links.values()) await l.audioSender?.replaceTrack(track).catch(() => {});
       this.startMic(track);
@@ -316,6 +327,8 @@ export class CallController {
       this.log("mic_still_blocked", { error: String(err) });
       this.setProblem("mic-blocked", true);
       return false;
+    } finally {
+      this.micBusy = false;
     }
   }
 
@@ -432,8 +445,13 @@ export class CallController {
     return !(this.state.inRoom && p.inRoom);
   }
 
+  /** The page is going away (back swipe, Back button): leave properly and free the camera. */
   dispose() {
-    if (!this.stopped) this.shutdown();
+    if (!this.stopped) {
+      this.sendLeave();
+      this.shutdown();
+    }
+    this.releaseDevices();
     this.listeners.clear();
   }
 
@@ -458,14 +476,27 @@ export class CallController {
       this.log("back", {});
     }
     this.mic?.resume();
+    this.checkSocket();
     // iOS pauses or ends the camera and mic while Safari is in the background (e.g. switching to
     // WhatsApp to send the link). Bring them back as soon as we're visible again.
     setTimeout(() => this.recoverLocalTracks(), 800);
   };
 
+  /** Back in the app without a visibility change (iOS system alert, Siri, a phone call). */
+  private onReturn = () => {
+    if (this.stopped || document.visibilityState !== "visible") return;
+    this.checkSocket();
+    setTimeout(() => this.recoverLocalTracks(), 300);
+  };
+
   private shutdown() {
     this.stopped = true;
     this.awake.off();
+    if (this.pingTimer) clearInterval(this.pingTimer);
+    if (this.pongTimer) clearTimeout(this.pongTimer);
+    this.pingTimer = this.pongTimer = null;
+    window.removeEventListener("pageshow", this.onReturn);
+    window.removeEventListener("focus", this.onReturn);
     window.removeEventListener("online", this.onNetwork);
     (navigator as { connection?: EventTarget }).connection?.removeEventListener?.("change", this.onNetwork);
     document.removeEventListener("visibilitychange", this.onVisible);
@@ -554,7 +585,11 @@ export class CallController {
     this.cameraBusy = true;
     try {
       this.dropLocalVideo();
-      const track = await getCameraTrack(this.facing);
+      const track = await withTimeout(getCameraTrack(this.facing), 15_000);
+      if (this.stopped) {
+        track.stop();
+        return false;
+      }
       this.local.addTrack(track);
       this.watchLocalTracks();
       this.set({ camOn: true });
@@ -576,7 +611,11 @@ export class CallController {
     // No mic because they refused it: only a tap on Mic asks again, never a surprise prompt.
     if (!this.state.noMic && (!audio || audio.readyState === "ended")) {
       try {
-        const track = await getMicTrack();
+        const track = await withTimeout(getMicTrack(), 15_000);
+        if (this.stopped) {
+          track.stop();
+          return;
+        }
         if (audio) this.local.removeTrack(audio);
         this.local.addTrack(track);
         track.enabled = !this.state.muted;
@@ -636,6 +675,7 @@ export class CallController {
     this.ws = ws;
     ws.onopen = () => {
       this.wsRetry = 0;
+      this.startHeartbeat();
       ws.send(
         JSON.stringify({
           t: "join",
@@ -671,6 +711,46 @@ export class CallController {
 
   private send(msg: ClientMsg) {
     if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify(msg));
+  }
+
+  /**
+   * iOS can leave a WebSocket looking "open" after the app was in the background while it's
+   * actually dead, so nothing sent arrives. Every 20 s, and on coming back to the app, ask the
+   * server for a pong; no answer within 4 s = drop it and reconnect straight away.
+   */
+  private startHeartbeat() {
+    if (this.pingTimer) clearInterval(this.pingTimer);
+    this.pingTimer = setInterval(() => this.checkSocket(), 20_000);
+  }
+
+  private checkSocket() {
+    const ws = this.ws;
+    if (this.stopped || !ws || ws.readyState !== WebSocket.OPEN || this.pongTimer) return;
+    try {
+      ws.send(JSON.stringify({ t: "ping" } satisfies ClientMsg));
+    } catch {}
+    this.pongTimer = setTimeout(() => {
+      this.pongTimer = null;
+      if (this.ws !== ws || this.stopped) return;
+      this.log("socket_dead", {});
+      ws.onclose = ws.onmessage = ws.onopen = null;
+      try {
+        ws.close();
+      } catch {}
+      this.ws = null;
+      this.set({ reconnecting: true });
+      this.connectSocket();
+    }, 4_000);
+  }
+
+  /** "leave" over the socket and, in case the socket is dead, as a beacon over HTTP. */
+  private sendLeave() {
+    this.send({ t: "leave" });
+    try {
+      const body = JSON.stringify({ room: this.room, peerId: this.peerId });
+      if (!navigator.sendBeacon?.("/api/leave", new Blob([body], { type: "application/json" })))
+        void fetch("/api/leave", { method: "POST", body, headers: { "Content-Type": "application/json" }, keepalive: true }).catch(() => {});
+    } catch {}
   }
 
   /** Mic audio for captions, only while someone is there to read them. Byte 0 = level (dBFS + 120). */
@@ -746,6 +826,10 @@ export class CallController {
 
   private onServer(msg: ServerMsg) {
     switch (msg.t) {
+      case "pong":
+        if (this.pongTimer) clearTimeout(this.pongTimer);
+        this.pongTimer = null;
+        break;
       case "joined": {
         this.selfId = msg.selfId;
         this.iceServers = msg.iceServers;
@@ -1356,4 +1440,27 @@ export class CallController {
 
 export function worst(states: CaptionState[]): CaptionState {
   return states.includes("unavailable") ? "unavailable" : states.includes("paused") ? "paused" : "ok";
+}
+
+/** A getUserMedia that never answers (it happens) mustn't leave the camera or mic stuck. */
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    let late = false;
+    const t = setTimeout(() => {
+      late = true;
+      reject(new Error("timeout"));
+    }, ms);
+    p.then(
+      (v) => {
+        clearTimeout(t);
+        // Answered after we gave up: switch that camera/mic straight off again.
+        if (late) (v as { stop?: () => void })?.stop?.();
+        else resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      },
+    );
+  });
 }

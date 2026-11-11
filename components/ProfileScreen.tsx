@@ -34,6 +34,8 @@ export function ProfileScreen() {
   const [saved, setSaved] = useState(false);
   const [incoming, setIncoming] = useState<Transfer | null>(null);
   const [showTransfer, setShowTransfer] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [newLink, setNewLink] = useState(false);
   useEffect(() => {
     setP(loadProfile());
     setPrefs(loadCaptionPrefs());
@@ -238,17 +240,45 @@ export function ProfileScreen() {
 
       <section className="pcard quiet">
         <p className="small">🔒 {t("profilePrivacy")}</p>
-        <button
-          className="btn small"
-          onClick={() => {
-            if (!window.confirm(t("clearConfirm"))) return;
-            clearProfile();
-            setP(loadProfile());
-            setPrefs(loadCaptionPrefs());
-          }}
-        >
-          {t("clearProfile")}
-        </button>
+        {!clearing ? (
+          <button className="btn small" onClick={() => setClearing(true)}>
+            {t("clearProfile")}
+          </button>
+        ) : (
+          <div className="clear-box" role="alertdialog" aria-label={t("clearTitle")}>
+            <h3>{t("clearTitle")}</h3>
+            <p className="small muted">{t("clearWhat")}</p>
+            <label className="clear-opt">
+              <input type="checkbox" checked={newLink} onChange={(e) => setNewLink(e.target.checked)} />
+              <span>{t("clearNewLink")}</span>
+            </label>
+            {newLink && <p className="small clear-warn">⚠️ {t("clearNewLinkWarn")}</p>}
+            <div className="clear-actions">
+              <button
+                className="btn small danger"
+                onClick={() => {
+                  clearProfile(newLink);
+                  setP(loadProfile());
+                  setPrefs(loadCaptionPrefs());
+                  setClearing(false);
+                  setNewLink(false);
+                }}
+              >
+                {t("clearDo")}
+              </button>
+              <button
+                className="btn small"
+                autoFocus
+                onClick={() => {
+                  setClearing(false);
+                  setNewLink(false);
+                }}
+              >
+                {t("cancel")}
+              </button>
+            </div>
+          </div>
+        )}
       </section>
     </main>
   );

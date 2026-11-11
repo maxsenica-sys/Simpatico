@@ -197,5 +197,19 @@
   "tileGroupSub": "Hasta 12 personas",
   "tileLinkSub": "Compártelo una vez, llama cuando quieras",
   "myLinkShort": "Compártelo una vez. Ábrelo cuando quieras para llamar, sin enlaces nuevos.",
-  "cancelCall": "Cancelar llamada"
+  "cancelCall": "Cancelar llamada",
+  "recentTitle": "Recientes",
+  "recentHint": "Toca para volver a llamar",
+  "callPerson": "Llamar a {name}",
+  "callPersonHint": "Abre tu sala de llamadas y envía a {name} un mensaje de “Únete” en su idioma.",
+  "removeRecent": "Quitar de Recientes",
+  "speaksLang": "Habla {lang}",
+  "oneCall": "1 llamada",
+  "nCalls": "{n} llamadas",
+  "clearTitle": "¿Borrar este teléfono?",
+  "clearWhat": "Se borrarán de este teléfono tu nombre, género, palabras, ajustes de subtítulos y la lista de Recientes.",
+  "clearNewLink": "Darme también un nuevo enlace de llamada",
+  "clearNewLinkWarn": "Tu enlace antiguo dejará de llegar a ti. Quien lo tenga necesitará el nuevo.",
+  "clearDo": "Borrar",
+  "cancel": "Cancelar"
 }

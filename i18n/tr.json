@@ -197,5 +197,19 @@
   "tileGroupSub": "12 kişiye kadar",
   "tileLinkSub": "Bir kez paylaş, istediğin zaman ara",
   "myLinkShort": "Bir kez paylaş. İstediğin zaman aç ve ara — yeni bağlantıya gerek yok.",
-  "cancelCall": "Aramayı iptal et"
+  "cancelCall": "Aramayı iptal et",
+  "recentTitle": "Son aramalar",
+  "recentHint": "Tekrar aramak için dokun",
+  "callPerson": "{name} adlı kişiyi ara",
+  "callPersonHint": "Arama odanı açar ve {name} adlı kişiye kendi dilinde “Bana katıl” mesajı gönderir.",
+  "removeRecent": "Son aramalardan kaldır",
+  "speaksLang": "{lang} konuşuyor",
+  "oneCall": "1 arama",
+  "nCalls": "{n} arama",
+  "clearTitle": "Bu telefon temizlensin mi?",
+  "clearWhat": "Adın, cinsiyetin, kelimelerin, altyazı ayarların ve son aramalar listen bu telefondan silinecek.",
+  "clearNewLink": "Bana yeni bir arama bağlantısı da ver",
+  "clearNewLinkWarn": "Eski bağlantın artık sana ulaşmayacak. Onu kimde varsa yenisine ihtiyaç duyacak.",
+  "clearDo": "Temizle",
+  "cancel": "İptal"
 }

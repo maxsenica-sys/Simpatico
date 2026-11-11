@@ -14,6 +14,7 @@ import { Notice } from "./Notice";
 import { SelfView, type SelfMode } from "./SelfView";
 import { ShareLink } from "./ShareLink";
 import { Transcript } from "./Transcript";
+import { noteCall, noteTime } from "@/lib/recent";
 
 const OWN_LINE_MS = 5000;
 const NO_VIDEO_GRACE_MS = 4000;
@@ -52,6 +53,37 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const [now, setNow] = useState(() => Date.now());
   const [connectedAt, setConnectedAt] = useState<number | null>(null);
   const router = useRouter();
+
+  // "Recent" on the home screen: remember who we actually talked to, and for how long.
+  const met = useRef(new Map<string, string>());
+  const timed = useRef(false);
+  const latest = useRef(s);
+  latest.current = s;
+  useEffect(() => {
+    for (const p of s.participants)
+      if (p.connected && !met.current.has(p.id)) {
+        met.current.set(p.id, p.name);
+        noteCall(p.name, p.lang.speaks);
+      }
+  }, [s.participants]);
+  useEffect(() => {
+    const finish = () => {
+      const st = latest.current;
+      if (timed.current || !st.startedAt || !met.current.size) return;
+      timed.current = true;
+      noteTime([...met.current.values()], ((st.endedAt ?? Date.now()) - st.startedAt) / 1000);
+    };
+    if (s.phase === "ended") finish();
+    window.addEventListener("pagehide", finish);
+    return () => window.removeEventListener("pagehide", finish);
+  }, [s.phase]);
+  useEffect(
+    () => () => {
+      const st = latest.current;
+      if (!timed.current && st.startedAt && met.current.size) noteTime([...met.current.values()], (Date.now() - st.startedAt) / 1000);
+    },
+    [],
+  );
   const [videoLostAt, setVideoLostAt] = useState<number | null>(null);
   const [firstOwnAt, setFirstOwnAt] = useState<number | null>(null);
   const [prefs, setPrefs] = useState<CaptionPrefs>({ size: "m", box: false, style: "instant", focus: true });

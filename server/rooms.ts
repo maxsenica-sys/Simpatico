@@ -10,7 +10,7 @@ import type { ContextLine } from "./refine";
 /** A call has no time limit while anyone is in it. A link nobody has used yet lasts a day. */
 export const UNUSED_TTL_MS = 24 * 60 * 60 * 1000;
 /** Everyone gone: the link keeps working this long, so a dropped call can be rejoined. */
-export const EMPTY_TTL_MS = 10 * 60 * 1000;
+export const EMPTY_TTL_MS = 5 * 60 * 1000;
 /**
  * A dropped connection keeps its seat (and its WebRTC calls, which may still be up) for this
  * long: phones switching between Wi-Fi and mobile data, lifts and tunnels, a quick app switch.
@@ -287,6 +287,9 @@ export function removePeer(room: Room, peer: Peer, why: string) {
   broadcast(room, { t: "peer-left", peerId: peer.id });
   updatePipelines(room);
   if ([...room.peers.values()].every((p) => !p.ws)) room.emptySince ??= Date.now();
+  // A personal link's room reopens whenever someone visits it, so close it the moment the
+  // last person has left for good.
+  if (room.peers.size === 0 && PERSONAL_CODE.test(room.code)) destroyRoom(room, "empty");
 }
 
 /**

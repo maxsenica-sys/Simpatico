@@ -41,5 +41,24 @@ assert.equal(admitAudio(room, I, -30, Date.now() + 100), false, "tail of Ayşe's
 assert.equal(admitAudio(room, I, -12, Date.now() + 200), true, "Ivan himself speaks: floor");
 console.log("✓ release: quiet echoes ignored, real new speaker admitted");
 
+// Personal call links: the room opens when someone visits and closes as soon as the last
+// person has left; an ordinary room keeps working for 5 minutes so a dropped call can rejoin.
+{
+  const { ensureRoom, getRoom, removePeer, EMPTY_TTL_MS } = await import("../server/rooms");
+  const code = "k7mzq2wx4z";
+  const pr = ensureRoom(code)!;
+  assert.ok(pr, "personal room opens on demand");
+  const s1 = seat(pr, "me-0000001", lang("en-AU"), fakeWs(), { name: "Max", inRoom: false });
+  const s2 = seat(pr, "ezgi-00001", lang("tr-TR"), fakeWs(), { name: "Ezgi", inRoom: false });
+  assert.ok(s1 !== "room-full" && s2 !== "room-full");
+  removePeer(pr, (s1 as Exclude<typeof s1, "room-full">).peer, "left");
+  assert.ok(getRoom(code), "still open while Ezgi is there");
+  removePeer(pr, (s2 as Exclude<typeof s2, "room-full">).peer, "left");
+  assert.equal(getRoom(code), undefined, "closed the moment the second person left");
+  assert.ok(ensureRoom(code), "and opens again next time the link is used");
+  assert.equal(EMPTY_TTL_MS, 5 * 60 * 1000);
+  console.log("✓ personal link rooms close as soon as both have left; other rooms after 5 minutes");
+}
+
 console.log("\nROOM TESTS PASSED");
 process.exit(0);

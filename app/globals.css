@@ -535,3 +535,46 @@ p { margin: 0; line-height: 1.5; }
 .join-back { position: absolute; inset-inline-start: 0; top: 50%; transform: translateY(-50%); color: var(--text); text-decoration: none; background: rgba(255, 255, 255, 0.06); }
 [dir="rtl"] .join-back svg { transform: scaleX(-1); }
 .call-status .cancel-wait { margin-top: 4px; min-width: 200px; pointer-events: auto; }
+
+/* clearing the profile: a proper confirmation, with the call link as an opt-in */
+.clear-box { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 14px; background: rgba(255, 77, 79, 0.07); border: 1px solid rgba(255, 77, 79, 0.3); }
+.clear-box h3 { margin: 0; font-size: 1rem; }
+.clear-opt { display: flex; gap: 10px; align-items: center; font-weight: 600; cursor: pointer; }
+.clear-opt input { width: 20px; height: 20px; accent-color: var(--danger); }
+.clear-warn { color: #ffb4a8; }
+.clear-actions { display: flex; gap: 10px; }
+.btn.danger { background: var(--danger); border-color: transparent; color: #fff; }
+
+/* Recent: right under the call buttons, visible without scrolling */
+.recent { display: flex; flex-direction: column; gap: 10px; }
+.recent-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 0 4px; }
+.recent-head h2 { margin: 0; font-size: 1.02rem; font-weight: 700; }
+.recent-head span { color: var(--muted); font-size: 0.84rem; }
+.recent-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 12px 6px; border-radius: 22px; background: rgba(255, 255, 255, 0.045); border: 1px solid var(--line); }
+.rp { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; background: none; border: 0; padding: 2px; cursor: pointer; color: var(--text); border-radius: 14px; }
+.rp:active { transform: scale(0.96); }
+.rp:focus-visible { outline: 3px solid rgba(91, 140, 255, 0.6); }
+.rp-av { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-weight: 750; font-size: 1.1rem; color: #0b0d10; }
+.rp b { font-size: 0.84rem; font-weight: 650; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rp small { font-size: 0.72rem; color: var(--muted); margin-top: -3px; white-space: nowrap; }
+.pc-av { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; font-weight: 750; font-size: 1.8rem; color: #0b0d10; margin-top: 6px; }
+.pc-facts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 2px 0 8px; }
+.pc-facts span { padding: 6px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); border: 1px solid var(--line); font-size: 0.86rem; color: var(--muted); }
+.pc-note { font-size: 0.84rem; color: var(--muted); max-width: 32ch; margin-top: 2px; }
+.bsheet-actions .pc-remove { color: var(--muted); }
+
+/* With Recent showing, everything tightens so it all fits on one screen */
+.home2.has-recent { gap: 16px; }
+.has-recent .home-hero { flex: 0 1 auto; min-height: 0; padding: 10px 4px 2px; }
+.has-recent .slogan { font-size: clamp(1.9rem, 8.6vw, 2.4rem); }
+.has-recent .htile.primary { padding: 16px; }
+.has-recent .htile.primary .htile-icon { width: 50px; height: 50px; }
+.has-recent .htile-row .htile { flex-direction: row; align-items: center; gap: 12px; padding: 14px; }
+.has-recent .htile-row .htile-icon { width: 40px; height: 40px; border-radius: 12px; }
+.has-recent .htile-row .htile-text small { display: none; }
+.has-recent .htile-row .htile-text b { font-size: 1rem; line-height: 1.2; }
+.has-recent .home-foot { margin-top: auto; }
+@media (max-height: 600px) {
+  .has-recent .slogan { font-size: 1.7rem; }
+  .home2.has-recent { gap: 12px; }
+}

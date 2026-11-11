@@ -197,5 +197,19 @@
   "tileGroupSub": "Hingga 12 orang",
   "tileLinkSub": "Bagikan sekali, telepon kapan saja",
   "myLinkShort": "Bagikan sekali. Buka kapan saja untuk menelepon, tanpa tautan baru.",
-  "cancelCall": "Batalkan panggilan"
+  "cancelCall": "Batalkan panggilan",
+  "recentTitle": "Terbaru",
+  "recentHint": "Ketuk untuk menelepon lagi",
+  "callPerson": "Telepon {name}",
+  "callPersonHint": "Membuka ruang panggilanmu dan mengirim pesan “Gabung yuk” ke {name} dalam bahasanya.",
+  "removeRecent": "Hapus dari Terbaru",
+  "speaksLang": "Berbahasa {lang}",
+  "oneCall": "1 panggilan",
+  "nCalls": "{n} panggilan",
+  "clearTitle": "Hapus data di ponsel ini?",
+  "clearWhat": "Nama, gender, kata, pengaturan teks, dan daftar Terbaru akan dihapus dari ponsel ini.",
+  "clearNewLink": "Beri saya tautan panggilan baru juga",
+  "clearNewLinkWarn": "Tautan lamamu tidak akan menjangkaumu lagi. Siapa pun yang memilikinya perlu yang baru.",
+  "clearDo": "Hapus",
+  "cancel": "Batal"
 }

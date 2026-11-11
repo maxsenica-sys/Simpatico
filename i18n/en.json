@@ -197,5 +197,19 @@
   "tileGroupSub": "Up to 12 people",
   "tileLinkSub": "Share once, call any time",
   "myLinkShort": "Share it once. Open it any time to call — no new link needed.",
-  "cancelCall": "Cancel call"
+  "cancelCall": "Cancel call",
+  "recentTitle": "Recent",
+  "recentHint": "Tap to call again",
+  "callPerson": "Call {name}",
+  "callPersonHint": "Opens your call room and sends {name} a “Join me” message in their language.",
+  "removeRecent": "Remove from Recent",
+  "speaksLang": "Speaks {lang}",
+  "oneCall": "1 call",
+  "nCalls": "{n} calls",
+  "clearTitle": "Clear this phone?",
+  "clearWhat": "Your name, gender, words, caption settings and Recent list will be removed from this phone.",
+  "clearNewLink": "Also give me a new call link",
+  "clearNewLinkWarn": "Your old link will stop reaching you. Anyone who has it will need the new one.",
+  "clearDo": "Clear",
+  "cancel": "Cancel"
 }

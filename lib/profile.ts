@@ -58,8 +58,10 @@ export function saveProfile(p: Profile) {
   set(KEY, JSON.stringify({ from: p.from, words: p.words, topics: p.topics }));
 }
 
-export function clearProfile() {
-  for (const k of [NAME_KEY, GENDER_KEY, KEY, "talk.captions.v1", "talk.selfCorner"]) set(k, null);
+/** Wipe what this phone knows about you. Your call link is kept unless you ask for a new one. */
+export function clearProfile(newLink = false) {
+  for (const k of [NAME_KEY, GENDER_KEY, KEY, "talk.captions.v1", "talk.selfCorner", "talk.recent.v1"]) set(k, null);
+  if (newLink) set(MY_LINK_KEY, null);
 }
 
 /** What goes to the server with a call (no name or gender: those are sent separately). */

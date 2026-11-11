@@ -197,5 +197,19 @@
   "tileGroupSub": "最多 12 人",
   "tileLinkSub": "分享一次，随时通话",
   "myLinkShort": "分享一次。随时打开即可通话，无需新链接。",
-  "cancelCall": "取消通话"
+  "cancelCall": "取消通话",
+  "recentTitle": "最近通话",
+  "recentHint": "点按再次通话",
+  "callPerson": "呼叫{name}",
+  "callPersonHint": "打开你的通话房间，并用对方的语言给{name}发送“来加入我”的消息。",
+  "removeRecent": "从最近通话中移除",
+  "speaksLang": "说{lang}",
+  "oneCall": "1 次通话",
+  "nCalls": "{n} 次通话",
+  "clearTitle": "清除此手机上的数据？",
+  "clearWhat": "你的名字、性别、词语、字幕设置和最近通话列表将从此手机中删除。",
+  "clearNewLink": "同时给我一个新的通话链接",
+  "clearNewLinkWarn": "旧链接将无法再联系到你。拥有旧链接的人需要新的链接。",
+  "clearDo": "清除",
+  "cancel": "取消"
 }

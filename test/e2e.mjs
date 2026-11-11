@@ -253,6 +253,13 @@ try {
   await b.getByText("Max aramadan ayrıldı.").waitFor({ timeout: 10000 });
   await b.screenshot({ path: OUT + "6-guest-peer-left.png" });
 
+  step("Recent: A's home screen now shows Ayşe, and her card offers to call her again");
+  await a.goto(BASE);
+  await a.getByRole("button", { name: "Call Ayşe" }).click();
+  await a.getByText("Speaks Turkish").waitFor();
+  await a.getByText("1 call", { exact: true }).waitFor();
+  await a.screenshot({ path: OUT + "7-recent.png" });
+
   console.log("\nE2E PASSED");
 } catch (err) {
   console.log("\nE2E FAILED:", err.message);

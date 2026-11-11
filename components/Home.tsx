@@ -8,6 +8,8 @@ import { loadProfile, myCallCode } from "@/lib/profile";
 import { Logo } from "./Logo";
 import { initials } from "./ProfileScreen";
 import { LinkSheet } from "./LinkSheet";
+import { PersonSheet, RecentRow } from "./Recent";
+import { loadRecent, type RecentPerson } from "@/lib/recent";
 
 type InstallEvent = Event & { prompt: () => Promise<void> };
 
@@ -20,11 +22,14 @@ export function Home() {
   const [name, setName] = useState("");
   const [showLink, setShowLink] = useState(false);
   const [myLink, setMyLink] = useState<string | null>(null);
+  const [recent, setRecent] = useState<RecentPerson[]>([]);
+  const [person, setPerson] = useState<{ p: RecentPerson; color: string } | null>(null);
 
   useEffect(() => {
     navigator.serviceWorker?.register("/sw.js").catch(() => {});
     setName(loadProfile().name);
     setMyLink(`${location.origin}/r/${myCallCode()}`);
+    setRecent(loadRecent());
     const env = detectEnv();
     if (env.ios && !env.standalone && !env.inApp && !env.nativeApp) setIosHint(true);
     const onPrompt = (e: Event) => {
@@ -48,7 +53,7 @@ export function Home() {
   };
 
   return (
-    <main className="screen home2">
+    <main className={`screen home2 ${recent.length ? "has-recent" : ""}`}>
       <header className="home-top">
         <Logo small />
         <Link href="/profile" className="me-btn" aria-label={t("openProfile")}>
@@ -98,6 +103,8 @@ export function Home() {
         </div>
       </nav>
 
+      {recent.length > 0 && <RecentRow people={recent} onPick={(p, color) => setPerson({ p, color })} />}
+
       <footer className="home-foot">
         {install ? (
           <button
@@ -117,6 +124,19 @@ export function Home() {
         </Link>
       </footer>
 
+      {person && myLink && (
+        <PersonSheet
+          person={person.p}
+          color={person.color}
+          link={myLink}
+          onClose={() => setPerson(null)}
+          onCalling={() => router.push(new URL(myLink).pathname)}
+          onRemoved={() => {
+            setPerson(null);
+            setRecent(loadRecent());
+          }}
+        />
+      )}
       {showLink && myLink && <LinkSheet url={myLink} onClose={() => setShowLink(false)} onOpen={() => router.push(new URL(myLink).pathname)} />}
     </main>
   );

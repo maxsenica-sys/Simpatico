@@ -241,5 +241,13 @@
   "notifyTurnOn": "Activar",
   "crashTitle": "Algo salió mal",
   "crashBody": "Lo sentimos. Los datos de tu llamada están a salvo: toca abajo para seguir donde lo dejaste.",
-  "crashRetry": "Reintentar"
+  "crashRetry": "Reintentar",
+  "waitingBanner": "{name} te está esperando",
+  "waitingMany": "{name} y {n} más te esperan",
+  "waitingNow": "Esperando ahora",
+  "joinNow": "Unirme",
+  "camOk": "La cámara funciona",
+  "micOk": "El micro funciona",
+  "micSaySomething": "Di hola para probar",
+  "testSound": "Probar sonido"
 }

@@ -241,5 +241,13 @@
   "notifyTurnOn": "Turn on",
   "crashTitle": "Something went wrong",
   "crashBody": "Sorry about that. Your call details are safe: tap below to pick up where you left off.",
-  "crashRetry": "Try again"
+  "crashRetry": "Try again",
+  "waitingBanner": "{name} is waiting for you",
+  "waitingMany": "{name} and {n} more are waiting",
+  "waitingNow": "Waiting now",
+  "joinNow": "Join",
+  "camOk": "Camera works",
+  "micOk": "Mic works",
+  "micSaySomething": "Say hi to test",
+  "testSound": "Test sound"
 }

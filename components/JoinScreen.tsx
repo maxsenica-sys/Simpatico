@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { Avatar } from "./Avatar";
+import { MediaCheck } from "./MediaCheck";
 import { loadPhoto } from "@/lib/photo";
 import { useEffect, useRef, useState } from "react";
 import { useT } from "@/lib/i18n";
@@ -139,6 +140,7 @@ export function JoinScreen({
             {stream ? "" : t("cameraStarting")}
           </div>
         )}
+        {stream && !refused && <MediaCheck stream={stream} />}
       </div>
       <section className="join-panel">
         <LanguageLine />

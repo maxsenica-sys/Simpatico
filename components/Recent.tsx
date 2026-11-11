@@ -5,6 +5,7 @@ import { useT } from "@/lib/i18n";
 import { canShareLink, shareLink } from "@/lib/native";
 import { loadProfile } from "@/lib/profile";
 import { forgetRecent, type RecentPerson } from "@/lib/recent";
+import type { Waiting } from "@/lib/waiting";
 import { baseLang } from "@/shared/lang";
 import { Avatar } from "./Avatar";
 import { initials } from "./ProfileScreen";
@@ -58,7 +59,7 @@ function languageName(tag: string) {
 }
 
 /** The home screen's row of the last five people you called. */
-export function RecentRow({ people, onPick }: { people: RecentPerson[]; onPick: (p: RecentPerson, color: string) => void }) {
+export function RecentRow({ people, waiting = [], onPick }: { people: RecentPerson[]; waiting?: Waiting[]; onPick: (p: RecentPerson, color: string) => void }) {
   const t = useT();
   return (
     <section className="recent" aria-label={t("recentTitle")}>
@@ -67,13 +68,18 @@ export function RecentRow({ people, onPick }: { people: RecentPerson[]; onPick: 
         <span>{t("recentHint")}</span>
       </div>
       <div className="recent-row">
-        {people.slice(0, 5).map((p, i) => (
-          <button key={p.name} className="rp" onClick={() => onPick(p, gradient(i))} aria-label={t("callPerson", { name: p.name })}>
-            <Avatar className="rp-av" photo={p.photo} fallback={initials(p.name)} style={{ background: gradient(i) }} />
-            <b>{p.name}</b>
-            <small>{when(p.at)}</small>
-          </button>
-        ))}
+        {people.slice(0, 5).map((p, i) => {
+          const isWaiting = waiting.some((w) => w.person === p);
+          return (
+            <button key={p.name} className={`rp ${isWaiting ? "waiting" : ""}`} onClick={() => onPick(p, gradient(i))} aria-label={isWaiting ? t("waitingBanner", { name: p.name }) : t("callPerson", { name: p.name })}>
+              <span className="rp-ring">
+                <Avatar className="rp-av" photo={p.photo} fallback={initials(p.name)} style={{ background: gradient(i) }} />
+              </span>
+              <b>{p.name}</b>
+              <small>{isWaiting ? t("waitingNow") : when(p.at)}</small>
+            </button>
+          );
+        })}
       </div>
     </section>
   );

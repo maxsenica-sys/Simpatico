@@ -662,3 +662,37 @@ p { margin: 0; line-height: 1.5; }
 .a2hs-icon { color: var(--accent); }
 .a2hs-buttons { display: flex; align-items: center; gap: 14px; margin-top: 6px; }
 .a2hs-buttons .a2hs-later { grid-column: auto; }
+
+/* "Waiting now": someone is in your call card room (or one you've talked in) */
+.waiting-banner {
+  display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 14px; border-radius: 22px; cursor: pointer; text-align: start; color: var(--text);
+  background: linear-gradient(135deg, rgba(52, 199, 89, 0.22), rgba(52, 199, 89, 0.08)); border: 1px solid rgba(52, 199, 89, 0.55);
+  box-shadow: 0 10px 30px -14px rgba(52, 199, 89, 0.8); animation: rise 0.25s ease;
+}
+.waiting-banner:active { transform: scale(0.98); }
+.waiting-av { position: relative; flex: none; }
+.waiting-av .avatar { width: 46px; height: 46px; font-size: 1rem; }
+.live-dot { position: absolute; right: -1px; bottom: -1px; width: 14px; height: 14px; border-radius: 50%; background: #34c759; border: 3px solid #0f1a14; animation: live 1.6s ease-in-out infinite; }
+@keyframes live { 0%, 100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7); } 50% { box-shadow: 0 0 0 6px rgba(52, 199, 89, 0); } }
+.waiting-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.waiting-text b { font-size: 1.02rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.waiting-text small { color: #7ee2a0; font-weight: 600; font-size: 0.82rem; }
+.waiting-join { flex: none; padding: 9px 18px; border-radius: 999px; background: #34c759; color: #04210f; font-weight: 750; }
+.rp-ring { border-radius: 50%; border: 3px solid transparent; display: grid; place-items: center; }
+.rp.waiting .rp-ring { border-color: #34c759; animation: live 1.6s ease-in-out infinite; }
+.rp.waiting small { color: #7ee2a0; font-weight: 650; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* quick mic / camera check on the join preview */
+.media-check { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; z-index: 2; }
+.mc-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px; font-size: 0.8rem; font-weight: 650; color: var(--text);
+  background: rgba(10, 12, 16, 0.62); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.14); }
+.mc-pill.ok { border-color: rgba(52, 199, 89, 0.7); color: #a6f0bf; }
+.mc-test { cursor: pointer; font: inherit; font-size: 0.8rem; font-weight: 650; }
+.mc-bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+.mc-bars i { width: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.3); transition: background 0.08s ease; }
+.mc-bars i:nth-child(1) { height: 30%; } .mc-bars i:nth-child(2) { height: 45%; } .mc-bars i:nth-child(3) { height: 60%; } .mc-bars i:nth-child(4) { height: 80%; } .mc-bars i:nth-child(5) { height: 100%; }
+.mc-bars i.on { background: #34c759; }
+.has-waiting .slogan { font-size: clamp(1.8rem, 8vw, 2.2rem) !important; }
+.has-waiting .home-hero { padding: 0 4px; }
+.home2.has-waiting { gap: 14px; }

@@ -241,5 +241,13 @@
   "notifyTurnOn": "Aktifkan",
   "crashTitle": "Terjadi kesalahan",
   "crashBody": "Maaf. Data panggilanmu aman: ketuk di bawah untuk melanjutkan dari tadi.",
-  "crashRetry": "Coba lagi"
+  "crashRetry": "Coba lagi",
+  "waitingBanner": "{name} sedang menunggumu",
+  "waitingMany": "{name} dan {n} lainnya menunggu",
+  "waitingNow": "Sedang menunggu",
+  "joinNow": "Gabung",
+  "camOk": "Kamera berfungsi",
+  "micOk": "Mik berfungsi",
+  "micSaySomething": "Ucapkan halo untuk tes",
+  "testSound": "Tes suara"
 }

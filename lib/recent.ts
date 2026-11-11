@@ -18,6 +18,8 @@ export type RecentPerson = {
   last?: number;
   /** Their profile photo as their phone last sent it (updates on every call). */
   photo?: string | null;
+  /** The call card room we last talked in, if it was one (for "Waiting now"). */
+  room?: string;
 };
 
 const norm = (name: string) => name.trim().toLocaleLowerCase();
@@ -41,8 +43,9 @@ function save(list: RecentPerson[]) {
 /** Names the server gives people who didn't type one ("Guest A"): not a person to remember. */
 const DEFAULT_NAME = /^Guest [A-Z0-9]+$/;
 
-export function noteCall(name: string, lang: string) {
+export function noteCall(name: string, lang: string, room?: string) {
   if (!name.trim() || DEFAULT_NAME.test(name.trim())) return;
+  const card = room && /^[a-z0-9]{10}$/.test(room) ? room : undefined;
   const list = loadRecent();
   const hit = list.find((r) => norm(r.name) === norm(name));
   if (hit) {
@@ -50,7 +53,8 @@ export function noteCall(name: string, lang: string) {
     hit.calls += 1;
     hit.lang = lang;
     hit.name = name.trim();
-  } else list.push({ name: name.trim(), lang, at: Date.now(), calls: 1, seconds: 0 });
+    if (card) hit.room = card;
+  } else list.push({ name: name.trim(), lang, at: Date.now(), calls: 1, seconds: 0, room: card });
   save(list);
 }
 
@@ -74,6 +78,11 @@ export function noteTime(names: string[], seconds: number) {
       r.last = Math.round(seconds);
     }
   save(list);
+}
+
+/** Same person? (Recent matches people by name.) */
+export function samePerson(a: string, b: string) {
+  return norm(a) === norm(b);
 }
 
 export function forgetRecent(name: string) {

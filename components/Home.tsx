@@ -13,6 +13,7 @@ import { loadPhoto } from "@/lib/photo";
 import { followCards } from "@/lib/push";
 import { PersonSheet, RecentRow } from "./Recent";
 import { loadRecent, type RecentPerson } from "@/lib/recent";
+import { useWaiting } from "@/lib/waiting";
 
 type InstallEvent = Event & { prompt: () => Promise<void> };
 
@@ -47,6 +48,9 @@ export function Home() {
     return () => window.removeEventListener("beforeinstallprompt", onPrompt);
   }, []);
 
+  const waiting = useWaiting(recent, name);
+  const first = waiting[0];
+
   const start = async (kind: "pair" | "group") => {
     setBusy(true);
     try {
@@ -60,7 +64,7 @@ export function Home() {
   };
 
   return (
-    <main className={`screen home2 ${recent.length ? "has-recent" : ""}`}>
+    <main className={`screen home2 ${recent.length ? "has-recent" : ""} ${first ? "has-waiting" : ""}`}>
       <header className="home-top">
         <Logo small />
         <Link href="/profile" className="me-btn" aria-label={t("openProfile")}>
@@ -72,6 +76,20 @@ export function Home() {
       <section className="home-hero">
         <h1 className="slogan">{t("slogan")}</h1>
       </section>
+
+      {first && (
+        <button className="waiting-banner" onClick={() => router.push(`/r/${first.room}`)}>
+          <span className="waiting-av">
+            <Avatar photo={first.person?.photo} fallback={initials(first.name)} />
+            <span className="live-dot" aria-hidden="true" />
+          </span>
+          <span className="waiting-text">
+            <b>{waiting.length > 1 ? t("waitingMany", { name: first.name, n: String(waiting.length - 1) }) : t("waitingBanner", { name: first.name })}</b>
+            <small>{t("waitingNow")}</small>
+          </span>
+          <span className="waiting-join">{t("joinNow")}</span>
+        </button>
+      )}
 
       <nav className="home-actions">
         <button className="htile primary" onClick={() => start("pair")} disabled={busy}>
@@ -108,7 +126,17 @@ export function Home() {
         </div>
       </nav>
 
-      {recent.length > 0 && <RecentRow people={recent} onPick={(p, color) => setPerson({ p, color })} />}
+      {recent.length > 0 && (
+        <RecentRow
+          people={recent}
+          waiting={waiting}
+          onPick={(p, color) => {
+            const w = waiting.find((x) => x.person === p);
+            if (w) router.push(`/r/${w.room}`);
+            else setPerson({ p, color });
+          }}
+        />
+      )}
 
       <footer className="home-foot">
         {install ? (

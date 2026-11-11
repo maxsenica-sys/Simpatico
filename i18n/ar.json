@@ -241,5 +241,13 @@
   "notifyTurnOn": "تشغيل",
   "crashTitle": "حدث خطأ ما",
   "crashBody": "نأسف لذلك. بيانات مكالمتك بأمان: اضغط بالأسفل للمتابعة من حيث توقفت.",
-  "crashRetry": "حاول مرة أخرى"
+  "crashRetry": "حاول مرة أخرى",
+  "waitingBanner": "{name} بانتظارك",
+  "waitingMany": "{name} و{n} آخرون بانتظارك",
+  "waitingNow": "ينتظر الآن",
+  "joinNow": "انضم",
+  "camOk": "الكاميرا تعمل",
+  "micOk": "الميكروفون يعمل",
+  "micSaySomething": "قل مرحبًا للتجربة",
+  "testSound": "اختبر الصوت"
 }

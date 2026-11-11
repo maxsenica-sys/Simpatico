@@ -241,5 +241,13 @@
   "notifyTurnOn": "Aç",
   "crashTitle": "Bir şeyler ters gitti",
   "crashBody": "Bunun için üzgünüz. Arama bilgilerin güvende: kaldığın yerden devam etmek için aşağıya dokun.",
-  "crashRetry": "Tekrar dene"
+  "crashRetry": "Tekrar dene",
+  "waitingBanner": "{name} seni bekliyor",
+  "waitingMany": "{name} ve {n} kişi daha bekliyor",
+  "waitingNow": "Şu an bekliyor",
+  "joinNow": "Katıl",
+  "camOk": "Kamera çalışıyor",
+  "micOk": "Mikrofon çalışıyor",
+  "micSaySomething": "Denemek için merhaba de",
+  "testSound": "Sesi dene"
 }

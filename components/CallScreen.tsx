@@ -74,7 +74,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
     for (const p of s.participants)
       if (p.connected && !met.current.has(p.id)) {
         met.current.set(p.id, p.name);
-        noteCall(p.name, p.lang.speaks);
+        noteCall(p.name, p.lang.speaks, call.info.room);
       }
     for (const p of s.participants)
       if (met.current.has(p.id) && photos.current.get(p.id) !== p.photo && (p.photo || photos.current.has(p.id))) {

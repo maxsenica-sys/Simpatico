@@ -38,6 +38,7 @@ const server = createServer((req, res) => {
   if (path === "/admin" && req.method === "GET") return dashboard(typeof url.query.token === "string" ? url.query.token : undefined, res);
   if (path === "/api/push/key" && req.method === "GET") return pushKey(res);
   if (path === "/api/leave" && req.method === "POST") return void leaveBeacon(req, res);
+  if (path === "/api/waiting" && req.method === "GET") return presence(typeof url.query.codes === "string" ? url.query.codes : "", res);
   if (path === "/api/push/subscribe" && req.method === "POST") return void pushSubscribe(req, res);
   if (path === "/api/push/unsubscribe" && req.method === "POST") return void pushUnsubscribe(req, res);
   if (path === "/api/rooms" && req.method === "POST") {
@@ -204,4 +205,20 @@ async function leaveBeacon(req: import("node:http").IncomingMessage, res: import
   }
   res.writeHead(204);
   res.end();
+}
+
+/**
+ * GET /api/waiting?codes=a,b — who is sitting in these call card rooms right now (first names),
+ * for "Waiting now" on the home screen. Only codes the phone already holds (its own card and
+ * cards it has joined); never opens a room. Call card codes are 10 random characters.
+ */
+function presence(codes: string, res: import("node:http").ServerResponse) {
+  const out: Record<string, string[]> = {};
+  for (const code of codes.split(",").slice(0, 20)) {
+    if (!/^[a-z0-9]{10}$/.test(code)) continue;
+    const room = getRoom(code);
+    const here = room ? [...room.peers.values()].filter((p) => p.ws).map((p) => p.name) : [];
+    if (here.length) out[code] = here;
+  }
+  return json(res, 200, { waiting: out });
 }

@@ -1,3 +1,4 @@
+import { slangFor } from "./slang";
 import Anthropic from "@anthropic-ai/sdk";
 import { baseLang, langInfo } from "../shared/lang";
 import type { SpeakerProfile } from "../shared/protocol";
@@ -124,47 +125,7 @@ const SYSTEM = `You write the subtitles for a live, face-to-face video call betw
  * Static text placed last in the system prompt and marked for caching, so it adds no per-call latency
  * once warm (Haiku 5.5 caches prompts of 512+ tokens; this keeps both prompts above that).
  */
-const SLANG = `<spoken_language_reference>
-People on these calls talk casually: friends, families, teammates. Below are common slang words, particles and set phrases by language. They are examples, not a complete list. They are written in Latin letters here, but the transcript uses each language's own script, and speech recognition may spell them oddly. Read them by meaning, and when the target language has its own casual equivalent at the same register, use it.
-
-English is spoken differently by region; <languages> may say which (Australia, United Kingdom, United States). The same word can differ: "pissed" = drunk (Australia, UK) but angry (US); "pants" = trousers (US) or underwear / rubbish (UK); "thongs" = flip-flops (Australia: "grab your thongs" is just "grab your flip-flops", nothing added); "fanny pack" vs "bum bag"; "football" = soccer (UK), American football (US); in Australia "footy" is AFL in most states and rugby league in New South Wales and Queensland, so it depends on context.
-English, Australian: "arvo" = afternoon; "brekkie" = breakfast; "servo" = petrol station; "bottle-o" = liquor shop; "Maccas" = McDonald's; "bathers", "togs", "cossie" = swimsuit; "esky" = cooler box; "ute" = pickup; "sanga" = sandwich; "snag" = sausage; "barbie" = barbecue; "stubby" = small bottle of beer; "tinny" = can of beer (or small boat); "goon" = cheap cask wine; "cuppa" = cup of tea; "smoko" = short break; "tradie" = tradesperson; "rellies" = relatives; "lollies" = sweets; "bikkie" = biscuit; "sunnies" = sunglasses; "trackies" = tracksuit pants; "mozzie" = mosquito; "durry" = cigarette; "dunny" = toilet; "doona" = duvet; "uni" = university; "g'day" = hi; "how ya going?" = how are you?; "mate" = friend (also neutral address); "reckon" = think; "heaps" = lots, very; "keen" = up for it; "stoked" = thrilled; "no worries", "no wukkas", "no dramas" = no problem, you're welcome; "she'll be right", "she's apples" = it'll be fine; "fair dinkum" = genuine, really?; "fair enough" = OK, understood; "deadset" = truly; "bloody oath", "too right" = absolutely; "yeah nah" = no; "nah yeah" = yes; "ripper", "bonza", "sweet as" = great; "how good is that!" = that's great; "flat out", "flat chat" = very busy; "full on" = intense; "chockers" = packed full; "dodgy" = shady, poor quality; "suss it out" = figure it out; "rock up" = turn up; "my shout" = I'm paying; "chuck a sickie" = take a fake sick day; "chuck a U-ey" = do a U-turn; "hard yakka" = hard work; "spewin'" = really annoyed; "devo" = devastated; "stuffed", "rooted", "knackered" = exhausted (or broken); "carked it" = died, broke down; "strewth", "crikey" = wow; "bogan" = uncouth person; "daggy" = dorky; "drongo", "galah" = idiot; "Straya" = Australia; "Aussie" = Australian; "Kiwi" = New Zealander; "pom", "pommy" = English person.
-English, British: "innit" = isn't it, right?; "bruv", "mate", "pal" = friend; "cheers" = thanks, bye; "ta" = thanks; "knackered" = exhausted; "gutted" = devastated; "chuffed" = pleased; "skint" = broke; "quid" = pound(s); "fiver", "tenner" = £5, £10; "gobsmacked" = astonished; "taking the piss", "taking the mick" = mocking; "having a laugh" = joking; "can't be arsed" = can't be bothered; "cheeky" = playfully bold; "sorted" = done, fixed; "proper", "well" = very ("well good"); "fit" = attractive; "peng" = attractive, great; "minging" = gross; "wagwan" = what's up; "mandem" = the guys; "bare" = lots of; "allow it" = drop it; "peak" = bad luck; "Bob's your uncle" = and that's it; "fortnight" = two weeks; "loo" = toilet; "queue" = line.
-English, American and online: "no cap" = honestly, no lie; "cap" = a lie; "bet" = OK, deal; "facts" = true, I agree; "lowkey" = a bit, secretly; "highkey" = openly, very; "deadass", "on God" = seriously, I swear; "say less" = got it, say no more; "slaps", "fire", "lit", "bussin'" (food) = great; "mid" = mediocre; "sus" = suspicious; "salty" = bitter, annoyed; "tilted" = frustrated, thrown off (from gaming); "it's giving…" = it looks/feels like…; "ate", "slay" = did great; "rizz" = charm; "simp" = overly devoted; "ghosted" = stopped replying; "situationship" = undefined relationship; "delulu" = delusional; "drip" = stylish clothes; "bougie" = fancy; "extra" = over the top; "shook" = shocked; "spill the tea" = share the gossip; "GOAT" = greatest of all time; "W" / "L" = win / loss; "touch grass" = go outside, get real; "based" = admirably yourself; "cringe" = embarrassing; "built different" = exceptional; "rent free" = can't stop thinking about it; "glow up" = big improvement; "caught in 4K" = caught red-handed; "no shot" = no way; "I'm dead", "I'm crying" = that's hilarious; "finna" = going to; "y'all" = you all; "bruh", "fam" = friend, mate; "hella" = very; "chillin'" = relaxing, hanging out; "chillin' like a villain" = relaxing (playful rhyme); "kick it" = hang out; "my bad" = sorry; "gonna/wanna/gotta" = going to / want to / have to.
-Rhymes, catchphrases and set phrases ("see you later, alligator", "easy peasy lemon squeezy", "chillin' like a villain", "winner winner chicken dinner") are translated by meaning and playfulness, not word for word; keep the playful tone if the target language has a similar phrase.
-Turkish: "kanka", "kanki" = buddy; "abi", "abla" = bro, sis (also polite for an older person); "lan" = dude (rough, between friends); "valla" = honestly; "aynen" = exactly; "eyvallah" = thanks, cheers; "hadi ya", "yok artık" = no way; "kolay gelsin" = greeting to someone working; "eline sağlık" = thanks for the food, nice work; "geçmiş olsun" = sorry that happened, get well; "afiyet olsun" = enjoy your meal; "kafayı yemek" = to go crazy; "boş yapma" = stop talking nonsense; "efsane" = legendary; "çok fena" = awesome or awful, by context; "hocam" = coach, teacher, or a friendly respectful "mate" (by context, never left as "hocam"); "naber", "ne haber" = what's up; "iyiyim" = I'm good; "sağ ol", "saol" = thanks; "kusura bakma" = sorry; "boşver" = never mind; "tamam", "olur" = OK; "hı hı" = yeah; "yok" = no, there isn't; "hadi" = come on, let's go; "of ya" = ugh. Turkish has one word, "o", for he, she and it: in English use the person's name or "they" unless the conversation makes it clear. English "you" to Turkish: "sen" between friends, family and teammates, "siz" for strangers, elders or to show respect; follow the conversation's tone and stay consistent.
-Russian: "блин" = damn; "короче" = anyway, long story short; "ну" = well; "давай" = come on, OK, bye; "чё" = what; "прикол" = funny thing, joke; "кайф" = bliss; "норм" = fine; "жесть", "капец" = insane, crazy; "забей" = forget it; "ваще" = totally.
-Spanish: "tío/tía" (Spain), "güey/wey" (Mexico), "che" (Argentina), "pana" (Venezuela, Caribbean) = dude; "vale" = OK; "guay", "chévere", "padre", "bacán" = cool; "neta" = really; "ni modo" = oh well; "me vale" = I don't care.
-Portuguese (Brazil): "cara", "mano" = dude; "beleza" = cool, OK; "valeu" = thanks; "né" = right?; "tipo" = like; "nossa" = wow; "tô de boa" = I'm chill; "saudade" = missing someone; "gambiarra" = makeshift fix.
-Arabic: "yalla" = come on, let's go; "wallah" = I swear, really; "inshallah" = hopefully (often a polite maybe); "mashallah" = wonderful; "habibi/habibti" = dear, buddy; "khalas" = enough, done; "ya'ni" = I mean, like; "tamam" = OK; "mafi mushkila", "ma fi mushkila" = no problem; "shlonak", "ezayak" = how are you (Gulf, Egyptian).
-Hindi and Urdu: "yaar" = buddy; "accha" = OK, really?; "arre" = hey, oh; "bas" = enough, that's it; "chalo" = OK, let's go; "theek hai" = OK; "pakka" = for sure; "jugaad" = clever hack; "bindaas" = carefree, cool; "timepass" = killing time; "kya scene hai" = what's up.
-Bengali: "dada", "didi" = older brother, sister (also friendly address); "ki obostha" = what's up; "jhamela" = hassle; "adda" = long chat with friends; "bhalo" = good.
-Indonesian: "gue/gw", "lo/lu" = I, you (casual); "anjir", "anjay" = damn, wow; "santai" = relax; "gokil" = crazy, awesome; "mager" = too lazy to move; "baper" = taking it personally; "otw" = on the way; "wkwk" = haha; the particles "sih", "dong", "deh", "kok" soften or stress and rarely need words of their own.
-French: "wesh" = hey, yo; "frérot", "frère" = bro; "grave" = totally; "ouf" = crazy; "kiffer" = to love; "chelou" = weird; "relou" = annoying; "bof" = meh; "du coup" = so; "genre" = like; "c'est chaud" = it's intense, tough.
-Chinese: "牛", "牛逼" = awesome; "绝了" = amazing; "666" = nice one; "yyds", "永远的神" = the greatest; "躺平" = giving up on the rat race; "内卷" = rat race; "靠谱" = reliable; "加油" = come on, you've got this; "没事" = no worries; "随便" = whatever.
-German: "Alter", "Digga" = dude; "krass" = crazy, intense; "geil" = awesome; "na?" = what's up?; "Bock haben" = to feel like it; "passt" = fine, works; "Moin" = hi; "Feierabend" = done for the day.
-Italian: "dai" = come on; "boh" = no idea; "figo" = cool; "raga" = guys; "magari" = I wish, maybe; "che palle" = what a drag; "ci sta" = fair enough; "mi raccomando" = make sure, take care.
-Japanese: "やばい" = crazy (awesome or terrible, by context); "マジ" = seriously; "なるほど" = I see; "お疲れ様" = good work, thanks; "よろしく" = nice to meet you, please; the particles ね and よ add "right?" or emphasis; "えっと" is a filler.
-Korean: "대박" = awesome; "진짜" = really; "헐" = OMG; "화이팅" = you've got this; "아이고" = oh dear; "오빠", "언니", "형", "누나" are older brother/sister forms of address: use the name or "mate".
-Vietnamese: "ơi" calls someone ("Lan ơi" = hey Lan); "trời ơi" = oh my god; "nha", "nhé" soften; "anh", "em", "chị" are age-based I/you: translate as I/you.
-Thai: "ครับ" / "ค่ะ" are politeness particles (and show the speaker is a man / woman): don't translate them as words; "ไม่เป็นไร" = no worries; "สบาย ๆ" = relax, easy; "จริงดิ" = for real?
-Persian: "دمت گرم" = thanks, nice one; "خسته نباشی" = greeting to someone working; "باشه" = OK; "قربونت برم" = affectionate thanks, love you; ritual politeness (taarof) means offers may be refused out of courtesy.
-Polish: "spoko" = cool, fine; "kurde", "kurczę" = damn; "ziom" = bro; "masakra" = a disaster or crazy; "luz" = chill.
-Dutch: "gezellig" = cosy, fun; "lekker" = nice; "joh" = man; "toch?" = right?; "doei" = bye; "gaaf" = cool.
-Ukrainian: "та ну" = no way; "кльово" = cool; "ну" = well; "давай" = OK, bye; "файно" = great.
-Greek: "ρε" = hey, man; "έλα" = come on, or hello on the phone; "άντε" = come on, let's go; "μαλάκα" = dude between close friends, an insult otherwise; "ωραίος" = cool.
-Hebrew: "סבבה" = cool, OK; "יאללה" = come on; "אחי" = bro; "תכלס" = bottom line; "וואלה" = really.
-Swahili: "poa" = cool; "sawa" = OK; "mambo" = what's up; "hakuna matata" = no worries; "pole" = sorry (sympathy).
-Tagalog: "pre", "pare" = buddy; "sige" = OK, go ahead; "grabe" = wow, intense; "lodi" = idol; "po" and "opo" show respect, not words; mixing English (Taglish) is normal.
-Malay: "lah" softens or stresses; "boleh" = can, OK; "best" = great; "geng" = buddy.
-Romanian: "frate" = bro; "mișto" = cool; "nasol" = bad; "hai" = come on; "las-o baltă" = forget it.
-Czech: "jo" = yeah; "v pohodě" = all good; "hustý" = cool; "kámo" = buddy; "fakt" = really.
-Swedish: "typ" = like; "asså" = I mean, like; "fika" = coffee break; "lagom" = just right; "schysst" = nice.
-Hungarian: "szia" = hi, bye; "király" = awesome; "haver" = buddy; "jó" = good, OK.
-Mixing languages in one sentence (Hinglish, Taglish, Turkish or Arabic with English words) is normal: translate the meaning of the whole. Politeness particles and fillers carry tone, not words.
-Terms of address (yaar, abi, habibi, dada, güey, kanka, frérot) become the target language's own (mate, bro, dear), not the original word, unless the listener's language uses it too.
-Sports talk (volleyball and others): keep the terms players of the target language really use; many are borrowed from English ("spike", "set", "libero", "timeout"), so use those rather than a literal translation.
-</spoken_language_reference>`;
+// The slang reference lives in server/slang/: one file per language, loaded per call.
 
 /**
  * Last line of defence for what reaches the screen: with thinking off, a model can occasionally
@@ -202,11 +163,9 @@ export function looksUntranslated(source: string, out: string): boolean {
   return same / b.length >= 0.8;
 }
 
-/** The slang reference plus approved additions from reports (server/vocab.ts, /data/vocab-extra.json). */
-function slangReference(): string {
-  const add = Object.entries(vocabExtra().slang ?? {}).flatMap(([lang, lines]) => lines.map((l) => `${langInfo(lang).name}: ${l}`));
-  if (!add.length) return SLANG;
-  return SLANG.replace("</spoken_language_reference>", `Added from real calls:\n${add.join("\n")}\n</spoken_language_reference>`);
+/** The slang reference for this call's two languages, plus approved additions from reports. */
+function slangReference(sourceLang: string, targetLang: string): string {
+  return slangFor(sourceLang, targetLang, vocabExtra().slang ?? {});
 }
 
 let client: Anthropic | null = null;
@@ -250,7 +209,7 @@ export async function refine(input: RefineInput): Promise<string | null> {
         // Latency matters more than depth here: a subtitle rewrite needs no reasoning pass.
         thinking: { type: "disabled" },
         output_config: { effort: "medium" },
-        system: [{ type: "text", text: SYSTEM }, { type: "text", text: slangReference(), cache_control: { type: "ephemeral" } }],
+        system: [{ type: "text", text: SYSTEM }, { type: "text", text: slangReference(input.sourceLang, input.targetLang), cache_control: { type: "ephemeral" } }],
         messages: [{ role: "user", content: user }],
       },
       { signal: input.signal, maxRetries: 0 },
@@ -345,7 +304,7 @@ export async function phraseTranslate(input: PhraseInput): Promise<string | null
     max_tokens: 300,
     thinking: { type: "disabled" as const },
     output_config: { effort: "medium" as const },
-    system: [{ type: "text" as const, text: PHRASE_SYSTEM }, { type: "text" as const, text: slangReference(), cache_control: { type: "ephemeral" as const } }],
+    system: [{ type: "text" as const, text: PHRASE_SYSTEM }, { type: "text" as const, text: slangReference(input.sourceLang, input.targetLang), cache_control: { type: "ephemeral" as const } }],
     messages: [{ role: "user" as const, content: user }],
   };
   try {

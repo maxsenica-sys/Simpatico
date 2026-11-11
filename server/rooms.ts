@@ -346,6 +346,8 @@ function makePipeline(room: Room, p: Peer, key: string): SpeakerPipeline {
     // Everyone's names and their own words: any of them may come up in this person's speech.
     names: () => [...room.peers.values()].flatMap((x) => [x.name, ...(x.profile.words ?? [])]),
     profile: () => p.profile,
+    callNames: () => [...room.peers.values()].map((x) => x.name),
+    speakerName: () => p.name,
     settled: (id, source, translation) => {
       room.recent.set(id, { from: p.id, source, translation, srcLang: p.lang.speaks, tgtLang: key === "same" ? p.lang.speaks : key });
       if (room.recent.size > RECENT_LINES) room.recent.delete(room.recent.keys().next().value!);

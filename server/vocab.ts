@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { baseLang } from "../shared/lang";
+import { soundsAlike } from "../shared/soundalike";
 import { dataFile } from "./store";
 
 /**
@@ -76,7 +77,13 @@ const TERMS_BUDGET = 7000;
 export function sonioxContext(source: string, names: string[]): SonioxContext {
   const people = [...new Set(names.map((n) => n.trim()).filter((n) => n && !/^[A-Z]$/.test(n)))].slice(0, 12);
   const lang = baseLang(source) ?? "";
-  const all = [...people, ...(BY_LANG[lang] ?? []), ...(vocabExtra().terms?.[lang] ?? [])];
+  // A term that sounds like someone in the call loses to their name: "Esky" (a cooler box)
+  // would otherwise pull an Australian saying "Ezgi" towards the wrong word.
+  const nameWords = people.flatMap((n) => n.split(/\s+/));
+  const listed = [...(BY_LANG[lang] ?? []), ...(vocabExtra().terms?.[lang] ?? [])].filter(
+    (t) => !nameWords.some((n) => t.split(/\s+/).some((w) => soundsAlike(w, n) && w.toLowerCase() !== n.toLowerCase())),
+  );
+  const all = [...people, ...listed];
   const terms: string[] = [];
   let size = 0;
   for (const t of new Set(all)) {

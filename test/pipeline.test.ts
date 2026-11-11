@@ -5,7 +5,8 @@ import { WebSocketServer, type WebSocket } from "ws";
 
 import { SpeakerPipeline } from "../server/pipeline";
 import { isTrivialEdit } from "../server/text";
-import { looksUntranslated, relevantPeople, subtitleOnly } from "../server/refine";
+import { looksUntranslated, namesTag, relevantPeople, subtitleOnly } from "../server/refine";
+import { sonioxContext } from "../server/vocab";
 import { reply } from "./sse";
 
 delete process.env.ANTHROPIC_API_KEY; // pass 2 off: utterances settle on the literal text
@@ -209,6 +210,15 @@ assert.equal(relevantPeople("My teacher was happy with us", "en-AU", { speaker: 
 assert.deepEqual(relevantPeople("Are you ready?", "en", { speaker: "f", listener: "m" }), { speaker: undefined, listener: "m" });
 assert.deepEqual(relevantPeople("Çok yoruldum", "tr", { speaker: "f" }), { speaker: "f" });
 console.log("✓ gender is passed only where it matters");
+
+// A name said in another accent: "Ezgi" heard as "esky". Recognition drops the competing slang
+// term for this call, and the translator is told the word may be the name.
+const ctxEzgi = sonioxContext("en-AU", ["Max", "Ezgi"]);
+assert.ok(ctxEzgi.terms.includes("Ezgi") && !ctxEzgi.terms.includes("esky"), "esky gives way to Ezgi");
+assert.ok(sonioxContext("en-AU", ["Max"]).terms.includes("esky"), "esky stays when no Ezgi is in the call");
+assert.match(namesTag(["Max", "Ezgi"], "hey esky how was your day"), /"esky" may be Ezgi/);
+assert.doesNotMatch(namesTag(["Max", "Ezgi"], "see you tomorrow"), /name_hints/);
+console.log("✓ a name heard as a similar word is flagged, and doesn't lose to slang");
 
 // A model second-guessing itself in the visible reply never reaches the screen.
 assert.equal(subtitleOnly("Arre yaar, bas karo.\nWait, I should check: the target is English.\nHey, come on, enough already."), "Hey, come on, enough already.");

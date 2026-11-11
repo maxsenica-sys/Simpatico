@@ -150,7 +150,7 @@
   "add": "Ajouter",
   "remove": "Supprimer",
   "topicsTitle": "Mes sujets de conversation habituels",
-  "topicsHint": "Aide le traducteur à comprendre tes mots.",
+  "topicsHint": "Facultatif : chaque appel peut porter sur n’importe quoi. Ça aide juste pour les mots que tu utilises souvent.",
   "topic_sport": "Sport",
   "topic_family": "Famille",
   "topic_work": "Travail",
@@ -176,5 +176,12 @@
   "minutesShort": "{n} min",
   "underMinute": "Moins d’une minute",
   "quickRate": "C’était comment ?",
-  "tellUsMore": "Dis-nous en plus (facultatif)"
+  "tellUsMore": "Dis-nous en plus (facultatif)",
+  "transferTitle": "Utiliser sur un autre téléphone",
+  "transferHint": "Ouvre ce lien ou scanne le code sur ton autre téléphone pour y copier ton profil. Il passe directement d’un téléphone à l’autre, sans passer par nos serveurs.",
+  "transferShow": "Afficher le lien et le QR code",
+  "importTitle": "Copier ce profil sur ce téléphone ?",
+  "importBody": "Le profil de ce téléphone sera remplacé par celui de {name} venant de l’autre téléphone.",
+  "importYes": "Copier sur ce téléphone",
+  "transferScan": "Scanne avec ton autre téléphone"
 }

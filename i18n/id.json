@@ -150,7 +150,7 @@
   "add": "Tambah",
   "remove": "Hapus",
   "topicsTitle": "Yang biasa kubicarakan",
-  "topicsHint": "Membantu penerjemah memahami kata-katamu.",
+  "topicsHint": "Opsional: tiap panggilan bisa membahas apa saja. Ini cuma membantu teks menulis kata-kata yang sering kamu pakai.",
   "topic_sport": "Olahraga",
   "topic_family": "Keluarga",
   "topic_work": "Kerja",
@@ -176,5 +176,12 @@
   "minutesShort": "{n} mnt",
   "underMinute": "Kurang dari semenit",
   "quickRate": "Gimana tadi?",
-  "tellUsMore": "Ceritain lebih lanjut (opsional)"
+  "tellUsMore": "Ceritain lebih lanjut (opsional)",
+  "transferTitle": "Pakai di HP lain",
+  "transferHint": "Buka link ini atau pindai kodenya di HP-mu yang lain untuk menyalin profilmu ke sana. Datanya langsung dikirim antar-HP-mu, tidak lewat server kami.",
+  "transferShow": "Tampilkan link dan kode QR",
+  "importTitle": "Salin profil ini ke HP ini?",
+  "importBody": "Profil di HP ini akan diganti dengan profil {name} dari HP yang lain.",
+  "importYes": "Salin ke HP ini",
+  "transferScan": "Pindai pakai HP-mu yang lain"
 }

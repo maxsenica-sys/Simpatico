@@ -84,6 +84,9 @@ export interface PipelineHost {
    * ones in memory only, so a reader can report a bad translation (see rooms.ts).
    */
   settled?(id: string, source: string, translation: string): void;
+  /** First names of everyone in the call, so the translator can recognise a misheard name. */
+  callNames?(): string[];
+  speakerName?(): string;
   /** Names of the people in the call, so speech recognition spells them right. */
   names?(): string[];
   /** The speaker's optional profile: where they're from, their words and usual topics. */
@@ -387,6 +390,8 @@ export class SpeakerPipeline {
       context: this.host.context(),
       people: this.host.people?.(),
       profile: this.host.profile?.(),
+      callNames: this.host.callNames?.(),
+      speakerName: this.host.speakerName?.(),
       signal: AbortSignal.timeout(STEADY_TIMEOUT_MS),
     }).then((text) => {
       u.steadyBusy = false;
@@ -507,6 +512,8 @@ export class SpeakerPipeline {
       context: this.host.context(),
       people: this.host.people?.(),
       profile: this.host.profile?.(),
+      callNames: this.host.callNames?.(),
+      speakerName: this.host.speakerName?.(),
       signal: AbortSignal.timeout(PREVIEW_TIMEOUT_MS),
       onPartial: show,
     }).then((text) => {
@@ -605,6 +612,8 @@ export class SpeakerPipeline {
       glossary: this.host.glossary(),
       people: this.host.people?.(),
       profile: this.host.profile?.(),
+      callNames: this.host.callNames?.(),
+      speakerName: this.host.speakerName?.(),
       signal: abort.signal,
     }).then((refined) => {
       clearTimeout(deadline);

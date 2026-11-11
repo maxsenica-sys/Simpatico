@@ -150,7 +150,7 @@
   "add": "Adicionar",
   "remove": "Remover",
   "topicsTitle": "Sobre o que eu costumo falar",
-  "topicsHint": "Ajuda o tradutor a entender suas palavras.",
+  "topicsHint": "Opcional: cada chamada pode ser sobre qualquer assunto. Isso só ajuda com palavras que você usa muito.",
   "topic_sport": "Esportes",
   "topic_family": "Família",
   "topic_work": "Trabalho",
@@ -176,5 +176,12 @@
   "minutesShort": "{n} min",
   "underMinute": "Menos de um minuto",
   "quickRate": "Como foi?",
-  "tellUsMore": "Conte mais (opcional)"
+  "tellUsMore": "Conte mais (opcional)",
+  "transferTitle": "Usar em outro celular",
+  "transferHint": "Abra este link ou escaneie o código no seu outro celular para copiar seu perfil para lá. Ele vai direto de um celular para o outro, sem passar pelos nossos servidores.",
+  "transferShow": "Mostrar link e QR code",
+  "importTitle": "Copiar este perfil para este celular?",
+  "importBody": "O perfil deste celular será substituído pelo perfil de {name} do outro celular.",
+  "importYes": "Copiar para este celular",
+  "transferScan": "Escaneie com seu outro celular"
 }

@@ -89,3 +89,35 @@ export function countries(ui: string): { code: string; name: string }[] {
     .filter((c) => c.name && c.name !== c.code && !/^(EU|EZ|UN|QO|XA|XB|ZZ)$/.test(c.code))
     .sort((x, y) => x.name.localeCompare(y.name, ui));
 }
+
+/**
+ * Moving to another phone without an account: the whole profile travels inside a link's
+ * #fragment, which browsers never send to a server. Open (or scan) it on the other phone.
+ * The groundwork for accounts later (docs/accounts.md): the same Transfer shape will be what
+ * a signed-in phone syncs.
+ */
+export type Transfer = { v: 1; profile: Profile; captions?: unknown; speaks?: string };
+
+function toBase64Url(s: string): string {
+  return btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function fromBase64Url(s: string): string {
+  const bin = atob(s.replace(/-/g, "+").replace(/_/g, "/"));
+  return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
+}
+
+export function transferLink(origin: string, t: Omit<Transfer, "v">): string {
+  return `${origin}/profile#import=${toBase64Url(JSON.stringify({ v: 1, ...t }))}`;
+}
+
+export function readTransfer(hash: string): Transfer | null {
+  const m = hash.match(/^#import=([\w-]+)$/);
+  if (!m) return null;
+  try {
+    const t = JSON.parse(fromBase64Url(m[1])) as Transfer;
+    if (t.v !== 1 || typeof t.profile !== "object") return null;
+    return t;
+  } catch {
+    return null;
+  }
+}

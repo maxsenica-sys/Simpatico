@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { baseLang, langInfo } from "../shared/lang";
 import type { SpeakerProfile } from "../shared/protocol";
+import { soundsAlike } from "../shared/soundalike";
 import { log } from "./log";
 import { vocabExtra } from "./vocab";
 
@@ -37,6 +38,24 @@ export function relevantPeople(text: string, sourceLang: string, p: People | und
   const speaker = p.speaker && /\b(I|I'm|I've|I'll|I'd|thanks?)\b/i.test(text) ? p.speaker : undefined;
   const listener = p.listener && /\b(you|you're|you've|you'll|you'd|your|yours|yourself)\b/i.test(text) ? p.listener : undefined;
   return speaker || listener ? { speaker, listener } : undefined;
+}
+
+/**
+ * Who is in the call, plus words in what was heard that sound like one of their names (an
+ * English speaker saying "Ezgi" is often transcribed "esky"). The model decides from the
+ * sentence whether the word is the name or its ordinary meaning.
+ */
+export function namesTag(names: string[] | undefined, heard: string, speaker?: string): string {
+  const people = [...new Set((names ?? []).map((n) => n.trim()).filter((n) => n && !/^[A-Z]$/.test(n)))];
+  if (!people.length) return "";
+  const words = [...new Set(heard.split(/[^\p{L}'’-]+/u).filter((w) => w.length >= 2))];
+  const hints: string[] = [];
+  for (const w of words) {
+    const name = people.find((n) => n.split(/\s+/).some((part) => soundsAlike(w, part) && w.toLowerCase() !== part.toLowerCase()));
+    if (name) hints.push(`"${w}" may be ${name}`);
+  }
+  const listed = people.map((n) => (n === speaker?.trim() ? `${n} (speaking now)` : n)).join(", ");
+  return `<people_in_call>${listed}</people_in_call>${hints.length ? `\n<name_hints>${hints.join("; ")}</name_hints>` : ""}`;
 }
 
 /** What the speaker told us about themselves in their profile (all optional). */
@@ -76,6 +95,10 @@ export type RefineInput = {
   glossary: Record<string, string>;
   people?: People;
   profile?: SpeakerProfile;
+  /** First names of everyone in the call (they are shown on screen anyway). */
+  callNames?: string[];
+  /** Which of them is speaking. */
+  speakerName?: string;
   signal: AbortSignal;
 };
 
@@ -90,6 +113,7 @@ const SYSTEM = `You write the subtitles for a live, face-to-face video call betw
 - Keep it as short as the natural spoken version. It is read as a subtitle while watching the speaker's face.
 - Never add anything that wasn't said: no extra items, words, sentences or explanations, even if they seem helpful.
 - Glossary entries are names, nicknames and in-jokes between these two people. Use them as given. <speaker_profile> says where the speaker is from, what they often talk about and names and words they use: use it to read their slang and spell their words.
+- <people_in_call> lists who is on this call. Speech recognition often turns a name said in another accent into a similar-sounding word (an English speaker saying the Turkish name "Ezgi" can come out as "esky"); <name_hints> points these out. If the word works as a name in the sentence (someone is spoken to, or something is said about them), write the person's name. If it clearly has its ordinary meaning ("grab the esky from the car"), keep that. Never add a name that wasn't said.
 - Some words mean different things by region or context (Australian "footy" is AFL in most states but rugby league in New South Wales and Queensland; "football" differs by country). Decide from the conversation, the speaker's region and topics; if it is still unclear, keep the neutral meaning ("football", "the game") rather than guessing.
 - Gender: <people> gives the speaker's and listener's gender. Use the speaker's only where the speaker refers to themselves (I, me, my: Russian "я устала", Portuguese "obrigada", Hindi "मैं गई"), and the listener's only where they are addressed as one person (you: Arabic "أنتِ", Spanish "¿estás cansada?"). Everyone else follows the conversation: people mentioned get the gender the context gives them, groups stay plural ("Are they coming?" about several people), "we" is the group, and where nothing says otherwise use neutral wording or the grammatical default. Never put the speaker's or listener's gender on anyone else: a woman saying "My friend is tired" in French is "Mon ami est fatigué" (the friend's gender is unknown), not "Mon amie est fatiguée". The source can show gender too (Russian past tenses, Hindi and Urdu verb endings, Thai "ครับ"/"ค่ะ", Arabic and Hebrew verb forms): use those clues. Never add a gender the source doesn't have: Turkish "o", Persian "u", Indonesian "dia", spoken Chinese "tā" become "they" (or the person's name) in English, never "he/she" or a slash. Example: "O da geliyor mu?" is "Are they coming too?", not "Is he coming too?".
 - Render interjections and backchannels ("mm-hmm", "uh-huh", "wow", "oh no") with the target language's own spoken equivalent, never the source-language sound.
@@ -211,6 +235,7 @@ export async function refine(input: RefineInput): Promise<string | null> {
     context ? `<recent_conversation>\n${context}\n</recent_conversation>` : "",
     peopleTag(relevantPeople(input.source, input.sourceLang, input.people)),
     profileTag(input.profile),
+    namesTag(input.callNames, input.source, input.speakerName),
     `<utterance speaker="${input.speaker}">${input.source}</utterance>`,
   ]
     .filter(Boolean)
@@ -256,6 +281,7 @@ const PHRASE_SYSTEM = `You write the subtitles for a live video call between peo
 - Translate only the new phrase, so that it reads as the natural continuation of the subtitle already shown. Never repeat, correct or rephrase what is already shown. Because of word order, the subtitle so far may already carry part of this phrase's meaning (a "when", "that" or "and" placed earlier); don't translate that part again.
 - Translate meaning, not words. Idioms, slang and colloquialisms become the natural equivalent in the target language; keep the speaker's register and tone. Drop fillers and false starts that carry no meaning. Never add anything that wasn't said.
 - If the phrase stops mid-sentence, stop there too; do not guess what comes next. In languages where the verb comes last (Turkish, Hindi, Urdu, Bengali, Japanese, Korean), a phrase often arrives before its verb: translate only what is there and never invent the missing verb; it comes with the next phrase, so place it naturally then. When the phrase is marked final, it is the end of what they said: finish the sentence naturally.
+- <people_in_call> and <name_hints>: a word that sounds like someone in the call (an English speaker's "esky" for the Turkish name "Ezgi") is that person's name when it works as a name in the sentence; otherwise keep its ordinary meaning.
 - Words that differ by region or context (Australian "footy": AFL or rugby league) follow the conversation and <speaker_profile>; if still unclear, keep the neutral meaning rather than guessing.
 - Gender: <people> gives the speaker's and listener's gender. Apply the speaker's only where they refer to themselves (I, me, my) and the listener's only where they are addressed as one person (you). Everyone else follows the conversation: groups stay plural, people mentioned get the gender the context gives them, otherwise neutral wording. Never put the speaker's gender on a friend, colleague or anyone else they mention. Clues in the source (verb endings, Thai "ครับ"/"ค่ะ") count too. Never add a gender the source doesn't have: Turkish "o", Indonesian "dia" and similar become just "they" (or the person's name) in English, never "he/she".
 - The transcript comes from speech recognition and can contain mistakes, especially names, characters and slang in accents or soft speech ("pin okio" for Pinocchio). Use what was said before and the recent conversation to work out what was meant, but translate only the new phrase.
@@ -276,6 +302,8 @@ export type PhraseInput = {
   context: ContextLine[];
   people?: People;
   profile?: SpeakerProfile;
+  callNames?: string[];
+  speakerName?: string;
   signal: AbortSignal;
   /** Stream the reply: called with the subtitle so far as the words are written (Live previews). */
   onPartial?: (text: string) => void;
@@ -304,6 +332,7 @@ export async function phraseTranslate(input: PhraseInput): Promise<string | null
     context ? `<recent_conversation>\n${context}\n</recent_conversation>` : "",
     peopleTag(relevantPeople(`${input.before.split(/\s+/).slice(-12).join(" ")} ${input.phrase}`, input.sourceLang, input.people)),
     profileTag(input.profile),
+    namesTag(input.callNames, `${input.before} ${input.phrase}`, input.speakerName),
     input.before ? `<said_so_far>${input.before}</said_so_far>` : "",
     input.shown ? `<subtitle_so_far>${input.shown}</subtitle_so_far>` : "",
     `<new_phrase final="${input.final}">${input.phrase}</new_phrase>`,

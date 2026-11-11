@@ -150,7 +150,7 @@
   "add": "Add",
   "remove": "Remove",
   "topicsTitle": "What I usually talk about",
-  "topicsHint": "Helps the translator understand your words.",
+  "topicsHint": "Optional: every call can be about anything. This just helps with words you use a lot.",
   "topic_sport": "Sport",
   "topic_family": "Family",
   "topic_work": "Work",
@@ -176,5 +176,12 @@
   "minutesShort": "{n} min",
   "underMinute": "Under a minute",
   "quickRate": "How was it?",
-  "tellUsMore": "Tell us more (optional)"
+  "tellUsMore": "Tell us more (optional)",
+  "transferTitle": "Use on another phone",
+  "transferHint": "Open this link or scan the code on your other phone to copy your profile there. It goes straight between your phones, not through our servers.",
+  "transferShow": "Show link and QR code",
+  "importTitle": "Copy this profile to this phone?",
+  "importBody": "This replaces the profile on this phone with {name}'s from the other phone.",
+  "importYes": "Copy to this phone",
+  "transferScan": "Scan with your other phone"
 }

@@ -150,7 +150,7 @@
   "add": "添加",
   "remove": "移除",
   "topicsTitle": "我常聊的话题",
-  "topicsHint": "帮助翻译更好地理解你说的话。",
+  "topicsHint": "选填：每次通话聊什么都可以。这只是帮助字幕识别你常用的词。",
   "topic_sport": "运动",
   "topic_family": "家庭",
   "topic_work": "工作",
@@ -176,5 +176,12 @@
   "minutesShort": "{n} 分钟",
   "underMinute": "不到 1 分钟",
   "quickRate": "感觉怎么样？",
-  "tellUsMore": "多说几句（选填）"
+  "tellUsMore": "多说几句（选填）",
+  "transferTitle": "在另一部手机上使用",
+  "transferHint": "在你的另一部手机上打开此链接或扫描二维码，即可将你的资料复制过去。资料直接在两部手机之间传输，不经过我们的服务器。",
+  "transferShow": "显示链接和二维码",
+  "importTitle": "要将此资料复制到这部手机吗？",
+  "importBody": "这会用另一部手机上 {name} 的资料替换这部手机上的资料。",
+  "importYes": "复制到这部手机",
+  "transferScan": "用你的另一部手机扫码"
 }

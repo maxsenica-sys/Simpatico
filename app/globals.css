@@ -412,6 +412,7 @@ p { margin: 0; line-height: 1.5; }
 .topic:active { transform: scale(0.96); }
 .topic.on { background: rgba(91, 140, 255, 0.18); border-color: var(--accent); }
 .caption-prefs.flat { border: 0; padding: 0; }
+.pcard.import { border-color: var(--accent); background: rgba(91, 140, 255, 0.1); }
 
 .joining-as { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); font-weight: 600; }
 .joining-as .avatar { width: 36px; height: 36px; font-size: 0.9rem; background: linear-gradient(135deg, #5b8cff, #5fe0bd); color: #0b0d10; }

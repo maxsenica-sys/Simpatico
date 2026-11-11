@@ -3,13 +3,14 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { loadCaptionPrefs, saveCaptionPrefs, type CaptionPrefs } from "@/lib/captionPrefs";
 import { useT } from "@/lib/i18n";
-import { MAX_WORDS, TOPICS, clearProfile, countries, loadProfile, saveProfile, type Profile } from "@/lib/profile";
+import { MAX_WORDS, TOPICS, clearProfile, countries, loadProfile, readTransfer, saveProfile, transferLink, type Profile, type Transfer } from "@/lib/profile";
 import { langFromChoice } from "@/lib/prefs";
 import { baseLang } from "@/shared/lang";
 import { LANGUAGES } from "@/shared/languages";
 import type { Topic } from "@/shared/protocol";
 import { CaptionSettings } from "./CaptionSettings";
 import { useLang } from "./LangRoot";
+import { ShareLink } from "./ShareLink";
 
 const SORTED = [...LANGUAGES].sort((a, b) => a.native.localeCompare(b.native));
 const TOPIC_ICON: Record<Topic, string> = { sport: "⚽", family: "👪", work: "💼", school: "🎓", travel: "✈️", food: "🍜", gaming: "🎮", music: "🎵", health: "🩺", faith: "🕊️" };
@@ -31,9 +32,12 @@ export function ProfileScreen() {
   const [prefs, setPrefs] = useState<CaptionPrefs | null>(null);
   const [word, setWord] = useState("");
   const [saved, setSaved] = useState(false);
+  const [incoming, setIncoming] = useState<Transfer | null>(null);
+  const [showTransfer, setShowTransfer] = useState(false);
   useEffect(() => {
     setP(loadProfile());
     setPrefs(loadCaptionPrefs());
+    setIncoming(readTransfer(location.hash));
   }, []);
   const ui = baseLang(lang.ui) ?? "en";
   const countryList = useMemo(() => countries(ui), [ui]);
@@ -63,6 +67,41 @@ export function ProfileScreen() {
           {saved ? `✓ ${t("saved")}` : ""}
         </span>
       </header>
+
+      {incoming && (
+        <section className="pcard import" role="dialog" aria-label={t("importTitle")}>
+          <h2>{t("importTitle")}</h2>
+          <p className="small">{t("importBody", { name: incoming.profile.name || "?" })}</p>
+          <div className="add-row">
+            <button
+              className="btn primary small"
+              onClick={() => {
+                const next = { ...loadProfile(), ...incoming.profile };
+                saveProfile(next);
+                setP(next);
+                if (incoming.captions) {
+                  saveCaptionPrefs({ ...loadCaptionPrefs(), ...(incoming.captions as Partial<CaptionPrefs>) });
+                  setPrefs(loadCaptionPrefs());
+                }
+                if (incoming.speaks) setLang(langFromChoice(incoming.speaks));
+                history.replaceState(null, "", "/profile");
+                setIncoming(null);
+              }}
+            >
+              {t("importYes")}
+            </button>
+            <button
+              className="btn small"
+              onClick={() => {
+                history.replaceState(null, "", "/profile");
+                setIncoming(null);
+              }}
+            >
+              {t("notNow")}
+            </button>
+          </div>
+        </section>
+      )}
 
       <div className="profile-hero">
         <div className="avatar xl" aria-hidden="true">
@@ -183,6 +222,18 @@ export function ProfileScreen() {
             }}
           />
         </div>
+      </section>
+
+      <section className="pcard">
+        <h2>{t("transferTitle")}</h2>
+        <p className="muted small">{t("transferHint")}</p>
+        {showTransfer ? (
+          <ShareLink url={transferLink(location.origin, { profile: p, captions: prefs, speaks: baseLang(lang.speaks) ?? undefined })} compact qr hideUrl caption={t("transferScan")} />
+        ) : (
+          <button className="btn small" onClick={() => setShowTransfer(true)}>
+            {t("transferShow")}
+          </button>
+        )}
       </section>
 
       <section className="pcard quiet">

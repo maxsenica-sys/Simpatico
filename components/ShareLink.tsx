@@ -4,7 +4,22 @@ import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n";
 import { canShareLink, shareLink } from "@/lib/native";
 
-export function ShareLink({ url, compact = false, qr = false }: { url: string; compact?: boolean; /** Show the QR code straight away. */ qr?: boolean }) {
+export function ShareLink({
+  url,
+  compact = false,
+  qr = false,
+  caption,
+  hideUrl = false,
+}: {
+  url: string;
+  compact?: boolean;
+  /** Show the QR code straight away. */
+  qr?: boolean;
+  /** Under the QR code (default: "Scan to join"). */
+  caption?: string;
+  /** Don't print the link (long links, e.g. a profile transfer). */
+  hideUrl?: boolean;
+}) {
   const t = useT();
   const [copied, setCopied] = useState(false);
   const [showQr, setShowQr] = useState(qr);
@@ -33,18 +48,20 @@ export function ShareLink({ url, compact = false, qr = false }: { url: string; c
     setTimeout(() => setCopied(false), 1800);
   };
   return (
-    <div className={`share ${compact ? "compact" : ""}`}>
+    <div className={`share ${compact ? "compact" : ""}`} data-url={url}>
       {!compact && <div className="share-title">{t("shareTitle")}</div>}
       {showQr && svg && (
         <figure className="qr">
           {/* QR code of the call link, generated on the device. */}
-          <div className="qr-code" role="img" aria-label={t("scanToJoin")} dangerouslySetInnerHTML={{ __html: svg }} />
-          <figcaption className="muted small">{t("scanToJoin")}</figcaption>
+          <div className="qr-code" role="img" aria-label={caption ?? t("scanToJoin")} dangerouslySetInnerHTML={{ __html: svg }} />
+          <figcaption className="muted small">{caption ?? t("scanToJoin")}</figcaption>
         </figure>
       )}
-      <div className="share-url" dir="ltr">
-        {url.replace(/^https?:\/\//, "")}
-      </div>
+      {!hideUrl && (
+        <div className="share-url" dir="ltr">
+          {url.replace(/^https?:\/\//, "")}
+        </div>
+      )}
       <div className="share-actions">
         {canShare && (
           <button className="btn primary" onClick={() => void shareLink(url)}>

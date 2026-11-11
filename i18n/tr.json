@@ -150,7 +150,7 @@
   "add": "Ekle",
   "remove": "Kaldır",
   "topicsTitle": "Genelde neler konuşurum",
-  "topicsHint": "Çevirmenin kelimelerini anlamasına yardımcı olur.",
+  "topicsHint": "İsteğe bağlı: her arama her konuda olabilir. Bu sadece sık kullandığın kelimelere yardımcı olur.",
   "topic_sport": "Spor",
   "topic_family": "Aile",
   "topic_work": "İş",
@@ -176,5 +176,12 @@
   "minutesShort": "{n} dk",
   "underMinute": "Bir dakikadan az",
   "quickRate": "Nasıldı?",
-  "tellUsMore": "Biraz daha anlat (isteğe bağlı)"
+  "tellUsMore": "Biraz daha anlat (isteğe bağlı)",
+  "transferTitle": "Başka bir telefonda kullan",
+  "transferHint": "Profilini diğer telefonuna kopyalamak için bu bağlantıyı orada aç ya da kodu tarat. Doğrudan telefonların arasında gider, sunucularımızdan geçmez.",
+  "transferShow": "Bağlantıyı ve QR kodu göster",
+  "importTitle": "Bu profil bu telefona kopyalansın mı?",
+  "importBody": "Bu telefondaki profil, diğer telefondaki {name} profiliyle değiştirilecek.",
+  "importYes": "Bu telefona kopyala",
+  "transferScan": "Diğer telefonunla tarat"
 }

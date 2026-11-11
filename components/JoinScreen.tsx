@@ -124,7 +124,8 @@ export function JoinScreen({
         ) : refused ? (
           <div className="preview-empty media-off">
             <div className="media-off-icon" aria-hidden="true">
-              🎙️ 📷
+              <MicOffGlyph />
+              <CamOffGlyph />
             </div>
             <h2>{t("mediaOffTitle")}</h2>
             <p className="muted small">{t("mediaOffBody")}</p>
@@ -269,6 +270,24 @@ function BackIcon() {
   return (
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M15 5l-7 7 7 7" />
+    </svg>
+  );
+}
+
+const GLYPH = { viewBox: "0 0 24 24", width: 30, height: 30, fill: "none", stroke: "currentColor", strokeWidth: 1.9, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+function MicOffGlyph() {
+  return (
+    <svg {...GLYPH}>
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M3 3l18 18" />
+    </svg>
+  );
+}
+function CamOffGlyph() {
+  return (
+    <svg {...GLYPH}>
+      <rect x="2.5" y="6" width="13" height="12" rx="3" />
+      <path d="M15.5 10.5 21 7.5v9l-5.5-3M3 3l18 18" />
     </svg>
   );
 }

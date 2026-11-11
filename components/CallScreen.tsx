@@ -690,8 +690,8 @@ function EndScreen({ call, s, onSave, onRejoin }: { call: CallController; s: Cal
                 <span className="muted small">{t("quickRate")}</span>
                 <div className="faces" role="group" aria-label={t("quickRate")}>
                   {(["great", "ok", "bad"] as const).map((r) => (
-                    <button key={r} className="face" aria-label={r === "great" ? t("rateGreat") : r === "ok" ? t("rateOk") : t("rateBad")} onClick={() => rate(r)}>
-                      {r === "great" ? "😀" : r === "ok" ? "😐" : "🙁"}
+                    <button key={r} className={`face face-${r}`} onClick={() => rate(r)}>
+                      {r === "great" ? t("rateGreat") : r === "ok" ? t("rateOk") : t("rateBad")}
                     </button>
                   ))}
                 </div>

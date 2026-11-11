@@ -120,7 +120,12 @@ export function Room({ code }: { code: string }) {
             {t("permBody")}
           </p>
         }
-        icon="🎥"
+        icon={
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2.5" y="6" width="13" height="12" rx="3" />
+            <path d="M15.5 10.5 21 7.5v9l-5.5-3" />
+          </svg>
+        }
       >
         <button className="btn primary big" autoFocus onClick={() => setExplain(false)}>
           {t("permContinue")}

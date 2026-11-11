@@ -651,3 +651,11 @@ p { margin: 0; line-height: 1.5; }
   .has-recent .recent-row { padding: 10px 6px; }
   .has-recent .rp-av { width: 48px; height: 48px; }
 }
+
+/* no emoji: text rating buttons and drawn icons */
+.faces { flex-wrap: wrap; justify-content: center; gap: 10px; }
+.face { width: auto; height: auto; min-height: 40px; padding: 0 16px; border-radius: 999px; font-size: 0.95rem; font-weight: 600; color: var(--text); }
+.face:hover { transform: none; border-color: rgba(255, 255, 255, 0.25); }
+.media-off-icon { display: flex; gap: 14px; color: var(--muted); letter-spacing: 0; }
+.notice-icon { color: var(--accent); }
+.photo-badge svg { display: block; }

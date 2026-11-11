@@ -11,13 +11,11 @@ import { MAX_WORDS, TOPICS, clearProfile, countries, loadProfile, readTransfer, 
 import { langFromChoice } from "@/lib/prefs";
 import { baseLang } from "@/shared/lang";
 import { LANGUAGES } from "@/shared/languages";
-import type { Topic } from "@/shared/protocol";
 import { CaptionSettings } from "./CaptionSettings";
 import { useLang } from "./LangRoot";
 import { ShareLink } from "./ShareLink";
 
 const SORTED = [...LANGUAGES].sort((a, b) => a.native.localeCompare(b.native));
-const TOPIC_ICON: Record<Topic, string> = { sport: "⚽", family: "👪", work: "💼", school: "🎓", travel: "✈️", food: "🍜", gaming: "🎮", music: "🎵", health: "🩺", faith: "🕊️" };
 
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -128,9 +126,9 @@ export function ProfileScreen() {
       <div className="profile-hero">
         <div className="photo-wrap">
           <button type="button" className="photo-pick" onClick={() => fileRef.current?.click()} aria-label={photo ? t("changePhoto") : t("addPhoto")}>
-            <Avatar className="avatar xl" photo={photo} fallback={initials(p.name) || "🙂"} />
+            <Avatar className="avatar xl" photo={photo} fallback={initials(p.name) || <PersonGlyph />} />
             <span className="photo-badge" aria-hidden="true">
-              📷
+              <CameraGlyph />
             </span>
           </button>
         </div>
@@ -267,7 +265,7 @@ export function ProfileScreen() {
                 className={`topic ${on ? "on" : ""}`}
                 onClick={() => update({ ...p, topics: on ? p.topics.filter((x) => x !== tp) : [...p.topics, tp] })}
               >
-                <span aria-hidden="true">{TOPIC_ICON[tp]}</span> {t(`topic_${tp}`)}
+                {t(`topic_${tp}`)}
               </button>
             );
           })}
@@ -329,7 +327,7 @@ export function ProfileScreen() {
       </section>
 
       <section className="pcard quiet">
-        <p className="small">🔒 {t("profilePrivacy")}</p>
+        <p className="small">{t("profilePrivacy")}</p>
         {!clearing ? (
           <button className="btn small" onClick={() => setClearing(true)}>
             {t("clearProfile")}
@@ -342,7 +340,7 @@ export function ProfileScreen() {
               <input type="checkbox" checked={newLink} onChange={(e) => setNewLink(e.target.checked)} />
               <span>{t("clearNewLink")}</span>
             </label>
-            {newLink && <p className="small clear-warn">⚠️ {t("clearNewLinkWarn")}</p>}
+            {newLink && <p className="small clear-warn">{t("clearNewLinkWarn")}</p>}
             <div className="clear-actions">
               <button
                 className="btn small danger"
@@ -372,5 +370,22 @@ export function ProfileScreen() {
         )}
       </section>
     </main>
+  );
+}
+
+function CameraGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 8h3l2-2.5h6L17 8h3v11H4z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </svg>
+  );
+}
+function PersonGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <circle cx="12" cy="8.5" r="4" />
+      <path d="M4 20.5c0-4.2 3.6-7 8-7s8 2.8 8 7" />
+    </svg>
   );
 }

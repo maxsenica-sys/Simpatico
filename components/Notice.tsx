@@ -1,7 +1,7 @@
 "use client";
 import type { ReactNode } from "react";
 
-export function Notice({ title, body, children, tone = "plain", icon }: { title: string; body?: ReactNode; children?: ReactNode; tone?: "plain" | "warn"; icon?: string }) {
+export function Notice({ title, body, children, tone = "plain", icon }: { title: string; body?: ReactNode; children?: ReactNode; tone?: "plain" | "warn"; icon?: ReactNode }) {
   return (
     <main className="screen center">
       <div className={`card notice ${tone}`}>

@@ -251,5 +251,11 @@
   "micSaySomething": "Di hola para probar",
   "testSound": "Probar sonido",
   "activeNow": "Activo ahora",
-  "callPairHint": "Inicia tu llamada con {name}. Se le avisa que estás esperando."
+  "callPairHint": "Inicia tu llamada con {name}. Se le avisa que estás esperando.",
+  "learnTitle": "Ayúdale a oírte mejor la próxima vez",
+  "learnHint": "Nombres de esta llamada. Tócalos para guardarlos y que la próxima vez se oigan y traduzcan bien.",
+  "learnHintNone": "¿Entendió mal un nombre o una palabra? Añádelo para que la próxima vez se oiga y traduzca bien.",
+  "learnPlaceholder": "Un nombre o palabra que entendió mal",
+  "learnAdd": "Añadir",
+  "learnPrivacy": "Elegidos en este teléfono a partir de los subtítulos. No se guarda nada de la llamada."
 }

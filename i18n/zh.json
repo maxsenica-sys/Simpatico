@@ -251,5 +251,11 @@
   "micSaySomething": "说句话试试",
   "testSound": "测试声音",
   "activeNow": "在线",
-  "callPairHint": "开始与{name}的通话，对方会收到你在等待的通知。"
+  "callPairHint": "开始与{name}的通话，对方会收到你在等待的通知。",
+  "learnTitle": "让它下次听得更准",
+  "learnHint": "这次通话中提到的名字。点按保存，下次就能正确识别和翻译。",
+  "learnHintNone": "有名字或词语弄错了吗？添加后，下次就能正确识别和翻译。",
+  "learnPlaceholder": "弄错的名字或词语",
+  "learnAdd": "添加",
+  "learnPrivacy": "在这部手机上从字幕中挑出，通话内容不会被保存。"
 }

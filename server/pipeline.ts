@@ -88,6 +88,8 @@ export interface PipelineHost {
   settled?(id: string, source: string, translation: string): void;
   /** First names of everyone in the call, so the translator can recognise a misheard name. */
   callNames?(): string[];
+  /** Names and words the people in the call saved on their Me page (a pet, a place, a nickname). */
+  callWords?(): string[];
   speakerName?(): string;
   /** Names of the people in the call, so speech recognition spells them right. */
   names?(): string[];
@@ -215,6 +217,7 @@ export class SpeakerPipeline {
       people: this.host.people?.(),
       profile: this.host.profile?.(),
       callNames: this.host.callNames?.(),
+      callWords: this.host.callWords?.(),
       speakerName: this.host.speakerName?.(),
       signal: AbortSignal.timeout(TYPED_TIMEOUT_MS),
     }).then((out) => {
@@ -431,6 +434,7 @@ export class SpeakerPipeline {
       people: this.host.people?.(),
       profile: this.host.profile?.(),
       callNames: this.host.callNames?.(),
+      callWords: this.host.callWords?.(),
       speakerName: this.host.speakerName?.(),
       signal: AbortSignal.timeout(STEADY_TIMEOUT_MS),
     }).then((text) => {
@@ -553,6 +557,7 @@ export class SpeakerPipeline {
       people: this.host.people?.(),
       profile: this.host.profile?.(),
       callNames: this.host.callNames?.(),
+      callWords: this.host.callWords?.(),
       speakerName: this.host.speakerName?.(),
       signal: AbortSignal.timeout(PREVIEW_TIMEOUT_MS),
       onPartial: show,
@@ -653,6 +658,7 @@ export class SpeakerPipeline {
       people: this.host.people?.(),
       profile: this.host.profile?.(),
       callNames: this.host.callNames?.(),
+      callWords: this.host.callWords?.(),
       speakerName: this.host.speakerName?.(),
       signal: abort.signal,
     }).then((refined) => {

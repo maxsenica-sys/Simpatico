@@ -1,4 +1,5 @@
 import { slangFor } from "./slang";
+import { phrasebookTag } from "./phrasebook";
 import Anthropic from "@anthropic-ai/sdk";
 import { baseLang, langInfo } from "../shared/lang";
 import type { SpeakerProfile } from "../shared/protocol";
@@ -46,17 +47,29 @@ export function relevantPeople(text: string, sourceLang: string, p: People | und
  * English speaker saying "Ezgi" is often transcribed "esky"). The model decides from the
  * sentence whether the word is the name or its ordinary meaning.
  */
-export function namesTag(names: string[] | undefined, heard: string, speaker?: string): string {
+export function namesTag(names: string[] | undefined, heard: string, speaker?: string, saved?: string[]): string {
   const people = [...new Set((names ?? []).map((n) => n.trim()).filter((n) => n && !/^[A-Z]$/.test(n)))];
-  if (!people.length) return "";
-  const words = [...new Set(heard.split(/[^\p{L}'’-]+/u).filter((w) => w.length >= 2))];
+  const words = [...new Set((saved ?? []).map((w) => w.trim()).filter((w) => w.length >= 2 && !people.includes(w)))].slice(0, 30);
+  if (!people.length && !words.length) return "";
+  const known = [...people, ...words];
+  const heardWords = heard.split(/[^\p{L}'’-]+/u).filter((w) => w.length >= 1);
+  // Single words, and two short words heard as one ("me a" for "Mia").
+  const candidates = new Set<string>(heardWords.filter((w) => w.length >= 2));
+  for (let i = 0; i + 1 < heardWords.length; i++) if (heardWords[i].length <= 4 && heardWords[i + 1].length <= 4) candidates.add(`${heardWords[i]} ${heardWords[i + 1]}`);
   const hints: string[] = [];
-  for (const w of words) {
-    const name = people.find((n) => n.split(/\s+/).some((part) => soundsAlike(w, part) && w.toLowerCase() !== part.toLowerCase()));
+  for (const w of candidates) {
+    const flat = w.replace(/\s+/g, "");
+    const name = known.find((n) => n.split(/\s+/).some((part) => soundsAlike(flat, part) && flat.toLowerCase() !== part.toLowerCase()));
     if (name) hints.push(`"${w}" may be ${name}`);
   }
   const listed = people.map((n) => (n === speaker?.trim() ? `${n} (speaking now)` : n)).join(", ");
-  return `<people_in_call>${listed}</people_in_call>${hints.length ? `\n<name_hints>${hints.join("; ")}</name_hints>` : ""}`;
+  return [
+    people.length ? `<people_in_call>${listed}</people_in_call>` : "",
+    words.length ? `<their_names_and_words>${words.join(", ")}</their_names_and_words>` : "",
+    hints.length ? `<name_hints>${hints.join("; ")}</name_hints>` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 /** What the speaker told us about themselves in their profile (all optional). */
@@ -98,6 +111,8 @@ export type RefineInput = {
   profile?: SpeakerProfile;
   /** First names of everyone in the call (they are shown on screen anyway). */
   callNames?: string[];
+  /** Names and words people in the call saved (pets, places, nicknames): recognition may mishear them. */
+  callWords?: string[];
   /** Which of them is speaking. */
   speakerName?: string;
   signal: AbortSignal;
@@ -115,6 +130,8 @@ const SYSTEM = `You write the subtitles for a live, face-to-face video call betw
 - Never add anything that wasn't said: no extra items, words, sentences or explanations, even if they seem helpful.
 - Glossary entries are names, nicknames and in-jokes between these two people. Use them as given. <speaker_profile> says where the speaker is from, what they often talk about and names and words they use: use it to read their slang and spell their words.
 - <people_in_call> lists who is on this call. Speech recognition often turns a name said in another accent into a similar-sounding word (an English speaker saying the Turkish name "Ezgi" can come out as "esky"); <name_hints> points these out. If the word works as a name in the sentence (someone is spoken to, or something is said about them), write the person's name. If it clearly has its ordinary meaning ("grab the esky from the car"), keep that. Never add a name that wasn't said.
+- <their_names_and_words> are names and words these people use (a pet, family, places, nicknames). Recognition may hear them as similar-sounding ordinary words or split them ("me a" for "Mia"); <name_hints> points these out. When the sentence makes sense with the saved name, write the name, unchanged.
+- <phrasebook> gives the meaning of set phrases and idioms just said, with what people really say for it in the target language. Use that equivalent when it fits the sentence; never mention the phrasebook.
 - Some words mean different things by region or context (Australian "footy" is AFL in most states but rugby league in New South Wales and Queensland; "football" differs by country). Decide from the conversation, the speaker's region and topics; if it is still unclear, keep the neutral meaning ("football", "the game") rather than guessing.
 - Gender: <people> gives the speaker's and listener's gender. Use the speaker's only where the speaker refers to themselves (I, me, my: Russian "я устала", Portuguese "obrigada", Hindi "मैं गई"), and the listener's only where they are addressed as one person (you: Arabic "أنتِ", Spanish "¿estás cansada?"). Everyone else follows the conversation: people mentioned get the gender the context gives them, groups stay plural ("Are they coming?" about several people), "we" is the group, and where nothing says otherwise use neutral wording or the grammatical default. Never put the speaker's or listener's gender on anyone else: a woman saying "My friend is tired" in French is "Mon ami est fatigué" (the friend's gender is unknown), not "Mon amie est fatiguée". The source can show gender too (Russian past tenses, Hindi and Urdu verb endings, Thai "ครับ"/"ค่ะ", Arabic and Hebrew verb forms): use those clues. Never add a gender the source doesn't have: Turkish "o", Persian "u", Indonesian "dia", spoken Chinese "tā" become "they" (or the person's name) in English, never "he/she" or a slash. Example: "O da geliyor mu?" is "Are they coming too?", not "Is he coming too?".
 - Render interjections and backchannels ("mm-hmm", "uh-huh", "wow", "oh no") with the target language's own spoken equivalent, never the source-language sound.
@@ -203,7 +220,8 @@ export async function refine(input: RefineInput): Promise<string | null> {
     context ? `<recent_conversation>\n${context}\n</recent_conversation>` : "",
     peopleTag(relevantPeople(input.source, input.sourceLang, input.people)),
     profileTag(input.profile),
-    namesTag(input.callNames, input.source, input.speakerName),
+    namesTag(input.callNames, input.source, input.speakerName, input.callWords),
+    phrasebookTag(input.source, input.sourceLang, input.targetLang),
     `<utterance speaker="${input.speaker}">${input.source}</utterance>`,
   ]
     .filter(Boolean)
@@ -250,6 +268,8 @@ const PHRASE_SYSTEM = `You write the subtitles for a live video call between peo
 - Translate meaning, not words. Idioms, slang and colloquialisms become the natural equivalent in the target language; keep the speaker's register and tone. Drop fillers and false starts that carry no meaning. Never add anything that wasn't said.
 - If the phrase stops mid-sentence, stop there too; do not guess what comes next. In languages where the verb comes last (Turkish, Hindi, Urdu, Bengali, Japanese, Korean), a phrase often arrives before its verb: translate only what is there and never invent the missing verb; it comes with the next phrase, so place it naturally then. When the phrase is marked final, it is the end of what they said: finish the sentence naturally.
 - <people_in_call> and <name_hints>: a word that sounds like someone in the call (an English speaker's "esky" for the Turkish name "Ezgi") is that person's name when it works as a name in the sentence; otherwise keep its ordinary meaning.
+- <their_names_and_words> are names and words these people use (a pet, family, places, nicknames). Recognition may hear them as similar-sounding ordinary words or split them ("me a" for "Mia"); <name_hints> points these out. When the sentence makes sense with the saved name, write the name, unchanged.
+- <phrasebook> gives the meaning of set phrases and idioms just said, with what people really say for it in the target language. Use that equivalent when it fits the sentence; never mention the phrasebook.
 - Words that differ by region or context (Australian "footy": AFL or rugby league) follow the conversation and <speaker_profile>; if still unclear, keep the neutral meaning rather than guessing.
 - Gender: <people> gives the speaker's and listener's gender. Apply the speaker's only where they refer to themselves (I, me, my) and the listener's only where they are addressed as one person (you). Everyone else follows the conversation: groups stay plural, people mentioned get the gender the context gives them, otherwise neutral wording. Never put the speaker's gender on a friend, colleague or anyone else they mention. Clues in the source (verb endings, Thai "ครับ"/"ค่ะ") count too. Never add a gender the source doesn't have: Turkish "o", Indonesian "dia" and similar become just "they" (or the person's name) in English, never "he/she".
 - The transcript comes from speech recognition and can contain mistakes, especially names, characters and slang in accents or soft speech ("pin okio" for Pinocchio). Use what was said before and the recent conversation to work out what was meant, but translate only the new phrase.
@@ -271,6 +291,8 @@ export type PhraseInput = {
   people?: People;
   profile?: SpeakerProfile;
   callNames?: string[];
+  /** Names and words people in the call saved (pets, places, nicknames): recognition may mishear them. */
+  callWords?: string[];
   speakerName?: string;
   signal: AbortSignal;
   /** Stream the reply: called with the subtitle so far as the words are written (Live previews). */
@@ -300,7 +322,8 @@ export async function phraseTranslate(input: PhraseInput): Promise<string | null
     context ? `<recent_conversation>\n${context}\n</recent_conversation>` : "",
     peopleTag(relevantPeople(`${input.before.split(/\s+/).slice(-12).join(" ")} ${input.phrase}`, input.sourceLang, input.people)),
     profileTag(input.profile),
-    namesTag(input.callNames, `${input.before} ${input.phrase}`, input.speakerName),
+    namesTag(input.callNames, `${input.before} ${input.phrase}`, input.speakerName, input.callWords),
+    phrasebookTag(`${input.before.split(/\s+/).slice(-12).join(" ")} ${input.phrase}`, input.sourceLang, input.targetLang),
     input.before ? `<said_so_far>${input.before}</said_so_far>` : "",
     input.shown ? `<subtitle_so_far>${input.shown}</subtitle_so_far>` : "",
     `<new_phrase final="${input.final}">${input.phrase}</new_phrase>`,

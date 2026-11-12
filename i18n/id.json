@@ -251,5 +251,11 @@
   "micSaySomething": "Ucapkan halo untuk tes",
   "testSound": "Tes suara",
   "activeNow": "Aktif sekarang",
-  "callPairHint": "Memulai panggilanmu dengan {name}. Dia diberi tahu bahwa kamu menunggu."
+  "callPairHint": "Memulai panggilanmu dengan {name}. Dia diberi tahu bahwa kamu menunggu.",
+  "learnTitle": "Bantu ia mendengarmu lebih baik lain kali",
+  "learnHint": "Nama dari panggilan ini. Ketuk untuk menyimpannya agar lain kali terdengar dan diterjemahkan dengan benar.",
+  "learnHintNone": "Salah menangkap nama atau kata? Tambahkan agar lain kali terdengar dan diterjemahkan dengan benar.",
+  "learnPlaceholder": "Nama atau kata yang salah ditangkap",
+  "learnAdd": "Tambah",
+  "learnPrivacy": "Dipilih di ponsel ini dari teks. Tidak ada isi panggilan yang disimpan."
 }

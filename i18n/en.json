@@ -251,5 +251,11 @@
   "micSaySomething": "Say hi to test",
   "testSound": "Test sound",
   "activeNow": "Active now",
-  "callPairHint": "Starts your call with {name}. They're told you're waiting."
+  "callPairHint": "Starts your call with {name}. They're told you're waiting.",
+  "learnTitle": "Help it hear you next time",
+  "learnHint": "Names from this call. Tap to save them, so they're heard and translated right next time.",
+  "learnHintNone": "Did it get a name or word wrong? Add it, so it's heard and translated right next time.",
+  "learnPlaceholder": "A name or word it got wrong",
+  "learnAdd": "Add",
+  "learnPrivacy": "Picked out on this phone from the captions. Nothing from the call is saved."
 }

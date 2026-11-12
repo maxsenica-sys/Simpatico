@@ -376,6 +376,7 @@ function makePipeline(room: Room, p: Peer, key: string): SpeakerPipeline {
     names: () => [...room.peers.values()].flatMap((x) => [x.name, ...(x.profile.words ?? [])]),
     profile: () => p.profile,
     callNames: () => [...room.peers.values()].map((x) => x.name),
+    callWords: () => [...new Set([...room.peers.values()].flatMap((x) => x.profile.words ?? []))],
     speakerName: () => p.name,
     settled: (id, source, translation) => {
       room.recent.set(id, { from: p.id, source, translation, srcLang: p.lang.speaks, tgtLang: key === "same" ? p.lang.speaks : key });

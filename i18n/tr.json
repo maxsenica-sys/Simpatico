@@ -251,5 +251,11 @@
   "micSaySomething": "Denemek için merhaba de",
   "testSound": "Sesi dene",
   "activeNow": "Şu an aktif",
-  "callPairHint": "{name} ile aramanı başlatır. Beklediğin ona bildirilir."
+  "callPairHint": "{name} ile aramanı başlatır. Beklediğin ona bildirilir.",
+  "learnTitle": "Bir dahaki sefere seni daha iyi anlasın",
+  "learnHint": "Bu aramada geçen isimler. Bir dahaki sefere doğru duyulup çevrilmeleri için dokunup kaydet.",
+  "learnHintNone": "Bir ismi ya da kelimeyi yanlış mı anladı? Bir dahaki sefere doğru duyulup çevrilmesi için ekle.",
+  "learnPlaceholder": "Yanlış anladığı bir isim ya da kelime",
+  "learnAdd": "Ekle",
+  "learnPrivacy": "Altyazılardan bu telefonda seçildi. Aramadan hiçbir şey kaydedilmez."
 }

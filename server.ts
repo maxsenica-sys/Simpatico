@@ -6,6 +6,7 @@ import { sanitizeLang } from "./shared/lang";
 import type { ClientMsg } from "./shared/protocol";
 import { clientError, dashboard, feedback } from "./server/admin";
 import { getIceServers } from "./server/ice";
+import { startPhrasebookSchedule } from "./server/phrasebook";
 import { noteSeat, notifyWaiting, pushKey, pushSubscribe, pushUnsubscribe, readBody } from "./server/push";
 import { getRoom } from "./server/rooms";
 import { append, device } from "./server/store";
@@ -28,6 +29,8 @@ function json(res: import("node:http").ServerResponse, status: number, body: unk
 }
 
 await app.prepare();
+
+startPhrasebookSchedule();
 
 const server = createServer((req, res) => {
   const url = parse(req.url ?? "/", true);

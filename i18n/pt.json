@@ -251,5 +251,11 @@
   "micSaySomething": "Diga oi para testar",
   "testSound": "Testar som",
   "activeNow": "Ativo agora",
-  "callPairHint": "Inicia sua chamada com {name}. A pessoa é avisada de que você está esperando."
+  "callPairHint": "Inicia sua chamada com {name}. A pessoa é avisada de que você está esperando.",
+  "learnTitle": "Ajude-o a ouvir você melhor da próxima vez",
+  "learnHint": "Nomes desta chamada. Toque para salvar e da próxima vez eles serão ouvidos e traduzidos certo.",
+  "learnHintNone": "Errou um nome ou palavra? Adicione para que da próxima vez seja ouvido e traduzido certo.",
+  "learnPlaceholder": "Um nome ou palavra que ele errou",
+  "learnAdd": "Adicionar",
+  "learnPrivacy": "Escolhidos neste celular a partir das legendas. Nada da chamada é salvo."
 }

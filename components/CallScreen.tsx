@@ -14,6 +14,8 @@ import { SelfView, type SelfMode } from "./SelfView";
 import { ShareLink } from "./ShareLink";
 import { Transcript } from "./Transcript";
 import { detectEnv } from "@/lib/env";
+import { suggestNames } from "@/lib/suggest";
+import { MAX_WORDS, loadProfile, saveProfile } from "@/lib/profile";
 import { followCards, notifyEnabled, pushPermission } from "@/lib/push";
 import { noteCall, notePair, notePhoto, noteTime } from "@/lib/recent";
 import { myKey, pairCode } from "@/lib/pair";
@@ -742,6 +744,7 @@ function EndScreen({ call, s, onSave, onRejoin }: { call: CallController; s: Cal
           )}
         </nav>
 
+        {hadCall && <LearnCard s={s} />}
         {hadCall && <NotifyCard room={call.info.room} />}
         {hadCall && <AddToHome />}
 
@@ -986,5 +989,70 @@ function BellGlyph() {
       <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" />
       <path d="M10 20.5a2 2 0 0 0 4 0" />
     </svg>
+  );
+}
+
+/**
+ * After a call: "Help it hear you next time". Names that came up in this call, picked out on
+ * this phone from its captions, one tap to save each to the profile (they then help speech
+ * recognition and translation for everyone in your next calls), plus a box for anything it
+ * got wrong. Nothing from the call is sent or kept.
+ */
+function LearnCard({ s }: { s: CallState }) {
+  const t = useT();
+  const [saved, setSaved] = useState<string[]>([]);
+  const [word, setWord] = useState("");
+  const [suggestions] = useState(() => {
+    const me = loadProfile();
+    const known = [me.name, ...me.words, ...Object.values(s.names)].filter(Boolean);
+    return suggestNames(
+      s.transcript.filter((l) => l.final).map((l) => l.text),
+      known,
+    );
+  });
+  const add = (w: string) => {
+    const clean = w.replace(/[<>"]/g, "").trim().slice(0, 40);
+    if (!clean) return;
+    const me = loadProfile();
+    if (!me.words.some((x) => x.toLocaleLowerCase() === clean.toLocaleLowerCase())) {
+      saveProfile({ ...me, words: [...me.words, clean].slice(-MAX_WORDS) });
+    }
+    setSaved((x) => (x.includes(clean) ? x : [...x, clean]));
+  };
+  return (
+    <section className="learn-card" aria-label={t("learnTitle")}>
+      <b>{t("learnTitle")}</b>
+      <p className="small muted">{suggestions.length ? t("learnHint") : t("learnHintNone")}</p>
+      {suggestions.length > 0 && (
+        <div className="learn-chips">
+          {suggestions.map((w) => {
+            const done = saved.includes(w);
+            return (
+              <button key={w} type="button" className={`chip ${done ? "on" : ""}`} onClick={() => add(w)} disabled={done} aria-pressed={done}>
+                {done ? "✓ " : "+ "}
+                {w}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <form
+        className="learn-add"
+        onSubmit={(e) => {
+          e.preventDefault();
+          add(word);
+          setWord("");
+        }}
+      >
+        <input value={word} onChange={(e) => setWord(e.target.value)} placeholder={t("learnPlaceholder")} maxLength={40} enterKeyHint="done" />
+        <button className="btn small" type="submit" disabled={!word.trim()}>
+          {t("learnAdd")}
+        </button>
+      </form>
+      {saved.filter((w) => !suggestions.includes(w)).length > 0 && (
+        <p className="small learn-saved">✓ {saved.filter((w) => !suggestions.includes(w)).join(", ")}</p>
+      )}
+      <p className="small muted learn-privacy">{t("learnPrivacy")}</p>
+    </section>
   );
 }

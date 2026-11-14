@@ -710,3 +710,13 @@ p { margin: 0; line-height: 1.5; }
 .learn-add input { flex: 1; min-width: 0; min-height: 40px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); font: inherit; }
 .learn-saved { color: #7ee2a0; font-weight: 600; }
 .learn-privacy { font-size: 0.78rem; }
+
+/* moving to a new icon or phone */
+.move .move-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.move-sub { margin: 10px 0 0; font-size: 1rem; }
+.move-ok { color: #7ee2a0; font-weight: 600; }
+.move-bad { color: #ffb4a8; }
+.move-manual { display: flex; flex-direction: column; gap: 8px; }
+.move-manual textarea { width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); font: 0.85rem ui-monospace, Menlo, monospace; resize: vertical; }
+.move-found { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 14px; background: rgba(52, 199, 89, 0.08); border: 1px solid rgba(52, 199, 89, 0.35); }
+.home-foot .move-link { color: var(--accent); text-decoration: none; font-weight: 600; }

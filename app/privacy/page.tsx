@@ -84,6 +84,12 @@ export default function Privacy() {
           people you have called) is likewise kept only on your device. Removing someone from Recent, removing your photo, or &ldquo;Clear my profile&rdquo; deletes it
           from your device; a photo you have already shared stays on the other person&rsquo;s device until they remove you from their Recent or clear their profile.
         </p>
+        <h3>Moving to a new phone or icon</h3>
+        <p>
+          &ldquo;Copy everything&rdquo; on the Me page puts everything Simpatico keeps on your device (profile, saved words, photo, call card, Recent and your
+          private room keys, settings) into your device&rsquo;s clipboard, or into a message you choose to send to yourself. &ldquo;Paste my data&rdquo; on the
+          other one reads it back. It never passes through our servers. Anyone you send that code to could use it as you, so only send it to your own devices.
+        </p>
         <h3>Calling people again, &ldquo;Active now&rdquo; and &ldquo;Waiting now&rdquo;</h3>
         <p>
           When two people have been in a call together, their devices agree on a private room of their own, so either can call the other again from Recent without

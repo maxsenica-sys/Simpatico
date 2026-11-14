@@ -158,6 +158,11 @@ export function Home() {
         ) : iosHint ? (
           <span className="muted small">{t("installIos")}</span>
         ) : null}
+        {!name && !recent.length && (
+          <Link className="small move-link" href="/profile#move">
+            {t("moveNew")}
+          </Link>
+        )}
         <Link className="small" href="/privacy">
           {t("privacy")}
         </Link>

@@ -13,7 +13,8 @@
     "test": "ECHO_CHECK=off SONIOX_API_KEY=x SONIOX_URL=ws://localhost:3997 tsx test/pipeline.test.ts && tsx test/rooms.test.ts && tsx test/vad.test.ts && tsx test/push.test.ts && tsx test/subtitle.test.ts && tsx test/phrasebook.test.ts",
     "e2e:group": "node test/e2e-group.mjs",
     "e2e:perms": "node test/e2e-perms.mjs",
-    "e2e:pair": "node test/e2e-pair.mjs"
+    "e2e:pair": "node test/e2e-pair.mjs",
+    "e2e:move": "node test/e2e-move.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.4.0",

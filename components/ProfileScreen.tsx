@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Avatar } from "./Avatar";
+import { MoveSection } from "./MoveSection";
 import { loadPhoto, photoFromFile, savePhoto } from "@/lib/photo";
 import { forgetPush, notifyEnabled, pushPermission, setNotify as setNotifyPush } from "@/lib/push";
 import { detectEnv } from "@/lib/env";
@@ -322,17 +323,7 @@ export function ProfileScreen() {
         )}
       </section>
 
-      <section className="pcard">
-        <h2>{t("transferTitle")}</h2>
-        <p className="muted small">{t("transferHint")}</p>
-        {showTransfer ? (
-          <ShareLink url={transferLink(location.origin, { profile: p, captions: prefs, speaks: baseLang(lang.speaks) ?? undefined })} compact qr hideUrl invite={false} caption={t("transferScan")} />
-        ) : (
-          <button className="btn small" onClick={() => setShowTransfer(true)}>
-            {t("transferShow")}
-          </button>
-        )}
-      </section>
+      <MoveSection />
 
       <section className="pcard quiet">
         <p className="small">{t("profilePrivacy")}</p>

@@ -37,16 +37,13 @@ try {
   await newApp.waitForURL(/\/profile#move$/);
   await newApp.evaluate((c) => navigator.clipboard.writeText(c), code);
   await newApp.getByRole("button", { name: "Paste my data" }).click();
-  await newApp.getByText("Found: Max · 1 people in Recent · 3 saved words · photo · call card").waitFor();
-  await newApp.getByRole("button", { name: "Bring it here" }).click();
-  await newApp.getByText(/^All moved/).waitFor();
+  await newApp.waitForURL((u) => u.pathname === "/");
   const after = await newApp.evaluate(() => Object.fromEntries(Object.keys(localStorage).filter((k) => k.startsWith("talk.")).map((k) => [k, localStorage.getItem(k)])));
   const missing = Object.keys(before).filter((k) => after[k] !== before[k]);
   if (missing.length) throw new Error(`not moved: ${missing.join(", ")}`);
   console.log(`  all ${Object.keys(before).length} items identical on the new icon`);
 
-  step("Home on the new icon shows Max and Ezgi in Recent");
-  await newApp.goto(BASE);
+  step("Straight to home on the new icon: Ezgi in Recent");
   await newApp.getByRole("button", { name: "Call Ezgi" }).waitFor();
 
   step("Rubbish pasted: a calm message, nothing changed");

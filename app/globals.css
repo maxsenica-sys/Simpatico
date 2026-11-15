@@ -108,7 +108,8 @@ p { margin: 0; line-height: 1.5; }
 .topbar { display: flex; flex-direction: column-reverse; align-items: flex-start; gap: 8px; }
 .controls {
   display: flex; gap: 6px; justify-content: center; align-self: stretch; flex-wrap: wrap;
-  max-height: 90px; overflow: hidden; opacity: 1; transition: opacity 0.25s ease, max-height 0.25s ease;
+  /* Padding so the green "talking" ring around a button (3px outside it) is never cut off. */
+  max-height: 96px; padding: 4px 4px 0; overflow: hidden; opacity: 1; transition: opacity 0.25s ease, max-height 0.25s ease;
 }
 .ctrl { display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: 0; padding: 0; cursor: pointer; width: 56px; }
 .ctrl-label {
@@ -253,7 +254,7 @@ p { margin: 0; line-height: 1.5; }
 /* ---------------------------------------------------------------- group calls */
 .pills { display: flex; gap: 6px; flex-wrap: wrap; }
 .cc-pill.count { cursor: default; }
-.controls { max-height: 190px; row-gap: 8px; column-gap: 4px; }
+.controls { max-height: 196px; row-gap: 8px; column-gap: 4px; }
 .people { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 4px; scrollbar-width: none; justify-content: center; }
 .people::-webkit-scrollbar { display: none; }
 .person { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 64px; flex-shrink: 0; }

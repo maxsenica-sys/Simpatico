@@ -35,7 +35,7 @@ export function CaptionSettings({
       </p>
       <div className="seg" role="radiogroup" aria-label={t("longSpeech")}>
         <span className="muted small">{t("longSpeech")}</span>
-        {(["scroll", "room"] as const).map((l) => (
+        {(["room", "scroll"] as const).map((l) => (
           <button key={l} role="radio" aria-checked={prefs.long === l} className={`seg-btn wide ${prefs.long === l ? "on" : ""}`} onClick={() => onPrefs({ ...prefs, long: l })}>
             {t(l === "scroll" ? "longScroll" : "longRoom")}
           </button>

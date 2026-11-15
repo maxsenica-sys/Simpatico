@@ -32,7 +32,7 @@ export function Captions({
   names,
   lang,
   speaking,
-  mode = "scroll",
+  mode = "room",
   onEarlier,
   onLong,
 }: {

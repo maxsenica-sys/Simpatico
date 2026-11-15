@@ -123,7 +123,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   );
   const [videoLostAt, setVideoLostAt] = useState<number | null>(null);
   const [firstOwnAt, setFirstOwnAt] = useState<number | null>(null);
-  const [prefs, setPrefs] = useState<CaptionPrefs>({ size: "m", box: false, style: "instant", focus: true, long: "scroll" });
+  const [prefs, setPrefs] = useState<CaptionPrefs>({ size: "m", box: false, style: "instant", focus: true, long: "room" });
   const [invite, setInvite] = useState(false);
   const [wide, setWide] = useState(false);
 

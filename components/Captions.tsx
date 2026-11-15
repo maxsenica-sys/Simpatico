@@ -1,25 +1,40 @@
 "use client";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Caption } from "@/lib/call";
+import type { LongSpeech } from "@/lib/captionPrefs";
+import { useT } from "@/lib/i18n";
 
-/** A settled line stays this long, then fades. */
 /** A finished line stays this long once a newer one is showing… */
 const LINGER_MS = 8000;
 /** …and the newest line stays this long when nobody says anything new. */
 const LAST_LINGER_MS = 20_000;
 const FADE_MS = 600;
-const MAX_UTTERANCES = 3;
+const MAX_UTTERANCES = 4;
+/** Reading pace for the scrolling window: about a third of a second a word, 1.3 to 4 s a line. */
+const MS_PER_WORD = 320;
+const MIN_LINE_MS = 1300;
+const MAX_LINE_MS = 4000;
 
 /**
- * Bottom-centre captions on the video, max 3 lines. Pass-1/live text is 60% opacity, settled
- * text 100%. A line that has already scrolled out of view is frozen: a late refinement can't
- * pull it back or reflow what the reader is looking at.
+ * Captions over the bottom of the video.
+ *
+ * "scroll" (default): a 2-line window (3 on tall phones). New words appear at the bottom; when
+ * the window is full, the text moves up one line at a time, never faster than it can be read.
+ * If they talk faster than that, lines wait and catch up (twice as fast) until the next pause.
+ * "Earlier" opens the transcript. Each chunk is translated once and never rewritten (lib/call),
+ * so a line that has moved up never changes under your eyes.
+ *
+ * "room": up to 4 lines; during a long run the text gets a size smaller and the call screen
+ * moves the video up (onLong), so the face stays clear of the captions.
  */
 export function Captions({
   captions,
   names,
   lang,
   speaking,
+  mode = "scroll",
+  onEarlier,
+  onLong,
 }: {
   captions: Caption[];
   /** Group calls: speaker names by id, shown before each line. */
@@ -27,13 +42,24 @@ export function Captions({
   /** The reader's language, so screen readers pronounce the captions correctly. */
   lang?: string;
   speaking: boolean;
+  mode?: LongSpeech;
+  onEarlier?: () => void;
+  onLong?: (long: boolean) => void;
 }) {
-  const box = useRef<HTMLDivElement>(null);
+  const t = useT();
+  const win = useRef<HTMLDivElement>(null);
+  const track = useRef<HTMLDivElement>(null);
   const frozen = useRef(new Map<string, string>());
+  const heights = useRef(new Map<string, number>());
+  const firstId = useRef<string | null>(null);
+  const offset = useRef(0);
+  const lastMove = useRef(0);
+  const [, setTick] = useState(0);
   const [now, setNow] = useState(() => Date.now());
+  const [long, setLong] = useState(false);
 
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 500);
+    const id = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(id);
   }, []);
 
@@ -42,17 +68,70 @@ export function Captions({
     .filter((c, i, all) => c.doneAt === null || now - c.doneAt < (i === all.length - 1 ? LAST_LINGER_MS : LINGER_MS) + FADE_MS)
     .slice(-MAX_UTTERANCES);
 
-  // After layout, freeze the text of any older line that is no longer fully inside the
-  // 3-line window. The newest line is never frozen, so a long live utterance keeps updating.
   useLayoutEffect(() => {
-    const el = box.current;
-    if (!el) return;
-    const top = el.getBoundingClientRect().top;
-    const children = Array.from(el.children) as HTMLElement[];
-    children.slice(0, -1).forEach((child) => {
-      const id = child.dataset.id;
-      if (!id) return;
-      if (child.getBoundingClientRect().top < top - 2 && !frozen.current.has(id)) {
+    const w = win.current;
+    const tr = track.current;
+    if (!w || !tr) return;
+    const kids = Array.from(tr.children) as HTMLElement[];
+
+    // A line that left the top of the list (it faded out): the text below it moved up by its
+    // height, so the window moves with it instead of jumping.
+    const first = kids[0]?.dataset.id ?? null;
+    if (firstId.current && first !== firstId.current && !kids.some((k) => k.dataset.id === firstId.current)) {
+      offset.current = Math.max(0, offset.current - (heights.current.get(firstId.current) ?? 0));
+    }
+    firstId.current = first;
+    for (const k of kids) if (k.dataset.id) heights.current.set(k.dataset.id, k.offsetHeight);
+    if (heights.current.size > 60) heights.current = new Map([...heights.current].slice(-20));
+
+    const total = tr.scrollHeight;
+    if (mode === "room") {
+      // Long = more words than about two lines hold at the normal size. Measured on the words,
+      // not on the shrunk text, so it can't flip back and forth.
+      const fontPx = parseFloat(getComputedStyle(tr.firstElementChild ?? tr).fontSize) || 32;
+      const perLine = Math.max(10, w.clientWidth / (fontPx * (long ? 1 / 0.78 : 1) * 0.5));
+      const chars = (shown.at(-1)?.text.length ?? 0) + (shown.at(-1)?.tail?.length ?? 0);
+      const isLong = shown.some((c) => c.doneAt === null) && chars > perLine * 2;
+      if (isLong !== long) {
+        setLong(isLong);
+        onLong?.(isLong);
+      }
+      offset.current = Math.max(0, total - w.clientHeight);
+    } else {
+      // Where each line really starts (lines differ slightly in height), so the window always
+      // shows whole lines.
+      const trTop = tr.getBoundingClientRect().top;
+      const tops = new Set<number>([0]);
+      for (const k of kids) {
+        const r = document.createRange();
+        r.selectNodeContents(k);
+        for (const rect of Array.from(r.getClientRects())) tops.add(Math.round(rect.top - trTop));
+      }
+      const starts = [...tops].sort((x, y) => x - y);
+      const fits = (o: number) => total - o <= w.clientHeight + 1;
+      const target = starts.find(fits) ?? Math.max(0, total - w.clientHeight);
+      if (target < offset.current) offset.current = target;
+      else if (target > offset.current) {
+        const words = (tr.textContent ?? "").split(/\s+/).filter(Boolean).length;
+        const lines = Math.max(1, starts.length);
+        const perLine = Math.min(MAX_LINE_MS, Math.max(MIN_LINE_MS, (words / lines) * MS_PER_WORD));
+        const backlog = starts.filter((t) => t > offset.current && t <= target).length;
+        const wait = backlog > 2 ? perLine / 2 : perLine;
+        const t0 = Date.now();
+        // A new run after a pause starts right away; otherwise one line per reading time.
+        if (t0 - lastMove.current >= wait || offset.current === 0) {
+          offset.current = starts.find((t) => t > offset.current) ?? target;
+          lastMove.current = t0;
+        }
+      }
+    }
+    tr.style.transform = `translateY(${-offset.current}px)`;
+
+    // Freeze any line that has moved fully above the window: a late refinement can't change it.
+    kids.forEach((k) => {
+      const id = k.dataset.id;
+      if (!id || k === kids[kids.length - 1]) return;
+      if (k.offsetTop + k.offsetHeight <= offset.current + 2 && !frozen.current.has(id)) {
         const c = shown.find((x) => x.id === id);
         if (c) frozen.current.set(id, c.text);
       }
@@ -60,27 +139,41 @@ export function Captions({
     if (frozen.current.size > 50) frozen.current = new Map([...frozen.current].slice(-20));
   });
 
+  // Keep the pacing moving between caption updates.
+  useEffect(() => {
+    if (mode !== "scroll") return;
+    const id = setInterval(() => setTick((n) => n + 1), 200);
+    return () => clearInterval(id);
+  }, [mode]);
+
+  const scrolled = mode === "scroll" && offset.current > 2;
   return (
-    <div className="captions-zone">
-      <div className="captions" ref={box} aria-live="polite" lang={lang}>
-        {shown.map((c, i) => {
-          const fading = c.doneAt !== null && now - c.doneAt > (i === shown.length - 1 ? LAST_LINGER_MS : LINGER_MS);
-          return (
-            <p key={c.id} data-id={c.id} className={`cap ${c.doneAt === null ? (c.stage === "steady" ? "steady" : "live") : "done"} ${fading ? "fading" : ""}`} dir="auto">
-              {names && <span className="cap-who">{names[c.from] ?? ""}</span>}
-              {c.text}
-              {c.tail && (
-                <span className="cap-tail" aria-hidden="true">
-                  {c.text ? " " : ""}
-                  {c.tail}
-                </span>
-              )}
-            </p>
-          );
-        })}
+    <div className={`captions-zone ${mode === "room" ? "room" : "scroll"} ${long ? "long" : ""}`}>
+      {scrolled && onEarlier && (
+        <button className="cap-earlier" onClick={onEarlier}>
+          ↑ {t("earlier")}
+        </button>
+      )}
+      <div className="captions" ref={win} aria-live="polite" lang={lang}>
+        <div className="cap-track" ref={track}>
+          {shown.map((c, i) => {
+            const fading = c.doneAt !== null && now - c.doneAt > (i === shown.length - 1 ? LAST_LINGER_MS : LINGER_MS);
+            return (
+              <p key={c.id} data-id={c.id} className={`cap ${c.doneAt === null ? (c.stage === "steady" ? "steady" : "live") : "done"} ${fading ? "fading" : ""}`} dir="auto">
+                {names && <span className="cap-who">{names[c.from] ?? ""}</span>}
+                {c.text}
+                {c.tail && (
+                  <span className="cap-tail" aria-hidden="true">
+                    {c.text ? " " : ""}
+                    {c.tail}
+                  </span>
+                )}
+              </p>
+            );
+          })}
+        </div>
       </div>
-      {/* They're talking but no words have arrived yet: show that something is coming.
-          Kept outside the 3-line box so it never pushes a caption line out of view. */}
+      {/* They're talking but no words have arrived yet: show that something is coming. */}
       {speaking && !shown.some((c) => c.doneAt === null && (c.stage === "live" || c.tail)) && (
         <div className="typing" aria-hidden="true">
           <span />

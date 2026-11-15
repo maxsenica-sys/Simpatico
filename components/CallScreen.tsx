@@ -20,6 +20,7 @@ import { followCards, notifyEnabled, pushPermission } from "@/lib/push";
 import { noteCall, notePair, notePhoto, noteTime } from "@/lib/recent";
 import { myKey, pairCode } from "@/lib/pair";
 import { Avatar } from "./Avatar";
+import { ReportSheet } from "./ReportSheet";
 
 const OWN_LINE_MS = 5000;
 const NO_VIDEO_GRACE_MS = 4000;
@@ -57,6 +58,8 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const [fit, setFit] = useState<"cover" | "contain">("cover");
   const [now, setNow] = useState(() => Date.now());
   const [connectedAt, setConnectedAt] = useState<number | null>(null);
+  const [longCaption, setLongCaption] = useState(false);
+  const [reportFor, setReportFor] = useState<{ name: string; seat: string } | null>(null);
 
   // "Recent" on the home screen: remember who we actually talked to, and for how long.
   const met = useRef(new Map<string, string>());
@@ -120,7 +123,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   );
   const [videoLostAt, setVideoLostAt] = useState<number | null>(null);
   const [firstOwnAt, setFirstOwnAt] = useState<number | null>(null);
-  const [prefs, setPrefs] = useState<CaptionPrefs>({ size: "m", box: false, style: "instant", focus: true });
+  const [prefs, setPrefs] = useState<CaptionPrefs>({ size: "m", box: false, style: "instant", focus: true, long: "scroll" });
   const [invite, setInvite] = useState(false);
   const [wide, setWide] = useState(false);
 
@@ -216,6 +219,14 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
     });
 
   if (s.phase === "ended") return <EndScreen call={call} s={s} onSave={save} onRejoin={onRejoin} />;
+  if (s.phase === "unavailable")
+    return (
+      <Notice title={t("personUnavailable")}>
+        <Link className="btn primary" href="/">
+          {t("backHome")}
+        </Link>
+      </Notice>
+    );
   if (s.phase === "gone" || s.phase === "full" || s.phase === "replaced")
     return (
       <Notice title={s.phase === "gone" ? t("roomGone") : s.phase === "full" ? (group ? t("groupFull") : t("roomFull")) : t("replaced")}>
@@ -397,7 +408,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
 
   return (
     <main
-      className={`call ${group ? "group" : ""} ${prefs.box ? "cap-box" : ""} ${selfView && s.camOn && s.selfVideo && selfMode === "split" ? "split" : ""}`}
+      className={`call ${group ? "group" : ""} ${longCaption && prefs.long === "room" ? "cap-long" : ""} ${prefs.box ? "cap-box" : ""} ${selfView && s.camOn && s.selfVideo && selfMode === "split" ? "split" : ""}`}
       style={{ ["--cap-size" as string]: CAPTION_SIZES[prefs.size] }}
     >
       <video
@@ -423,11 +434,19 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
               {stageAudioOnly ? <AudioOnlyIcon size={44} /> : <CameraIcon off size={44} />}
             </div>
           )}
-          {stage.name && <p className="stage-name">{stage.name}</p>}
+          {stage.name && (
+            <button className="stage-name" onClick={() => setReportFor({ name: stage.name, seat: stage.id })} aria-label={t("reportBlockTitle", { name: stage.name })}>
+              {stage.name} <span aria-hidden="true">⋯</span>
+            </button>
+          )}
           {placeholder && <p>{placeholder}</p>}
         </div>
       )}
-      {connected && stage?.name && placeholder === null && <div className="stage-label">{stage.name}</div>}
+      {connected && stage?.name && placeholder === null && (
+        <button className="stage-label" onClick={() => setReportFor({ name: stage.name, seat: stage.id })} aria-label={t("reportBlockTitle", { name: stage.name })}>
+          {stage.name} <span aria-hidden="true">⋯</span>
+        </button>
+      )}
 
       {status && (
         <div className="call-status">
@@ -520,7 +539,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
         {group && s.participants.length > 0 && (
           <div className="people" onClick={(e) => e.stopPropagation()}>
             {s.participants.map((p) => (
-              <PersonTile key={p.id} p={p} active={p.id === stage?.id} showVideo={!s.audioOnly && p.videoOk && s.participants.length < 4} />
+              <PersonTile key={p.id} p={p} active={p.id === stage?.id} showVideo={!s.audioOnly && p.videoOk && s.participants.length < 4} onMore={() => setReportFor({ name: p.name, seat: p.id })} />
             ))}
             {s.participants.length + 1 < s.max && (
               <button className="person invite-tile" onClick={() => setInvite(true)} aria-label={t("inviteMore")}>
@@ -577,8 +596,29 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
         </button>
       )}
 
-      <Captions captions={s.captions} names={names} lang={call.info.lang.reads} speaking={connected && anySpeaking} />
+      <Captions
+        captions={s.captions}
+        names={names}
+        lang={call.info.lang.reads}
+        speaking={connected && anySpeaking}
+        mode={prefs.long}
+        onEarlier={() => setTranscript(true)}
+        onLong={setLongCaption}
+      />
 
+      {reportFor && (
+        <ReportSheet
+          name={reportFor.name}
+          room={call.info.room}
+          seat={reportFor.seat}
+          onClose={() => setReportFor(null)}
+          onBlocked={() => {
+            setReportFor(null);
+            // One-to-one: blocking them ends the call. In a group you stay with the others.
+            if (!group) end();
+          }}
+        />
+      )}
       {transcript && (
         <Transcript lines={s.transcript} names={s.names} prefs={prefs} onPrefs={changePrefs} onSave={save} onClose={() => setTranscript(false)} onReport={(id) => call.report(id)} onType={(text) => call.sendTyped(text)} />
       )}
@@ -612,7 +652,7 @@ function RemoteAudio({ stream, muted, onBlocked }: { stream: MediaStream | null;
   return <audio ref={ref} className="remote-audio" autoPlay />;
 }
 
-function PersonTile({ p, active, showVideo }: { p: Participant; active: boolean; showVideo: boolean }) {
+function PersonTile({ p, active, showVideo, onMore }: { p: Participant; active: boolean; showVideo: boolean; onMore: () => void }) {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     const v = ref.current;
@@ -622,7 +662,14 @@ function PersonTile({ p, active, showVideo }: { p: Participant; active: boolean;
     }
   }, [p.stream, showVideo]);
   return (
-    <div className={`person ${p.speaking ? "speaking" : ""} ${active ? "active" : ""} ${p.connected ? "" : "pending"}`} title={p.name}>
+    <div
+      className={`person ${p.speaking ? "speaking" : ""} ${active ? "active" : ""} ${p.connected ? "" : "pending"}`}
+      title={p.name}
+      role="button"
+      tabIndex={0}
+      onClick={onMore}
+      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onMore()}
+    >
       {showVideo && p.stream ? (
         <div className="avatar">
           <video ref={ref} autoPlay playsInline muted />

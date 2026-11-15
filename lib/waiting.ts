@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { peerIdFor } from "./prefs";
 import { myCallCode } from "./profile";
 import { samePerson, type RecentPerson } from "./recent";
+import { isBlockedName } from "./blocks";
 
 export type Waiting = { name: string; room: string; person: RecentPerson | null };
 export type Presence = { waiting: Waiting[]; active: RecentPerson[] };
@@ -56,7 +57,7 @@ export function usePresence(recent: RecentPerson[], me: string): Presence {
             }
           }
           const active = recent.filter((p) => p.pair && res.active?.[p.pair]?.length);
-          if (live) setState({ waiting, active });
+          if (live) setState({ waiting: waiting.filter((w) => !isBlockedName(w.name)), active: active.filter((p) => !isBlockedName(p.name)) });
         } catch {}
       }
       if (live) checkTimer = setTimeout(check, CHECK_MS);

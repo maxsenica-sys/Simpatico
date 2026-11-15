@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Avatar } from "./Avatar";
 import { MoveSection } from "./MoveSection";
+import { BlockedList } from "./BlockedList";
 import { loadPhoto, photoFromFile, savePhoto } from "@/lib/photo";
 import { forgetPush, notifyEnabled, pushPermission, setNotify as setNotifyPush } from "@/lib/push";
 import { detectEnv } from "@/lib/env";
@@ -322,6 +323,8 @@ export function ProfileScreen() {
           </button>
         )}
       </section>
+
+      <BlockedList />
 
       <MoveSection />
 

@@ -7,6 +7,7 @@ import type { ClientMsg } from "./shared/protocol";
 import { clientError, dashboard, feedback } from "./server/admin";
 import { getIceServers } from "./server/ice";
 import { startPhrasebookSchedule } from "./server/phrasebook";
+import { blockRoute, isBlocked, reportRoute } from "./server/blocks";
 import { noteSeat, notifyWaiting, pushKey, pushSubscribe, pushUnsubscribe, readBody } from "./server/push";
 import { getRoom } from "./server/rooms";
 import { append, device } from "./server/store";
@@ -41,6 +42,8 @@ const server = createServer((req, res) => {
   if (path === "/admin" && req.method === "GET") return dashboard(typeof url.query.token === "string" ? url.query.token : undefined, res);
   if (path === "/api/push/key" && req.method === "GET") return pushKey(res);
   if (path === "/api/leave" && req.method === "POST") return void leaveBeacon(req, res);
+  if (path === "/api/block" && req.method === "POST") return void blockRoute(req, res);
+  if (path === "/api/report-person" && req.method === "POST") return void reportRoute(req, res);
   if (path === "/api/active" && req.method === "POST") return void markActive(req, res);
   if (path === "/api/waiting" && req.method === "GET") return presence(typeof url.query.codes === "string" ? url.query.codes : "", res);
   if (path === "/api/push/subscribe" && req.method === "POST") return void pushSubscribe(req, res);
@@ -109,6 +112,8 @@ wss.on("connection", (ws, req) => {
       }
       room = ensureRoom(msg.room);
       if (!room) return send(ws, { t: "error", code: "room-not-found" });
+      // Blocked from this call card or private room: told only that the person isn't available.
+      if (isBlocked(room.code, msg.peerId)) return send(ws, { t: "error", code: "unavailable" });
       const result = seat(room, msg.peerId, lang, ws, { name: msg.name, inRoom: msg.inRoom, device: devName, captionStyle: msg.captionStyle, gender: msg.gender, profile: msg.profile });
       if (result === "room-full") return send(ws, { t: "error", code: "room-full" });
       peer = result.peer;

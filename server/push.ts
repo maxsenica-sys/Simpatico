@@ -47,6 +47,18 @@ let seen: Map<string, string[]> = new Map();
 const SEEN_PER_CARD = 50;
 
 /** Someone took a seat in call card `code`. */
+/** Is this code someone's call card (it has an owner), as opposed to a private room of two? */
+export function isCard(code: string): boolean {
+  load();
+  return owners.has(code);
+}
+
+/** Has this seat really been in this call card / private room? */
+export function wasSeated(code: string, seat: string): boolean {
+  load();
+  return !!seen.get(code)?.includes(seat) || owners.get(code) === seat;
+}
+
 export function noteSeat(code: string, seat: string) {
   if (!ROOM.test(code) || !SEAT.test(seat)) return;
   load();

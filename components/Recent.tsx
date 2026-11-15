@@ -8,6 +8,7 @@ import { forgetRecent, samePerson, type RecentPerson } from "@/lib/recent";
 import type { Waiting } from "@/lib/waiting";
 import { baseLang } from "@/shared/lang";
 import { Avatar } from "./Avatar";
+import { ReportSheet } from "./ReportSheet";
 import { initials } from "./ProfileScreen";
 
 const GRADIENTS = [
@@ -128,6 +129,7 @@ export function RecentRow({
 export function PersonSheet({ person, color, link, onClose, onCalling, onRemoved }: { person: RecentPerson; color: string; link: string; onClose: () => void; onCalling: () => void; onRemoved: () => void }) {
   const t = useT();
   const [theirs, setTheirs] = useState<Strings | null>(null);
+  const [reporting, setReporting] = useState(false);
   const closeBtn = useRef<HTMLButtonElement>(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
@@ -157,6 +159,7 @@ export function PersonSheet({ person, color, link, onClose, onCalling, onRemoved
     onCalling();
   };
 
+  if (reporting) return <ReportSheet name={person.name} onClose={onClose} onBlocked={onRemoved} />;
   return (
     <div className="bsheet-backdrop" onClick={onClose}>
       <div className="bsheet" role="dialog" aria-modal="true" aria-label={person.name} onClick={(e) => e.stopPropagation()}>
@@ -187,6 +190,9 @@ export function PersonSheet({ person, color, link, onClose, onCalling, onRemoved
             }}
           >
             {t("removeRecent")}
+          </button>
+          <button className="link pc-remove" onClick={() => setReporting(true)}>
+            {t("reportBlockShort")}
           </button>
         </div>
       </div>

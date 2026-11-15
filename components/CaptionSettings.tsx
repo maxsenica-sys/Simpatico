@@ -33,6 +33,15 @@ export function CaptionSettings({
       <p className="muted small style-hint">
         {t(prefs.style === "steady" ? "styleSteadyHint" : "styleInstantHint")}
       </p>
+      <div className="seg" role="radiogroup" aria-label={t("longSpeech")}>
+        <span className="muted small">{t("longSpeech")}</span>
+        {(["scroll", "room"] as const).map((l) => (
+          <button key={l} role="radio" aria-checked={prefs.long === l} className={`seg-btn wide ${prefs.long === l ? "on" : ""}`} onClick={() => onPrefs({ ...prefs, long: l })}>
+            {t(l === "scroll" ? "longScroll" : "longRoom")}
+          </button>
+        ))}
+      </div>
+      <p className="muted small style-hint">{t(prefs.long === "scroll" ? "longScrollHint" : "longRoomHint")}</p>
       <div className="seg" role="radiogroup" aria-label={t("captionSize")}>
         <span className="muted small">{t("captionSize")}</span>
         {SIZES.map((s, i) => (

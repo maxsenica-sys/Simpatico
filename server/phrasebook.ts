@@ -14,8 +14,8 @@ import { dataFile, recent } from "./store";
  * other languages. Unlike the slang list (always sent), an entry only goes to the translator
  * when its words were just said, so the phrasebook can grow every day without slowing anything.
  *
- * A daily job on the server writes new entries for each language with Claude Opus, has a second
- * pass check them, and adds the ones that survive (/data/phrasebook.json). Nothing from calls
+ * A daily job on the server drafts new entries for each language with Claude Sonnet, has Claude
+ * Opus check every one, and adds the ones that survive (/data/phrasebook.json). Nothing from calls
  * is used except sentences people chose to report with "Not right?".
  */
 export type Phrase = {
@@ -145,13 +145,15 @@ Only real, current, widely used expressions; never invent one; nothing you are u
 async function draftFor(client: Anthropic, lang: string, existing: string[], mistakes: string[]): Promise<Draft[]> {
   const name = langInfo(lang).name;
   const langs = PHRASEBOOK_LANGS.map((l) => `${l} = ${langInfo(l).name}`).join(", ");
-  const ask = async (system: string, user: string): Promise<Draft[]> => {
+  // Drafting with Sonnet, checking with Opus: about half the cost of Opus for both, and the
+  // check (where quality is decided) stays with the strongest model.
+  const ask = async (model: "claude-sonnet-5-5" | "claude-opus-5-5", effort: "high" | "medium", system: string, user: string): Promise<Draft[]> => {
     const res = await client.beta.messages.parse({
-      model: "claude-opus-5-5",
+      model,
       max_tokens: 16000,
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
-      output_config: { effort: "high", format: betaJSONSchemaOutputFormat(schema) },
+      output_config: { effort, format: betaJSONSchemaOutputFormat(schema) },
       system,
       messages: [{ role: "user", content: user }],
     });
@@ -160,12 +162,16 @@ async function draftFor(client: Anthropic, lang: string, existing: string[], mis
   };
   const context = `<language>${lang} = ${name}</language>\n<languages_for_eq>${langs}</languages_for_eq>\n<existing>${existing.slice(-600).join(" | ")}</existing>${mistakes.length ? `\n<recent_mistakes>\n${mistakes.join("\n")}\n</recent_mistakes>` : ""}`;
   const drafts = await ask(
+    "claude-sonnet-5-5",
+    "high",
     `You add to the phrasebook of a live video-call translator. People on calls talk casually: friends, couples, families. Write ${PER_DAY} new entries for ${name}: everyday spoken phrases, idioms, set expressions, and current expressions people really use in conversation, where a word-for-word translation goes wrong. Mix well-known staples with expressions in fashion now. If <recent_mistakes> shows phrases the translator got wrong, cover those first.\n\n${RULES}`,
     context,
   );
   if (!drafts.length) return [];
   // Second pass: a fresh check of every entry. Wrong entries are worse than missing ones.
   return ask(
+    "claude-opus-5-5",
+    "medium",
     `You check entries for the phrasebook of a live video-call translator before they go live. Keep an entry only if the phrase is real, current and widely used in ${name}, the meaning is right, and every equivalent is what a native speaker would naturally say. Fix small mistakes in equivalents and match items (match items must always be present when the phrase is said, and must not match ordinary sentences). Drop any entry you are not sure of. Return the kept entries.\n\n${RULES}`,
     `${context}\n<entries_to_check>${JSON.stringify(drafts)}</entries_to_check>`,
   );

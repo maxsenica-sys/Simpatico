@@ -105,4 +105,4 @@ export type ServerMsg =
   | { t: "captions"; state: CaptionState; side: "theirs" | "mine"; from?: string }
   /** Someone's speech is being captioned right now (sent to everyone, the speaker included). */
   | { t: "speaking"; peer: string; on: boolean }
-  | { t: "error"; code: "room-not-found" | "room-full" | "bad-request" };
+  | { t: "error"; code: "room-not-found" | "room-full" | "bad-request" | "unavailable" };

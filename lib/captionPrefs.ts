@@ -5,7 +5,9 @@ import type { CaptionStyle } from "@/shared/protocol";
 /** Accessibility: caption size, an optional solid backing box and reading style. Remembered on this device. */
 export type CaptionSize = "s" | "m" | "l" | "xl";
 /** `styleSet`: the person picked a reading style themselves (otherwise the default applies). */
-export type CaptionPrefs = { size: CaptionSize; box: boolean; style: CaptionStyle; styleSet?: boolean; focus: boolean };
+/** Long speech: "scroll" = a 2-line window that scrolls at reading pace; "room" = smaller text, video moves up. */
+export type LongSpeech = "scroll" | "room";
+export type CaptionPrefs = { size: CaptionSize; box: boolean; style: CaptionStyle; styleSet?: boolean; focus: boolean; long: LongSpeech };
 
 const KEY = "talk.captions.v1";
 export const CAPTION_SIZES: Record<CaptionSize, string> = {
@@ -20,9 +22,9 @@ export function loadCaptionPrefs(): CaptionPrefs {
     const v = JSON.parse(localStorage.getItem(KEY) ?? "{}") as Partial<CaptionPrefs>;
     // Live is the default; Steady only when the person chose it.
     const style: CaptionStyle = v.styleSet && v.style === "steady" ? "steady" : "instant";
-    return { size: v.size && v.size in CAPTION_SIZES ? v.size : "m", box: !!v.box, style, styleSet: !!v.styleSet, focus: v.focus !== false };
+    return { size: v.size && v.size in CAPTION_SIZES ? v.size : "m", box: !!v.box, style, styleSet: !!v.styleSet, focus: v.focus !== false, long: v.long === "room" ? "room" : "scroll" };
   } catch {
-    return { size: "m", box: false, style: "instant", focus: true };
+    return { size: "m", box: false, style: "instant", focus: true, long: "scroll" };
   }
 }
 

@@ -16,7 +16,8 @@ export type Phase =
   | "ended" // we hung up
   | "gone" // room expired / not found
   | "full"
-  | "replaced";
+  | "replaced"
+  | "unavailable"; // blocked by the person whose call card / room this is
 
 export type Caption = { id: string; from: string; text: string; tail?: string; stage: CaptionStage; updatedAt: number; doneAt: number | null };
 export type TranscriptLine = { id: string; who: "me" | "them"; from: string | null; text: string; final: boolean; at: number };
@@ -895,7 +896,7 @@ export class CallController {
       case "error":
         this.shutdown();
         this.releaseDevices();
-        this.set({ phase: msg.code === "room-full" ? "full" : "gone", participants: [] });
+        this.set({ phase: msg.code === "room-full" ? "full" : msg.code === "unavailable" ? "unavailable" : "gone", participants: [] });
         break;
     }
   }

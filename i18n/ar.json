@@ -299,5 +299,7 @@
   "blockedDone": "تم حظر {name}.",
   "blockedTitle": "الأشخاص المحظورون",
   "unblock": "إلغاء الحظر",
-  "personUnavailable": "هذا الشخص غير متاح الآن."
+  "personUnavailable": "هذا الشخص غير متاح الآن.",
+  "ownScroll": "مرّر لرؤية ما سبق",
+  "ownLatest": "الأحدث"
 }

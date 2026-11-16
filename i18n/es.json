@@ -299,5 +299,7 @@
   "blockedDone": "{name} está bloqueado.",
   "blockedTitle": "Personas bloqueadas",
   "unblock": "Desbloquear",
-  "personUnavailable": "Esta persona no está disponible ahora."
+  "personUnavailable": "Esta persona no está disponible ahora.",
+  "ownScroll": "Desliza para ver lo anterior",
+  "ownLatest": "Lo último"
 }

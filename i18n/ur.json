@@ -299,5 +299,7 @@
   "blockedDone": "{name} بلاک ہے۔",
   "blockedTitle": "بلاک کیے گئے لوگ",
   "unblock": "ان بلاک",
-  "personUnavailable": "یہ شخص ابھی دستیاب نہیں ہے۔"
+  "personUnavailable": "یہ شخص ابھی دستیاب نہیں ہے۔",
+  "ownScroll": "پہلے کا دیکھنے کے لیے اسکرول کریں",
+  "ownLatest": "تازہ ترین"
 }

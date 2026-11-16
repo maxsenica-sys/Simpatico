@@ -746,3 +746,20 @@ p { margin: 0; line-height: 1.5; }
 .no-video .stage-name { background: none; border: 0; font: inherit; font-size: 1.3rem; font-weight: 650; color: var(--text); cursor: pointer; pointer-events: auto; }
 .blocked-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; } .blocked-list li { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-weight: 600; }
 .report-sheet .bsheet-handle { align-self: center; } .report-reasons .chip.on { background: var(--accent); color: #fff; border-color: transparent; }
+
+/* "You": your own words, scrollable, newest at the bottom */
+.own-words { position: relative; width: 100%; max-width: 560px; align-self: center; padding: 6px 18px 8px 12px; border-radius: 14px;
+  background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: rgba(255, 255, 255, 0.9); }
+.own-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 2px; }
+.own-words .who { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.7; }
+.own-scroll-hint { font-size: 0.7rem; opacity: 0.7; }
+.own-scroll-hint::before { content: "↕ "; }
+.own-box { max-height: calc(0.95rem * 1.35 * 3.2); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: none; touch-action: pan-y; }
+.own-box::-webkit-scrollbar { display: none; }
+.own-box.faded { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 1.1em); mask-image: linear-gradient(to bottom, transparent 0, #000 1.1em); }
+.own-box p { margin: 0 0 0.25em; font-size: 0.95rem; line-height: 1.35; opacity: 0.6; text-align: start; }
+.own-box p.latest { opacity: 1; }
+.own-box p.live { font-style: normal; }
+.own-track { position: absolute; right: 6px; top: 26px; bottom: 8px; width: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.14); }
+.own-thumb { position: absolute; left: 0; right: 0; border-radius: 2px; background: rgba(255, 255, 255, 0.75); }
+.own-latest { position: absolute; right: 16px; bottom: -14px; padding: 3px 10px; border-radius: 999px; border: 0; background: var(--accent); color: #fff; font: inherit; font-size: 0.75rem; font-weight: 700; cursor: pointer; }

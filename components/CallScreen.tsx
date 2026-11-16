@@ -21,6 +21,7 @@ import { noteCall, notePair, notePhoto, noteTime } from "@/lib/recent";
 import { myKey, pairCode } from "@/lib/pair";
 import { Avatar } from "./Avatar";
 import { ReportSheet } from "./ReportSheet";
+import { OwnWords } from "./OwnWords";
 
 const OWN_LINE_MS = 5000;
 const NO_VIDEO_GRACE_MS = 4000;
@@ -291,6 +292,8 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
 
   const ccState = worst([s.captionStatus, s.myCaptionStatus]);
   const showOwn = connected && s.ownLine && now - s.ownLine.at < OWN_LINE_MS;
+  // Your own recent sentences, for the scrollable "You" panel.
+  const ownLines = s.transcript.filter((l) => l.who === "me" && l.text.trim()).slice(-12);
   const showOwnHint = showOwn && firstOwnAt !== null && now - firstOwnAt < 8000;
   const names = Object.fromEntries(s.participants.map((p) => [p.id, p.name]));
   const anySpeaking = s.participants.some((p) => p.speaking);
@@ -550,7 +553,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
           </div>
         )}
 
-        {(banners.length > 0 || showOwn) && (
+        {(banners.length > 0 || (connected && ownLines.length > 0)) && (
           <div className="banners" onClick={(e) => e.stopPropagation()}>
             {banners.map((b) => (
               <div key={b.key} className={`banner ${b.tone}`}>
@@ -558,11 +561,13 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
                 {b.actions && <div className="banner-actions">{b.actions}</div>}
               </div>
             ))}
-            {showOwn && (
-              <div className="own-line" dir="auto">
-                <span className="who">{t("you")}</span> {s.ownLine!.text}
-                {showOwnHint && <div className="own-hint">{t("captionsCheck")}</div>}
-              </div>
+            {connected && (
+              <OwnWords
+                lines={ownLines}
+                lastAt={s.ownLine?.at ?? null}
+                speaking={s.meSpeaking && !s.muted}
+                hint={!!showOwnHint}
+              />
             )}
           </div>
         )}

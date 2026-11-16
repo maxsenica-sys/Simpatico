@@ -299,5 +299,7 @@
   "blockedDone": "{name} ब्लॉक है।",
   "blockedTitle": "ब्लॉक किए लोग",
   "unblock": "अनब्लॉक करें",
-  "personUnavailable": "यह व्यक्ति अभी उपलब्ध नहीं है।"
+  "personUnavailable": "यह व्यक्ति अभी उपलब्ध नहीं है।",
+  "ownScroll": "पहले का देखने के लिए स्क्रॉल करें",
+  "ownLatest": "नवीनतम"
 }

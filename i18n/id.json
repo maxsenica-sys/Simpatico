@@ -299,5 +299,7 @@
   "blockedDone": "{name} diblokir.",
   "blockedTitle": "Orang yang diblokir",
   "unblock": "Buka blokir",
-  "personUnavailable": "Orang ini sedang tidak tersedia."
+  "personUnavailable": "Orang ini sedang tidak tersedia.",
+  "ownScroll": "Gulir untuk yang sebelumnya",
+  "ownLatest": "Terbaru"
 }

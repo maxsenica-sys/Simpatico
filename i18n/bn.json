@@ -299,5 +299,7 @@
   "blockedDone": "{name} ব্লক করা হয়েছে।",
   "blockedTitle": "ব্লক করা লোক",
   "unblock": "আনব্লক",
-  "personUnavailable": "এই ব্যক্তি এখন উপলব্ধ নেই।"
+  "personUnavailable": "এই ব্যক্তি এখন উপলব্ধ নেই।",
+  "ownScroll": "আগেরটা দেখতে স্ক্রল করুন",
+  "ownLatest": "সর্বশেষ"
 }

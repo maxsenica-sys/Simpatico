@@ -299,5 +299,7 @@
   "blockedDone": "已屏蔽 {name}。",
   "blockedTitle": "已屏蔽的人",
   "unblock": "取消屏蔽",
-  "personUnavailable": "此人现在不方便接听。"
+  "personUnavailable": "此人现在不方便接听。",
+  "ownScroll": "滑动查看之前的内容",
+  "ownLatest": "最新"
 }

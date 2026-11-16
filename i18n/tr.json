@@ -299,5 +299,7 @@
   "blockedDone": "{name} engellendi.",
   "blockedTitle": "Engellenen kişiler",
   "unblock": "Engeli kaldır",
-  "personUnavailable": "Bu kişi şu anda müsait değil."
+  "personUnavailable": "Bu kişi şu anda müsait değil.",
+  "ownScroll": "Öncekiler için kaydır",
+  "ownLatest": "En son"
 }

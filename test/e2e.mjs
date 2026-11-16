@@ -186,8 +186,8 @@ try {
   const placeholderText = (p) => p.evaluate(() => document.querySelector(".no-video p:not(.stage-name)")?.textContent ?? null);
 
   step("Captions-working check: A sees its own recognised words and a green captions badge");
-  await a.waitForFunction(() => document.querySelector(".own-line")?.textContent?.length > 4, null, { timeout: 15000 });
-  console.log("  A badge:", await a.locator(".cc-pill").textContent(), "| own line:", await a.locator(".own-line").textContent());
+  await a.waitForFunction(() => document.querySelector(".own-words .own-box")?.textContent?.length > 4, null, { timeout: 15000 });
+  console.log("  A badge:", await a.locator(".cc-pill").textContent(), "| own line:", await a.locator(".own-words .own-box").textContent());
 
   step("Host and guest have the same controls");
   await show(a);

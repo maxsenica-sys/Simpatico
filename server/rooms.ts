@@ -293,8 +293,9 @@ export function removePeer(room: Room, peer: Peer, why: string) {
 }
 
 /**
- * Each speaker gets one Soniox pipeline per language somebody else in the call reads
- * (source = their own speaks, target = that reads), and only while someone reads it.
+ * Each speaker gets one caption pipeline per language somebody else in the call reads
+ * (source = their own speaks, target = that reads), and only while someone reads it. They share
+ * one Soniox stream (the primary's) while Claude writes the subtitles.
  * People who read the speaker's own language get the original words: from the primary
  * pipeline when there are translations, else from a transcription-only pipeline ("same").
  */
@@ -335,6 +336,10 @@ export function updatePipelines(room: Room) {
       }
       pl.setLanguages(p.lang.speaks, key === "same" ? p.lang.speaks : key);
     }
+    // One Soniox stream per speaker: the primary pipeline transcribes, the others translate its words.
+    const leader = p.primaryKey ? p.pipelines.get(p.primaryKey) ?? null : null;
+    leader?.follow(null);
+    for (const [key, pl] of p.pipelines) if (key !== p.primaryKey) pl.follow(leader);
   }
 }
 

@@ -176,6 +176,13 @@ export class SpeakerPipeline {
   private sonioxTranslates = false;
   private claudeMisses = 0;
   private backupUntil = 0;
+  /**
+   * Group calls: one pipeline per language the speaker is read in. While Claude writes the
+   * subtitles, Soniox only transcribes, so the same words serve every language: the leader opens
+   * the one stream and passes the words on to its followers, who each translate them.
+   */
+  private leader: SpeakerPipeline | null = null;
+  private followers = new Set<SpeakerPipeline>();
 
   constructor(private host: PipelineHost) {}
 
@@ -196,8 +203,36 @@ export class SpeakerPipeline {
     return this.translating && refineConfigured() && Date.now() >= this.backupUntil;
   }
 
+  /** Take this speaker's words from `leader` instead of opening a stream (null: open our own). */
+  follow(leader: SpeakerPipeline | null) {
+    if (leader === this) leader = null;
+    if (this.leader === leader) return;
+    this.leader?.followers.delete(this);
+    this.leader = leader;
+    if (!leader) return;
+    leader.followers.add(this);
+    // A follower doesn't lead anyone, and its own stream (if any) is no longer needed.
+    for (const f of this.followers) f.leader = null;
+    this.followers.clear();
+    this.stopStream("follow");
+  }
+
+  /** Words come from the leader's stream (only while no Soniox translation is needed here). */
+  private get sharing() {
+    return !!this.leader?.reads && this.claudeWrites;
+  }
+
+  /** Pass the leader's stream on: the speaker's own words only, never its translation. */
+  private forward(fn: (f: SpeakerPipeline) => void) {
+    for (const f of this.followers) if (f.sharing) fn(f);
+  }
+
   audio(chunk: Buffer) {
     if (!this.speaks || !this.reads) return; // nobody listening: never open a billable stream
+    if (this.sharing) {
+      if (this.stream) this.stopStream("shared");
+      return; // the leader's stream carries these words
+    }
     if (!sonioxConfigured()) return;
     if (Date.now() < this.fatalUntil) return;
     if (!this.stream) this.startStream();
@@ -253,6 +288,9 @@ export class SpeakerPipeline {
   /** Participant gone, or reader gone. Closes upstream immediately. */
   stop() {
     this.stopStream("stop");
+    this.follow(null);
+    for (const f of this.followers) f.leader = null;
+    this.followers.clear();
     this.speaks = this.reads = null;
   }
 
@@ -263,25 +301,34 @@ export class SpeakerPipeline {
     this.sonioxTranslates = !!target;
     const stream = new SonioxStream({ source, target, ref: this.host.ref, context: sonioxContext(source, this.host.names?.() ?? []) });
     this.stream = stream;
-    stream.on("ready", () => this.status("ok"));
+    stream.on("ready", () => {
+      this.status("ok");
+      this.forward((f) => f.status("ok"));
+    });
     stream.on("tokens", (tokens: SonioxToken[]) => {
       this.failures = 0;
       this.onTokens(tokens);
+      if (!this.followers.size) return;
+      const own = tokens.filter((t) => t.translation_status !== "translation");
+      if (own.length) this.forward((f) => f.onTokens(own));
     });
     stream.on("drop", ({ fatal, reason }: { fatal: boolean; reason: string }) => {
       if (this.stream !== stream) return;
       this.stream = null;
       this.host.billed?.((Date.now() - stream.startedAt) / 1000);
       this.flushOpen();
+      this.forward((f) => f.flushOpen());
       log("soniox_drop", { ref: this.host.ref, fatal, reason, failures: this.failures });
       if (fatal) {
         // Bad key / out of credit: stop hammering, tell the reader captions are unavailable.
         this.fatalUntil = Date.now() + 60_000;
         this.status("unavailable");
+        this.forward((f) => f.status("unavailable"));
       } else {
         // Video is unaffected; captions resume on the next audio chunk.
         this.failures++;
         this.status("paused");
+        this.forward((f) => f.status("paused"));
       }
     });
     const delay = BACKOFF_MS[Math.min(this.failures, BACKOFF_MS.length - 1)];
@@ -303,6 +350,8 @@ export class SpeakerPipeline {
       this.host.billed?.((Date.now() - this.stream.startedAt) / 1000);
       this.stream.close();
       this.stream = null;
+      // The stream that fed the followers is gone: settle what they have too.
+      this.forward((f) => f.flushOpen());
     }
     this.flushOpen();
   }
@@ -533,7 +582,8 @@ export class SpeakerPipeline {
     log("claude_backup", { ref: this.host.ref, minutes: BACKUP_MS / 60_000 });
     // Settle what's on screen, then reopen with Soniox translating on the next words.
     if (this.open?.steadyText) this.steadyEmit(this.open, true);
-    if (this.stream && !this.sonioxTranslates) this.stopStream("backup");
+    // A follower leaves the shared stream too (it needs one that translates).
+    if (!this.sonioxTranslates) this.stopStream("backup");
   }
 
   private literal(u: Utterance): string {

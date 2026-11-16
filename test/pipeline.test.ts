@@ -245,6 +245,36 @@ assert.equal(steady[0].text, "TAM-CEVIRI");
 assert.ok(own.some((m) => m.t === "own" && m.final && m.text === "my address is 12 Smith Street"));
 pt.stop();
 ps.stop();
+
+// 6e. Group call, one speaker read in two languages: one Soniox stream (transcription only),
+//     its words passed to the second pipeline, and each language gets its own subtitles.
+const trR: any[] = [];
+const ruR: any[] = [];
+const mk = (ref: string, out: any[]) =>
+  new SpeakerPipeline({ ref, label: "A", toReader: (m) => out.push(m), toSpeaker: () => {}, context: () => [], record: () => {}, glossary: () => ({}), styles: () => ({ steady: true, instant: false }) });
+const lead = mk("test-G-tr", trR);
+const follower = mk("test-G-ru", ruR);
+lead.setLanguages("en-AU", "tr-TR");
+follower.setLanguages("en-AU", "ru-RU");
+follower.follow(lead);
+const before = configs;
+lead.audio(audio);
+follower.audio(audio);
+await until(() => configs === before + 1);
+await sleep(200);
+assert.equal(configs, before + 1, "one stream for both languages");
+assert.equal(configList.at(-1).translation, undefined);
+push(sockets.at(-1)!, [tok("so yesterday I went to the market, and I bought some fresh fish", true), tok("<end>", true)]);
+await until(() => trR.some((m) => m.stage === "final") && ruR.some((m) => m.stage === "final"), 6000);
+assert.equal(trR.filter((m) => m.stage === "final").at(-1).text, "TAM-CEVIRI");
+assert.equal(ruR.filter((m) => m.stage === "final").at(-1).text, "TAM-CEVIRI");
+// The leader goes away: the follower opens its own stream on the next words.
+lead.stop();
+follower.follow(null);
+follower.audio(audio);
+await until(() => configs === before + 2);
+follower.stop();
+console.log("✓ group call: one Soniox stream per speaker, subtitles in each language");
 llm.close();
 console.log("✓ type to talk: translated once for the reader, shown to the speaker");
 

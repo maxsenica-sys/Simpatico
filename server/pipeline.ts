@@ -17,14 +17,16 @@ const SEAL_QUIET_MS = 700;
 const SEAL_MAX_MS = 2500;
 /**
  * Close the upstream socket after this long without speech; Soniox bills for as long as it is open.
- * 10 s keeps it open through normal back-and-forth; reopening costs ~0.3 s at the start of the next
- * utterance, and no audio is lost (it is buffered while the socket connects).
+ * Phones only send audio while someone is talking (plus the second before), so while the other
+ * person has the floor this one's stream is just costing money. 6 s keeps it open through a short
+ * reply; reopening costs ~0.3 s at the start of the next utterance, and no audio is lost (it is
+ * buffered while the socket connects).
  */
-const IDLE_CLOSE_MS = 10_000;
 const tuned = (key: string, fallback: number) => {
   const v = Number(process.env[key]);
   return Number.isFinite(v) && v > 0 ? v : fallback;
 };
+const IDLE_CLOSE_MS = tuned("IDLE_CLOSE_MS", 6_000);
 /**
  * Steady captions (the default reading style): a long utterance is subtitled phrase by phrase from
  * Soniox's finalised words, each phrase translated once and appended, never rewritten. A phrase is
@@ -38,7 +40,9 @@ const STEADY_TIMEOUT_MS = 3000;
 const TYPED_TIMEOUT_MS = 5000;
 /** Live readers' faint preview of the words not yet in a phrase. */
 const PREVIEW_MIN_WORDS = tuned("PREVIEW_MIN_WORDS", 2);
-const PREVIEW_EVERY_MS = tuned("PREVIEW_EVERY_MS", 350);
+/** A new preview only once a couple more words have been heard (each one is a paid request). */
+const PREVIEW_STEP_WORDS = tuned("PREVIEW_STEP_WORDS", 2);
+const PREVIEW_EVERY_MS = tuned("PREVIEW_EVERY_MS", 500);
 const PREVIEW_PARALLEL = tuned("PREVIEW_PARALLEL", 2);
 const PREVIEW_SEND_MS = 90;
 const PREVIEW_TIMEOUT_MS = 2500;
@@ -47,6 +51,12 @@ const VERB_FINAL = new Set(["tr", "hi", "ur", "bn", "ja", "ko", "fa", "ta", "te"
 const JOINING = /^(and|or|but|so|when|if|that|which|who|where|while|because|the|a|an|of|to|in|on|at|for|with|from|by|as|than|then|ve|ama|ile|için|gibi|de|da|ki|и|а|но|что|когда|в|на|с|y|o|pero|que|cuando|el|la|los|las|de|en|con|para|e|ou|mas|quando|o|os|as|do|da|em|com|et|ou|mais|quand|le|les|du|des|dans|avec|pour|dan|atau|tapi|yang|di|ke|dari|untuk)$/i;
 const CLAUSE_END = /[.!?;:,…。！？，、；：؟،।]["'”’)\]]*\s*$/u;
 const BACKOFF_MS = [0, 250, 1000, 2000, 5000];
+/**
+ * Claude writes the subtitles, so Soniox only transcribes (its own translation is billed per word).
+ * If Claude keeps failing, Soniox's translation comes back on as the backup for a while.
+ */
+const CLAUDE_MISSES_FOR_BACKUP = 4;
+const BACKUP_MS = 5 * 60_000;
 
 /**
  * Which readers a caption is for: "instant" (word by word, may be revised), "steady" (phrase by
@@ -128,6 +138,9 @@ type Utterance = {
   previewSendTimer?: NodeJS.Timeout;
   previewTimer?: NodeJS.Timeout;
   previewCover: number;
+  /** Where the tail started and how many words it had at the last preview. */
+  previewFrom: number;
+  previewWords: number;
   /** Steady captions: words of the utterance already translated and shown. */
   steadyWords: number;
   /** Steady captions: the subtitle shown so far for this utterance (only ever appended to). */
@@ -159,6 +172,10 @@ export class SpeakerPipeline {
   private open: Utterance | null = null;
   /** Closed utterances whose translation may still be streaming in, oldest first. */
   private closing: Utterance[] = [];
+  /** The open Soniox stream also translates (only when Claude isn't writing the subtitles). */
+  private sonioxTranslates = false;
+  private claudeMisses = 0;
+  private backupUntil = 0;
 
   constructor(private host: PipelineHost) {}
 
@@ -172,6 +189,11 @@ export class SpeakerPipeline {
 
   private get translating() {
     return !!this.speaks && !!this.reads && !sameLanguage(this.speaks, this.reads);
+  }
+
+  /** Claude writes the subtitles (and Soniox only transcribes). */
+  private get claudeWrites() {
+    return this.translating && refineConfigured() && Date.now() >= this.backupUntil;
   }
 
   audio(chunk: Buffer) {
@@ -236,7 +258,9 @@ export class SpeakerPipeline {
 
   private startStream() {
     const source = baseLang(this.speaks)!;
-    const target = this.translating ? baseLang(this.reads)! : null;
+    // Soniox's own translation is only needed when Claude isn't writing the subtitles.
+    const target = this.translating && !this.claudeWrites ? baseLang(this.reads)! : null;
+    this.sonioxTranslates = !!target;
     const stream = new SonioxStream({ source, target, ref: this.host.ref, context: sonioxContext(source, this.host.names?.() ?? []) });
     this.stream = stream;
     stream.on("ready", () => this.status("ok"));
@@ -304,6 +328,8 @@ export class SpeakerPipeline {
       previewShownSeq: 0,
       previewSentAt: 0,
       previewCover: 0,
+      previewFrom: -1,
+      previewWords: 0,
       steadyWords: 0,
       steadyText: "",
       steadyBusy: false,
@@ -365,7 +391,7 @@ export class SpeakerPipeline {
    */
   private get steadyOn() {
     const w = this.wants;
-    return this.translating && (w.steady || w.instant) && refineConfigured();
+    return this.claudeWrites && (w.steady || w.instant);
   }
 
   private get instantTag(): CaptionStyleTag {
@@ -442,6 +468,7 @@ export class SpeakerPipeline {
       if (u.steadyDone) return;
       // An empty reply for a real phrase (3+ words) is a miss, not "nothing to say": retry it.
       if (text === "" && phrase.split(/\s+/).length >= 3) text = null;
+      this.claudeResult(text !== null);
       if (text === null) {
         // Words are never skipped: they go out again with the next phrase. Only a sentence
         // whose closing phrase keeps failing is settled on what is already shown.
@@ -464,8 +491,13 @@ export class SpeakerPipeline {
     if (!u.steadyText && u.steadyWords === 0) {
       // Short utterance, nothing shown yet: the idiomatic rewrite of the whole thing is the subtitle.
       if (!u.refineDone) return; // called again when it lands
-      const text = u.refined ?? (u.sealed ? this.literal(u) : null);
-      if (text === null) return; // called again from seal()
+      let text = u.refined;
+      if (text === null) {
+        if (!u.sealed) return; // called again from seal()
+        text = this.literal(u);
+        // No backup translation from Soniox: translate it again as one closing phrase (retried).
+        if (!text && (u.origFinal + u.origLive).trim()) return this.steadyPhrase(u, true);
+      }
       u.steadyText = text.trim();
       return this.steadyEmit(u, true);
     }
@@ -487,6 +519,21 @@ export class SpeakerPipeline {
     }
     if (wants.instant) this.sendLive(u, final);
     if (!final && u.state === "open") this.maybePreview(u);
+  }
+
+  /** Count Claude's misses in a row; after a few, Soniox translates again for a while. */
+  private claudeResult(ok: boolean) {
+    if (ok) {
+      this.claudeMisses = 0;
+      return;
+    }
+    if (++this.claudeMisses < CLAUDE_MISSES_FOR_BACKUP || !this.claudeWrites) return;
+    this.claudeMisses = 0;
+    this.backupUntil = Date.now() + BACKUP_MS;
+    log("claude_backup", { ref: this.host.ref, minutes: BACKUP_MS / 60_000 });
+    // Settle what's on screen, then reopen with Soniox translating on the next words.
+    if (this.open?.steadyText) this.steadyEmit(this.open, true);
+    if (this.stream && !this.sonioxTranslates) this.stopStream("backup");
   }
 
   private literal(u: Utterance): string {
@@ -516,6 +563,8 @@ export class SpeakerPipeline {
     const from = u.steadyWords;
     const tail = units.slice(from);
     if (tail.length < PREVIEW_MIN_WORDS * scale) return;
+    // Every couple of words, not every word: a corrected word alone waits for the next ones.
+    if (from === u.previewFrom && tail.length - u.previewWords < PREVIEW_STEP_WORDS * scale) return;
     const fragment = tail.join(sep);
     if (fragment === u.previewSource) return;
     // Previews overlap: a new one starts every PREVIEW_EVERY_MS while earlier ones are still being
@@ -525,6 +574,8 @@ export class SpeakerPipeline {
     u.previewInFlight++;
     u.previewAt = now;
     u.previewSource = fragment;
+    u.previewFrom = from;
+    u.previewWords = tail.length;
     const show = (text: string) => {
       if (u.state !== "open" || u.steadyDone || u.steadyWords !== from || seq < u.previewShownSeq) return;
       if (!text || text === u.previewText) return;
@@ -681,7 +732,8 @@ export class SpeakerPipeline {
     if (u.sealTimer) clearTimeout(u.sealTimer);
     // A translated sentence ending in punctuation with nothing pending is complete.
     const done = !u.trLive && SENTENCE_END.test(u.trFinal);
-    u.sealTimer = setTimeout(() => this.seal(u), done ? 150 : SEAL_QUIET_MS);
+    // Nothing to wait for when Soniox isn't translating.
+    u.sealTimer = setTimeout(() => this.seal(u), !this.sonioxTranslates ? 0 : done ? 150 : SEAL_QUIET_MS);
   }
 
   private seal(u: Utterance) {

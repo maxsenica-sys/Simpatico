@@ -13,9 +13,13 @@ delete process.env.ANTHROPIC_API_KEY; // pass 2 off: utterances settle on the li
 const wss = new WebSocketServer({ port: 3997 });
 const sockets: WebSocket[] = [];
 let configs = 0;
+const configList: any[] = [];
 wss.on("connection", (ws) => {
   sockets.push(ws);
-  ws.once("message", () => configs++);
+  ws.once("message", (m) => {
+    configList.push(JSON.parse(String(m)));
+    configs++;
+  });
 });
 const openCount = () => sockets.filter((s) => s.readyState === s.OPEN).length;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -104,6 +108,8 @@ console.log("✓ same-language pair transcribes without translating");
 
 const { createServer } = await import("node:http");
 let interimCalls = 0;
+/** "rewrite": whole-utterance rewrites fail; "all": every request fails (Claude down). */
+let llmFail: "" | "rewrite" | "all" = "";
 const phraseCalls: { text: string; final: boolean }[] = [];
 const llm = createServer((req, res) => {
   let body = "";
@@ -113,6 +119,11 @@ const llm = createServer((req, res) => {
     const interim = JSON.stringify(j.system).includes("still talking");
     if (interim) interimCalls++;
     const phrase = String(j.messages[0].content).match(/<new_phrase final="(\w+)">([\s\S]*?)<\/new_phrase>/);
+    if (llmFail === "all" || (llmFail === "rewrite" && !phrase)) {
+      res.writeHead(500, { "content-type": "application/json" });
+      res.end(JSON.stringify({ type: "error", error: { type: "api_error", message: "down" } }));
+      return;
+    }
     if (phrase) phraseCalls.push({ text: phrase[2], final: phrase[1] === "true" });
     const text = phrase ? `[${phrase[2].trim()}]` : interim ? "ARA-CEVIRI" : "TAM-CEVIRI";
     reply(res, j, "m", text);
@@ -125,6 +136,8 @@ p.setLanguages("en-AU", "tr-TR");
 p.audio(audio);
 await until(() => configs === 4);
 const ws4 = sockets[3];
+assert.equal(configList[3].translation, undefined, "Claude writes the subtitles: Soniox only transcribes");
+assert.ok(configList[0].translation, "without Claude, Soniox translates");
 // 6. Live readers (default): a phrase settles once 8 words are safely recognised, and the words
 //    after it show as a faint preview (tail) that is replaced, never the settled text.
 const longLive = "so yesterday I went down to the market near the harbour and";
@@ -188,6 +201,35 @@ const short = steady.filter((m) => m.style === "steady");
 assert.equal(short.length, 1, "one settled line, no intermediate guesses");
 assert.equal(short[0].text, "TAM-CEVIRI");
 console.log("✓ steady captions: a short sentence appears once, already idiomatic");
+
+// 6c2. Claude's whole-utterance rewrite fails and Soniox isn't translating: the sentence is
+//      translated again as one closing phrase instead of being lost.
+ps.stop();
+steady.length = 0;
+llmFail = "rewrite";
+ps.setLanguages("en-AU", "tr-TR");
+ps.audio(audio);
+await until(() => configs === 7);
+push(sockets[6], [tok("see you soon", true), tok("<end>", true)]);
+await until(() => steady.some((m) => m.style === "steady" && m.stage === "final"), 6000);
+assert.equal(steady.filter((m) => m.style === "steady").at(-1).text, "[see you soon]");
+llmFail = "";
+ps.stop();
+console.log("✓ no Soniox backup needed: a failed rewrite is translated again as a phrase");
+
+// 6c3. Claude keeps failing: Soniox's own translation comes back on as the backup.
+steady.length = 0;
+llmFail = "all";
+ps.setLanguages("en-AU", "tr-TR");
+ps.audio(audio);
+await until(() => configs === 8);
+push(sockets[7], [tok("one two three four five six seven eight nine ten eleven twelve", true)]);
+ps.audio(audio); // the next words reopen the stream (now translating)
+await until(() => configs === 9 || (ps.audio(audio), false), 15000);
+assert.ok(configList[8].translation, "Soniox translates while Claude is down");
+llmFail = "";
+ps.stop();
+console.log("✓ Claude down: Soniox translation comes back on as the backup");
 
 // 6d. Type to talk: the speaker sees their line, the reader gets it translated, once.
 steady.length = 0;

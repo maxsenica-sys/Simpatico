@@ -10,11 +10,12 @@ export type LongSpeech = "scroll" | "room";
 export type CaptionPrefs = { size: CaptionSize; box: boolean; style: CaptionStyle; styleSet?: boolean; focus: boolean; long: LongSpeech };
 
 const KEY = "talk.captions.v1";
+/** Medium (the default) is small enough to keep a few lines of a long sentence in view. */
 export const CAPTION_SIZES: Record<CaptionSize, string> = {
-  s: "clamp(22px, 3.4vw, 34px)",
-  m: "clamp(28px, 4.2vw, 44px)",
-  l: "clamp(34px, 5.2vw, 56px)",
-  xl: "clamp(42px, 6.6vw, 70px)",
+  s: "clamp(17px, 2.6vw, 26px)",
+  m: "clamp(21px, 3.2vw, 34px)",
+  l: "clamp(27px, 4.2vw, 44px)",
+  xl: "clamp(34px, 5.4vw, 58px)",
 };
 
 export function loadCaptionPrefs(): CaptionPrefs {

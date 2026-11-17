@@ -131,9 +131,10 @@ export function CaptionBox({
         >
           <div className="cap-fill" />
           {!gone &&
-            shown.map((c) => (
+            shown.map((c, i) => (
               <p key={c.id} data-id={c.id} className={`cap ${c.doneAt === null ? (c.stage === "steady" ? "steady" : "live") : "done"}`} dir="auto">
-                {names && <span className="cap-who">{names[c.from] ?? ""}</span>}
+                {/* Who is talking: once, where the speaker changes, not on every line. */}
+                {names && shown[i - 1]?.from !== c.from && <span className="cap-who">{names[c.from] ?? ""}</span>}
                 {c.text}
                 {c.tail && (
                   <span className="cap-tail" aria-hidden="true">

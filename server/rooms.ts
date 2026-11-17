@@ -199,7 +199,7 @@ export function seat(
   peer.ws = ws;
   peer.lang = lang;
   peer.name = cleanName(opts.name, peer.label);
-  peer.inRoom = room.kind === "group" && !!opts.inRoom;
+  peer.inRoom = !!opts.inRoom;
   peer.captionStyle = opts.captionStyle === "steady" ? "steady" : "instant";
   peer.gender = opts.gender === "m" || opts.gender === "f" ? opts.gender : undefined;
   peer.profile = cleanProfile(opts.profile);
@@ -259,7 +259,7 @@ function toClient(msg: ReaderMsg, from: string): ServerMsg {
 }
 
 export function setInRoom(room: Room, peer: Peer, inRoom: boolean) {
-  peer.inRoom = room.kind === "group" && inRoom;
+  peer.inRoom = inRoom;
   broadcast(room, { t: "peer-info", peer: info(peer) }, peer);
 }
 

@@ -525,11 +525,9 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
             <Ctrl label={s.audioOnly ? t("lblVideo") : t("lblAudioOnly")} title={s.audioOnly ? t("goVideo") : t("goAudioOnly")} onClick={() => call.setAudioOnly(!s.audioOnly)}>
               {s.audioOnly ? <CameraIcon off={false} /> : <AudioOnlyIcon />}
             </Ctrl>
-            {group && (
-              <Ctrl label={t("lblInRoom")} title={s.inRoom ? t("inRoomOn") : t("inRoomOff")} active={s.inRoom} onClick={() => call.setInRoom(!s.inRoom)}>
-                <RoomIcon />
-              </Ctrl>
-            )}
+            <Ctrl label={t("lblInRoom")} title={s.inRoom ? t("inRoomOn") : t("inRoomOff")} active={s.inRoom} onClick={() => call.setInRoom(!s.inRoom)}>
+              <RoomIcon />
+            </Ctrl>
             <Ctrl label={t("lblText")} title={t("showTranscript")} onClick={() => setTranscript(true)}>
               <TextIcon />
             </Ctrl>

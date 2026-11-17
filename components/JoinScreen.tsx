@@ -37,7 +37,7 @@ export function JoinScreen({
   stream: MediaStream | null;
   /** The phone said no to camera and mic: join anyway, or ask again. */
   refused?: { again: boolean; steps: string; onAllow: () => void } | null;
-  /** Set for group calls: asks for a name and whether you're in the same room. */
+  /** Set for group calls (shows the size limit). */
   group: { max: number } | null;
   onJoin: (choice: JoinChoice) => void;
 }) {
@@ -103,7 +103,7 @@ export function JoinScreen({
     onJoin({
       audioOnly,
       name: n,
-      inRoom: group ? inRoom : undefined,
+      inRoom,
       gender: gender === "x" ? undefined : gender,
     });
   };
@@ -212,21 +212,18 @@ export function JoinScreen({
             {t("genderRequired")}
           </span>
         )}
-        {group && (
-          <>
-            <label className="check">
-              <input
-                type="checkbox"
-                checked={inRoom}
-                onChange={(e) => setInRoom(e.target.checked)}
-              />
-              <span>
-                {t("inRoomLabel")}
-                <small className="muted">{t("inRoomHint")}</small>
-              </span>
-            </label>
-          </>
-        )}
+        {/* Sitting together, each on your own phone (one-to-one or group): no echo between them. */}
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={inRoom}
+            onChange={(e) => setInRoom(e.target.checked)}
+          />
+          <span>
+            {t("inRoomLabel")}
+            <small className="muted">{t("inRoomHint")}</small>
+          </span>
+        </label>
         {refused ? (
           <button className="btn big secondary" onClick={() => join(false)}>
             {t("joinAnyway")}

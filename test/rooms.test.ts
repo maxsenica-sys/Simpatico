@@ -41,6 +41,19 @@ assert.equal(admitAudio(room, I, -30, Date.now() + 100), false, "tail of Ayşe's
 assert.equal(admitAudio(room, I, -12, Date.now() + 200), true, "Ivan himself speaks: floor");
 console.log("✓ release: quiet echoes ignored, real new speaker admitted");
 
+// One-to-one, sitting together (each on their own phone): same in-room rules as a group.
+{
+  const duo = createRoom("pair")!;
+  const a = seat(duo, "max-000002", lang("en-AU"), fakeWs(), { name: "Max", inRoom: true });
+  const b = seat(duo, "ezgi-00002", lang("tr-TR"), fakeWs(), { name: "Ezgi", inRoom: true });
+  assert.ok(a !== "room-full" && b !== "room-full");
+  const [X, Y] = [a, b].map((r) => (r as Exclude<typeof r, "room-full">).peer);
+  assert.ok(X.inRoom && Y.inRoom, "one-to-one calls keep the same-room choice");
+  assert.equal(admitAudio(duo, X, -18, t0), true, "Max talks into his phone");
+  assert.equal(admitAudio(duo, Y, -32, t0 + 100), false, "Ezgi's phone hearing Max: not captioned twice");
+  console.log("✓ one-to-one in the same room: no echo, each voice captioned once");
+}
+
 // Personal call links: the room opens when someone visits and closes as soon as the last
 // person has left; an ordinary room keeps working for 5 minutes so a dropped call can rejoin.
 {

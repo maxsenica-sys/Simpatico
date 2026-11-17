@@ -70,6 +70,10 @@ export function CaptionBox({
       if (!sameRun) break;
       i--;
     }
+    // A line still being translated always stays (someone else may have started talking
+    // after it, but its words are still arriving), with everything after it.
+    const firstActive = h.findIndex((x) => x.doneAt === null);
+    if (firstActive >= 0 && firstActive < i) i = firstActive;
     const run = h.slice(i);
     const earlier: Line[] = [];
     let chars = 0;
@@ -99,8 +103,17 @@ export function CaptionBox({
   const gone = fading && now - last!.doneAt! > LAST_LINGER_MS + FADE_MS;
 
   // Only a finger or a wheel moves you away from the newest words; the box's own gliding doesn't.
+  // While a finger is on the box (and just after), the box never moves the text itself: it
+  // used to keep gliding to the newest words during a long sentence and pull you back down.
   const touchedAt = useRef(0);
-  const touched = () => (touchedAt.current = Date.now());
+  const holding = useRef(false);
+  const glide = useRef<number | null>(null);
+  const touched = () => {
+    touchedAt.current = Date.now();
+    if (glide.current !== null) cancelAnimationFrame(glide.current);
+    glide.current = null;
+  };
+  const hands = () => holding.current || Date.now() - touchedAt.current < 700;
   /** Where the newest sentence sat on screen last time, so an update never moves it down. */
   const anchor = useRef<{ id: string; top: number } | null>(null);
   const saveAnchor = (el: HTMLDivElement) => {
@@ -129,7 +142,6 @@ export function CaptionBox({
    */
   const reserve = useRef<{ id: string; h: number }>({ id: "", h: 0 });
   const spacer = useRef<HTMLDivElement>(null);
-  const glide = useRef<number | null>(null);
   const following = useRef(true);
   following.current = atBottom;
   // Glide towards the newest words, chasing the bottom as it moves: translations stream in
@@ -140,7 +152,7 @@ export function CaptionBox({
     const step = () => {
       const to = el.scrollHeight - el.clientHeight;
       const d = to - el.scrollTop;
-      if (!following.current || d <= 0.5) {
+      if (!following.current || hands() || d <= 0.5) {
         glide.current = null;
         return;
       }
@@ -170,13 +182,13 @@ export function CaptionBox({
     // Following the newest words: whatever changed (a line above finishing with slightly longer
     // wording, the box filling up), the sentence being read must not slip down. Scroll it back
     // to where it was before anything is drawn; the glide below then moves it up smoothly.
-    if (atBottom && anchor.current) {
+    if (atBottom && !hands() && anchor.current) {
       const a = Array.from(el.querySelectorAll<HTMLElement>("p.cap")).find((x) => x.dataset.id === anchor.current!.id);
       const slipped = a ? a.getBoundingClientRect().top - anchor.current.top : 0;
       if (slipped > 0.5) el.scrollTop += slipped;
     }
     // New words: follow them, unless you've scrolled back to read.
-    if (atBottom) glideTo(el);
+    if (atBottom && !hands()) glideTo(el);
     measure();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sig]);
@@ -192,8 +204,19 @@ export function CaptionBox({
           className={`captions cap-box-scroll ${scrolledUp ? "faded" : ""} ${fading ? "fading" : ""}`}
           ref={box}
           onScroll={measure}
-          onTouchStart={touched}
+          onTouchStart={() => {
+            holding.current = true;
+            touched();
+          }}
           onTouchMove={touched}
+          onTouchEnd={() => {
+            holding.current = false;
+            touched();
+          }}
+          onTouchCancel={() => {
+            holding.current = false;
+            touched();
+          }}
           onWheel={touched}
           onPointerDown={touched}
           aria-live="polite"

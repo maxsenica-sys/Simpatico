@@ -141,7 +141,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   };
   const save = () => {
     const names = { ...s.names };
-    const text = transcriptText(s.transcript, names, t("you"), t("transcriptTitle"));
+    const text = transcriptText(s.transcript, names, t("you"), t("transcriptTitle"), { image: `[${t("mediaPhoto")}]`, video: `[${t("mediaVideo")}]` });
     saveTranscript(text, `transcript-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-")}.txt`);
   };
 
@@ -169,6 +169,11 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  // Photos and videos count as seen while the messages are open.
+  useEffect(() => {
+    if (transcript && s.unreadMedia) call.markMediaSeen();
+  }, [transcript, s.unreadMedia, call]);
 
   // The stage only shows video; each person's audio plays through their own <audio> below.
   useEffect(() => {
@@ -376,6 +381,19 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
     if (!group && stage?.partnerAudioOnly && s.camOn) banners.push({ key: "partner-audio", tone: "info", text: t("theyAreAudioOnly") });
     for (const p of s.participants) if (p.away) banners.push({ key: `away-${p.id}`, tone: "info", text: t("isAway", { name: p.name }) });
     for (const p of s.participants) if (p.noMic && !p.away) banners.push({ key: `nomic-${p.id}`, tone: "info", text: t("peerNoMic", { name: p.name }) });
+    // A photo or video just arrived: say who from, with a way to see it (the Text button keeps a count).
+    const lastMedia = [...s.transcript].reverse().find((l) => l.media && l.who === "them");
+    if (s.unreadMedia && lastMedia && now - lastMedia.at < 8000)
+      banners.push({
+        key: `media-${lastMedia.id}`,
+        tone: "info",
+        text: t("mediaArrived", { name: (lastMedia.from && names[lastMedia.from]) || "" }),
+        actions: (
+          <button className="btn small primary" onClick={() => setTranscript(true)}>
+            {t("mediaView")}
+          </button>
+        ),
+      });
     if (ccState !== "ok")
       banners.push({ key: "cc", tone: "warn", text: ccState === "paused" ? t("captionsPaused") : t("captionsUnavailable") });
     if (s.noMic) {
@@ -528,7 +546,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
             <Ctrl label={t("lblInRoom")} title={s.inRoom ? t("inRoomOn") : t("inRoomOff")} active={s.inRoom} onClick={() => call.setInRoom(!s.inRoom)}>
               <RoomIcon />
             </Ctrl>
-            <Ctrl label={t("lblText")} title={t("showTranscript")} onClick={() => setTranscript(true)}>
+            <Ctrl label={t("lblText")} title={t("showTranscript")} badge={s.unreadMedia} onClick={() => setTranscript(true)}>
               <TextIcon />
             </Ctrl>
             <Ctrl label={t("lblEnd")} title={t("endCall")} danger onClick={end}>
@@ -619,7 +637,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
         />
       )}
       {transcript && (
-        <Transcript lines={s.transcript} names={s.names} prefs={prefs} onPrefs={changePrefs} onSave={save} onClose={() => setTranscript(false)} onReport={(id) => call.report(id)} onType={(text) => call.sendTyped(text)} />
+        <Transcript lines={s.transcript} names={s.names} prefs={prefs} onPrefs={changePrefs} onSave={save} onClose={() => setTranscript(false)} onReport={(id) => call.report(id)} onType={(text) => call.sendTyped(text)} onMedia={(file) => call.sendMedia(file)} />
       )}
       {invite && (
         <div className="sheet invite-sheet" role="dialog" aria-modal="true" aria-label={t("inviteMore")} onClick={(e) => e.stopPropagation()}>
@@ -859,6 +877,7 @@ function Ctrl({
   title,
   danger,
   active,
+  badge,
   onClick,
   children,
 }: {
@@ -866,12 +885,17 @@ function Ctrl({
   title: string;
   danger?: boolean;
   active?: boolean;
+  /** A count on the button (new photos and videos on Text). */
+  badge?: number;
   onClick: () => void;
   children: ReactNode;
 }) {
   return (
     <button className={`ctrl ${danger ? "danger" : ""} ${active ? "active" : ""}`} aria-label={title} title={title} onClick={onClick}>
-      <span className="round">{children}</span>
+      <span className="round">
+        {children}
+        {!!badge && <span className="badge">{badge}</span>}
+      </span>
       <span className="ctrl-label">{label}</span>
     </button>
   );

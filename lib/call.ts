@@ -20,7 +20,11 @@ export type Phase =
   | "unavailable"; // blocked by the person whose call card / room this is
 
 export type Caption = { id: string; from: string; text: string; tail?: string; stage: CaptionStage; updatedAt: number; doneAt: number | null };
-export type TranscriptLine = { id: string; who: "me" | "them"; from: string | null; text: string; final: boolean; at: number };
+/** A photo or video in the messages. `progress` (0–1) while it's still being sent. */
+export type MediaRef = { kind: "image" | "video"; url: string; mime: string; progress?: number; failed?: boolean };
+export type TranscriptLine = { id: string; who: "me" | "them"; from: string | null; text: string; final: boolean; at: number; media?: MediaRef };
+/** What sending a photo or video can run into (shown to the person in their language). */
+export type MediaError = "too-big" | "bad-type" | "offline" | "failed";
 
 /** A problem one side can see about the call, shown as a banner with an action where one helps. */
 export type Problem =
@@ -68,6 +72,8 @@ export type CallState = {
   activeId: string | null;
   captions: Caption[];
   transcript: TranscriptLine[];
+  /** Photos and videos from others not yet seen in the messages. */
+  unreadMedia: number;
   /** Worst caption health of anyone's speech reaching me. */
   captionStatus: CaptionState;
   /** Captions of my speech reaching the others. */
@@ -173,6 +179,8 @@ export class CallController {
   private stopped = false;
   private iceServers: RTCIceServer[] = [];
   private selfId = "";
+  /** Lets us send photos and videos into this call's messages (from the server, on joining). */
+  private mediaKey = "";
   private links = new Map<string, Link>();
   /** Whoever spoke last, me included: in big groups only their video is sent. */
   private lastSpeaker: string | null = null;
@@ -220,6 +228,7 @@ export class CallController {
       activeId: null,
       captions: [],
       transcript: [],
+      unreadMedia: 0,
       captionStatus: "ok",
       myCaptionStatus: "ok",
       muted: !local.getAudioTracks().length,
@@ -401,6 +410,65 @@ export class CallController {
     if (!t || this.ws?.readyState !== WebSocket.OPEN) return false;
     this.send({ t: "typed", text: t.slice(0, 300) });
     return true;
+  }
+
+  /** The messages were opened: photos and videos there have been seen. */
+  markMediaSeen() {
+    if (this.state.unreadMedia) this.set({ unreadMedia: 0 });
+  }
+
+  /**
+   * Send a photo or video into the call's messages. Photos are made smaller first (1600 px,
+   * JPEG) so they arrive in a second or two; videos go as they are, up to 100 MB. It shows in
+   * your messages straight away, with progress, and in the others' when it has arrived.
+   */
+  async sendMedia(file: File): Promise<MediaError | null> {
+    if (this.ws?.readyState !== WebSocket.OPEN || !this.mediaKey) return "offline";
+    const kind = file.type.startsWith("video/") ? "video" : file.type.startsWith("image/") ? "image" : null;
+    if (!kind) return "bad-type";
+    let blob: Blob = file;
+    if (kind === "image" && file.type !== "image/gif") {
+      const small = await shrinkPhoto(file);
+      if (small) blob = small;
+      else if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return "bad-type";
+    }
+    const mime = blob.type || file.type;
+    if (kind === "video" && !/^video\/(mp4|quicktime|webm)$/.test(mime)) return "bad-type";
+    if (blob.size > (kind === "video" ? 100 : 15) * 1024 * 1024) return "too-big";
+
+    const id = `m-local-${Math.random().toString(36).slice(2, 10)}`;
+    const url = URL.createObjectURL(blob);
+    this.set({ transcript: [...this.state.transcript, { id, who: "me", from: null, text: "", final: true, at: Date.now(), media: { kind, mime, url, progress: 0 } }] });
+    const patch = (m: Partial<MediaRef>) =>
+      this.set({ transcript: this.state.transcript.map((l) => (l.id === id && l.media ? { ...l, media: { ...l.media, ...m } } : l)) });
+
+    return new Promise((resolve) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `/api/media/${this.room}`);
+      xhr.setRequestHeader("Content-Type", mime);
+      xhr.setRequestHeader("X-Peer", this.selfId);
+      xhr.setRequestHeader("X-Key", this.mediaKey);
+      let shownAt = 0;
+      xhr.upload.onprogress = (e) => {
+        if (!e.lengthComputable || Date.now() - shownAt < 150) return;
+        shownAt = Date.now();
+        patch({ progress: Math.min(0.99, e.loaded / e.total) });
+      };
+      xhr.onload = () => {
+        if (xhr.status === 201) {
+          patch({ progress: undefined });
+          resolve(null);
+        } else {
+          patch({ progress: undefined, failed: true });
+          resolve(xhr.status === 413 ? "too-big" : xhr.status === 415 ? "bad-type" : "failed");
+        }
+      };
+      xhr.onerror = xhr.onabort = () => {
+        patch({ progress: undefined, failed: true });
+        resolve("failed");
+      };
+      xhr.send(blob);
+    });
   }
 
   /** "Not right?" on a caption line: the server saves that line so translations can be improved. */
@@ -838,6 +906,7 @@ export class CallController {
       case "joined": {
         this.selfId = msg.selfId;
         this.iceServers = msg.iceServers;
+        this.mediaKey = msg.mediaKey ?? "";
         if (!msg.fresh && this.state.reconnecting) this.log("socket_back", { tries: this.wsRetry });
         this.set({ reconnecting: false, kind: msg.kind, max: msg.max });
         const present = new Set(msg.peers.map((p) => p.id));
@@ -872,6 +941,19 @@ export class CallController {
       case "signal":
         this.onSignal(msg.from, msg.data);
         break;
+      case "media": {
+        const line: TranscriptLine = {
+          id: `m-${msg.id}`,
+          who: "them",
+          from: msg.from,
+          text: "",
+          final: true,
+          at: Date.now(),
+          media: { kind: msg.kind, mime: msg.mime, url: `/api/media/${this.room}/${msg.id}` },
+        };
+        this.set({ transcript: [...this.state.transcript, line], unreadMedia: this.state.unreadMedia + 1 });
+        break;
+      }
       case "caption":
         this.onCaption(msg.from, msg.id, msg.stage, msg.text, msg.tail);
         break;
@@ -1494,5 +1576,29 @@ export function preferHardwareVideo(t: RTCRtpTransceiver) {
     t.setCodecPreferences([...h264, ...caps.codecs.filter((c) => !isH264(c))]);
   } catch {
     // Not supported here: the browser's own order applies.
+  }
+}
+
+/** A phone photo made small enough to send quickly: longest side 1600 px, JPEG. Null if it can't be read here. */
+async function shrinkPhoto(file: File): Promise<Blob | null> {
+  const MAX = 1600;
+  try {
+    let src: CanvasImageSource & { width: number; height: number };
+    if (typeof createImageBitmap === "function") {
+      src = await createImageBitmap(file, { imageOrientation: "from-image" } as ImageBitmapOptions);
+    } else {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      await img.decode();
+      src = img;
+    }
+    const scale = Math.min(1, MAX / Math.max(src.width, src.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(src.width * scale);
+    canvas.height = Math.round(src.height * scale);
+    canvas.getContext("2d")!.drawImage(src, 0, 0, canvas.width, canvas.height);
+    return await new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/jpeg", 0.85));
+  } catch {
+    return null;
   }
 }

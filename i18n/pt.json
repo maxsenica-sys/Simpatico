@@ -301,5 +301,18 @@
   "unblock": "Desbloquear",
   "personUnavailable": "Essa pessoa não está disponível agora.",
   "ownScroll": "Role para ver o que veio antes",
-  "ownLatest": "Mais recente"
+  "ownLatest": "Mais recente",
+  "attachMedia": "Enviar foto ou vídeo",
+  "mediaPhoto": "Foto",
+  "mediaVideo": "Vídeo",
+  "mediaSending": "Enviando… {pct}%",
+  "mediaFailed": "Não enviado",
+  "mediaFailedLong": "Não foi enviado. Tente de novo.",
+  "mediaTooBig": "É grande demais para enviar (vídeos até 100 MB).",
+  "mediaBadType": "Esse tipo de arquivo não pode ser enviado. Tente uma foto ou vídeo.",
+  "mediaOffline": "Sem conexão agora. Tente daqui a pouco.",
+  "mediaSave": "Salvar",
+  "mediaKept": "Só fica guardado enquanto a chamada dura.",
+  "mediaArrived": "{name} enviou uma foto ou vídeo",
+  "mediaView": "Ver"
 }

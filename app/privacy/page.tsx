@@ -31,10 +31,11 @@ export default function Privacy() {
 
         <h2>In short</h2>
         <ul>
-          <li>We don't record your calls. No audio, video or transcript is saved by us.</li>
+          <li>We don't record your calls. No audio, video or transcript of the call is saved by us.</li>
           <li>Your video and voice go directly between the two devices, encrypted.</li>
           <li>To make captions, the words you speak are sent to our speech and translation providers while you talk, and then discarded by us.</li>
           <li>If you tap &ldquo;Not right?&rdquo; on a caption, that one sentence and its translation are saved so we can improve translations. Nothing else you say is kept.</li>
+          <li>Photos and videos you send in a call&rsquo;s messages are kept on our server only until everyone has left the call, then deleted.</li>
           <li>The person you call needs no account. We don't use cookies, ads or tracking.</li>
         </ul>
 
@@ -83,6 +84,13 @@ export default function Privacy() {
           through a relay that cannot read it, the same as your video). The &ldquo;Recent&rdquo; list on the home screen (the names, languages, call times and photos of
           people you have called) is likewise kept only on your device. Removing someone from Recent, removing your photo, or &ldquo;Clear my profile&rdquo; deletes it
           from your device; a photo you have already shared stays on the other person&rsquo;s device until they remove you from their Recent or clear their profile.
+        </p>
+        <h3>Photos and videos in a call&rsquo;s messages</h3>
+        <p>
+          A photo or video you send from a call&rsquo;s messages goes to our server (encrypted on the way) and from there to the other people in that call. Photos are
+          made smaller on your device first. It is stored on the server&rsquo;s temporary disk, never on its permanent storage, under a random link that only the people in
+          the call are given, and it is deleted as soon as everyone has left the call (and whenever the server restarts). Anyone in the call can save a copy to their own
+          device; a copy they save is theirs to keep. We don&rsquo;t look at, scan or keep what you send.
         </p>
         <h3>Moving to a new phone or icon</h3>
         <p>

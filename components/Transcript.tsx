@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import type { TranscriptLine } from "@/lib/call";
+import type { MediaError, MediaRef, TranscriptLine } from "@/lib/call";
 import type { CaptionPrefs } from "@/lib/captionPrefs";
 import { CaptionSettings } from "./CaptionSettings";
 import { useT } from "@/lib/i18n";
@@ -14,6 +14,7 @@ export function Transcript({
   onClose,
   onReport,
   onType,
+  onMedia,
 }: {
   lines: TranscriptLine[];
   names: Record<string, string> | null;
@@ -25,6 +26,8 @@ export function Transcript({
   onReport?: (id: string) => void;
   /** Type to talk; returns false when it couldn't be sent. */
   onType?: (text: string) => boolean;
+  /** Send a photo or video into the messages; resolves with what went wrong, if anything. */
+  onMedia?: (file: File) => Promise<MediaError | null>;
 }) {
   const t = useT();
   const end = useRef<HTMLDivElement>(null);
@@ -32,6 +35,18 @@ export function Transcript({
   const [settings, setSettings] = useState(false);
   const [reported, setReported] = useState<Set<string>>(() => new Set());
   const [draft, setDraft] = useState("");
+  const [view, setView] = useState<MediaRef | null>(null);
+  const [mediaError, setMediaError] = useState<MediaError | null>(null);
+  const picker = useRef<HTMLInputElement>(null);
+  const pick = async (files: FileList | null) => {
+    if (!files || !onMedia) return;
+    setMediaError(null);
+    for (const f of Array.from(files).slice(0, 10)) {
+      const err = await onMedia(f);
+      if (err) setMediaError(err);
+    }
+    if (picker.current) picker.current.value = "";
+  };
   useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
   }, [lines.length]);
@@ -104,8 +119,8 @@ export function Transcript({
               names &&
               l.from && <span className="who">{names[l.from] ?? ""}</span>
             )}
-            <p>{l.text}</p>
-            {onReport && l.who === "them" && l.final && (
+            {l.media ? <MediaBubble m={l.media} onOpen={() => setView(l.media!)} /> : <p>{l.text}</p>}
+            {onReport && l.who === "them" && l.final && !l.media && (
               <button
                 className={`report-btn ${reported.has(l.id) ? "done" : ""}`}
                 disabled={reported.has(l.id)}
@@ -122,6 +137,11 @@ export function Transcript({
         <div ref={end} />
       </div>
       <footer className="sheet-foot">
+        {mediaError && (
+          <p className="media-error" role="alert">
+            {t(mediaError === "too-big" ? "mediaTooBig" : mediaError === "bad-type" ? "mediaBadType" : mediaError === "offline" ? "mediaOffline" : "mediaFailedLong")}
+          </p>
+        )}
         {onType && (
           <form
             className="type-row"
@@ -130,6 +150,18 @@ export function Transcript({
               if (draft.trim() && onType(draft)) setDraft("");
             }}
           >
+            {onMedia && (
+              <>
+                <button type="button" className="attach-btn" aria-label={t("attachMedia")} title={t("attachMedia")} onClick={() => picker.current?.click()}>
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="3" y="5" width="18" height="14" rx="3" />
+                    <circle cx="9" cy="10" r="1.8" />
+                    <path d="M21 16l-5.5-5.5L7 19" />
+                  </svg>
+                </button>
+                <input ref={picker} type="file" accept="image/*,video/*" multiple hidden onChange={(e) => pick(e.target.files)} />
+              </>
+            )}
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
@@ -150,6 +182,55 @@ export function Transcript({
           </button>
         )}
       </footer>
+      {view && <MediaViewer m={view} onClose={() => setView(null)} />}
+    </div>
+  );
+}
+
+/** A photo or video in the messages: tap to see it full size. Shows progress while it's sending. */
+function MediaBubble({ m, onOpen }: { m: MediaRef; onOpen: () => void }) {
+  const t = useT();
+  return (
+    <div className="media-bubble">
+      <button className="media-thumb" onClick={onOpen} aria-label={t(m.kind === "image" ? "mediaPhoto" : "mediaVideo")}>
+        {m.kind === "image" ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={m.url} alt="" loading="lazy" />
+        ) : (
+          <>
+            <video src={`${m.url}#t=0.1`} preload="metadata" muted playsInline />
+            <span className="media-play" aria-hidden="true">▶</span>
+          </>
+        )}
+      </button>
+      {m.progress !== undefined && <span className="media-status">{t("mediaSending", { pct: String(Math.round(m.progress * 100)) })}</span>}
+      {m.failed && <span className="media-status failed">{t("mediaFailed")}</span>}
+    </div>
+  );
+}
+
+/** Full screen, with Save. */
+function MediaViewer({ m, onClose }: { m: MediaRef; onClose: () => void }) {
+  const t = useT();
+  return (
+    <div className="media-viewer" role="dialog" aria-modal="true" onClick={onClose}>
+      <div className="media-viewer-body" onClick={(e) => e.stopPropagation()}>
+        {m.kind === "image" ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={m.url} alt="" />
+        ) : (
+          <video src={m.url} controls autoPlay playsInline />
+        )}
+      </div>
+      <div className="media-viewer-bar" onClick={(e) => e.stopPropagation()}>
+        <a className="btn small" href={m.url} download>
+          {t("mediaSave")}
+        </a>
+        <span className="muted small">{t("mediaKept")}</span>
+        <button className="round-btn" aria-label={t("close")} onClick={onClose}>
+          ×
+        </button>
+      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import type { WebSocket } from "ws";
 import { baseLang, type ParticipantLang } from "../shared/lang";
 import type { CaptionStyle, Gender, PeerInfo, RoomKind, ServerMsg, SpeakerProfile, Topic } from "../shared/protocol";
 import { log } from "./log";
+import { dropRoomMedia, newMediaKey } from "./media";
 import { SpeakerPipeline, type ReaderMsg } from "./pipeline";
 import { append } from "./store";
 import type { ContextLine } from "./refine";
@@ -55,6 +56,8 @@ export type Peer = {
   gender?: Gender;
   /** Optional "Me" profile from their phone (memory only, gone with the room). */
   profile: SpeakerProfile;
+  /** Lets this person (and only them) send photos and videos into this call's messages. */
+  mediaKey: string;
 };
 
 export type Room = {
@@ -189,7 +192,7 @@ export function seat(
     }
     const used = new Set([...room.peers.values()].map((p) => p.label));
     const label = [...LABELS].find((l) => !used.has(l)) ?? `P${room.peers.size + 1}`;
-    peer = { id: peerId, label, name: "", lang, inRoom: false, ws: null, graceTimer: null, pipelines: new Map(), primaryKey: null, speaking: false, captionStyle: "instant", profile: {} };
+    peer = { id: peerId, label, name: "", lang, inRoom: false, ws: null, graceTimer: null, pipelines: new Map(), primaryKey: null, speaking: false, captionStyle: "instant", profile: {}, mediaKey: newMediaKey() };
     room.peers.set(peerId, peer);
     fresh = true;
   }
@@ -290,6 +293,9 @@ export function removePeer(room: Room, peer: Peer, why: string) {
   // A personal link's room reopens whenever someone visits it, so close it the moment the
   // last person has left for good.
   if (room.peers.size === 0 && PERSONAL_CODE.test(room.code)) destroyRoom(room, "empty");
+  // Everyone has left: the call's photos and videos go now (the room itself may wait a few
+  // minutes in case someone rejoins, but a rejoined call starts with empty messages anyway).
+  else if (room.peers.size === 0) dropRoomMedia(room.code);
 }
 
 /**
@@ -452,6 +458,7 @@ function destroyRoom(room: Room, why: string) {
     p.ws?.close(1000, why);
   }
   rooms.delete(room.code);
+  dropRoomMedia(room.code);
   log("room_closed", { room: room.code, why, minutes: Math.round((Date.now() - room.createdAt) / 60000) });
   const st = room.stats;
   if (st.startedAt) {

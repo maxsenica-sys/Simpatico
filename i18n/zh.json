@@ -301,5 +301,18 @@
   "unblock": "取消屏蔽",
   "personUnavailable": "此人现在不方便接听。",
   "ownScroll": "滑动查看之前的内容",
-  "ownLatest": "最新"
+  "ownLatest": "最新",
+  "attachMedia": "发送照片或视频",
+  "mediaPhoto": "照片",
+  "mediaVideo": "视频",
+  "mediaSending": "正在发送… {pct}%",
+  "mediaFailed": "未发送",
+  "mediaFailedLong": "未能发送，请重试。",
+  "mediaTooBig": "文件太大，无法发送（视频最大 100 MB）。",
+  "mediaBadType": "无法发送这种文件，请试试照片或视频。",
+  "mediaOffline": "现在没有连接，请稍后再试。",
+  "mediaSave": "保存",
+  "mediaKept": "仅在通话期间保留。",
+  "mediaArrived": "{name} 发来了照片或视频",
+  "mediaView": "查看"
 }

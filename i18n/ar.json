@@ -301,5 +301,18 @@
   "unblock": "إلغاء الحظر",
   "personUnavailable": "هذا الشخص غير متاح الآن.",
   "ownScroll": "مرّر لرؤية ما سبق",
-  "ownLatest": "الأحدث"
+  "ownLatest": "الأحدث",
+  "attachMedia": "إرسال صورة أو فيديو",
+  "mediaPhoto": "صورة",
+  "mediaVideo": "فيديو",
+  "mediaSending": "جارٍ الإرسال… {pct}%",
+  "mediaFailed": "لم يُرسَل",
+  "mediaFailedLong": "لم يُرسَل. حاول مرة أخرى.",
+  "mediaTooBig": "الملف كبير جدًا (الفيديو حتى 100 ميغابايت).",
+  "mediaBadType": "لا يمكن إرسال هذا النوع من الملفات. جرّب صورة أو فيديو.",
+  "mediaOffline": "غير متصل الآن. حاول بعد قليل.",
+  "mediaSave": "حفظ",
+  "mediaKept": "يُحفظ فقط أثناء المكالمة.",
+  "mediaArrived": "أرسل {name} صورة أو فيديو",
+  "mediaView": "عرض"
 }

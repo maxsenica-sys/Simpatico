@@ -301,5 +301,18 @@
   "unblock": "আনব্লক",
   "personUnavailable": "এই ব্যক্তি এখন উপলব্ধ নেই।",
   "ownScroll": "আগেরটা দেখতে স্ক্রল করুন",
-  "ownLatest": "সর্বশেষ"
+  "ownLatest": "সর্বশেষ",
+  "attachMedia": "ছবি বা ভিডিও পাঠান",
+  "mediaPhoto": "ছবি",
+  "mediaVideo": "ভিডিও",
+  "mediaSending": "পাঠানো হচ্ছে… {pct}%",
+  "mediaFailed": "পাঠানো যায়নি",
+  "mediaFailedLong": "পাঠানো যায়নি। আবার চেষ্টা করুন।",
+  "mediaTooBig": "এটা পাঠানোর জন্য অনেক বড় (ভিডিও ১০০ MB পর্যন্ত)।",
+  "mediaBadType": "এই ধরনের ফাইল পাঠানো যায় না। ছবি বা ভিডিও চেষ্টা করুন।",
+  "mediaOffline": "এখন সংযোগ নেই। একটু পরে আবার চেষ্টা করুন।",
+  "mediaSave": "সেভ করুন",
+  "mediaKept": "শুধু কল চলাকালীন রাখা হয়।",
+  "mediaArrived": "{name} একটি ছবি বা ভিডিও পাঠিয়েছেন",
+  "mediaView": "দেখুন"
 }

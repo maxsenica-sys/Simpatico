@@ -2,12 +2,12 @@
 import type { TranscriptLine } from "./call";
 
 /** The transcript as plain text: one line per sentence, with time and who said it. */
-export function transcriptText(lines: TranscriptLine[], names: Record<string, string>, you: string, title: string): string {
+export function transcriptText(lines: TranscriptLine[], names: Record<string, string>, you: string, title: string, media: { image: string; video: string } = { image: "[photo]", video: "[video]" }): string {
   const time = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   const head = `${title} · ${new Date(lines[0]?.at ?? Date.now()).toLocaleString()}`;
   const body = lines
-    .filter((l) => l.final && l.text)
-    .map((l) => `[${time(l.at)}] ${l.who === "me" ? you : (l.from && names[l.from]) || "—"}: ${l.text}`)
+    .filter((l) => l.final && (l.text || l.media))
+    .map((l) => `[${time(l.at)}] ${l.who === "me" ? you : (l.from && names[l.from]) || "—"}: ${l.text || (l.media?.kind === "video" ? media.video : media.image)}`)
     .join("\n");
   return `${head}\n\n${body}\n`;
 }

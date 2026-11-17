@@ -91,7 +91,9 @@ export type CaptionState = "ok" | "paused" | "unavailable";
 
 export type ServerMsg =
   | { t: "pong" }
-  | { t: "joined"; selfId: string; fresh: boolean; kind: RoomKind; max: number; peers: PeerInfo[]; iceServers: RTCIceServer[] }
+  | { t: "joined"; selfId: string; fresh: boolean; kind: RoomKind; max: number; peers: PeerInfo[]; iceServers: RTCIceServer[]; mediaKey?: string }
+  /** A photo or video someone sent into the call's messages (kept only while the call is on). */
+  | { t: "media"; id: string; from: string; kind: "image" | "video"; mime: string; size: number }
   | { t: "peer-joined"; peer: PeerInfo; offer: boolean }
   | { t: "peer-left"; peerId: string }
   | { t: "peer-info"; peer: PeerInfo }

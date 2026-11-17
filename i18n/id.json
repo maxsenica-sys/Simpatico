@@ -301,5 +301,18 @@
   "unblock": "Buka blokir",
   "personUnavailable": "Orang ini sedang tidak tersedia.",
   "ownScroll": "Gulir untuk yang sebelumnya",
-  "ownLatest": "Terbaru"
+  "ownLatest": "Terbaru",
+  "attachMedia": "Kirim foto atau video",
+  "mediaPhoto": "Foto",
+  "mediaVideo": "Video",
+  "mediaSending": "Mengirim… {pct}%",
+  "mediaFailed": "Tidak terkirim",
+  "mediaFailedLong": "Tidak terkirim. Coba lagi.",
+  "mediaTooBig": "Terlalu besar untuk dikirim (video maksimal 100 MB).",
+  "mediaBadType": "Jenis file ini tidak bisa dikirim. Coba foto atau video.",
+  "mediaOffline": "Sedang tidak terhubung. Coba lagi sebentar lagi.",
+  "mediaSave": "Simpan",
+  "mediaKept": "Hanya disimpan selama panggilan berlangsung.",
+  "mediaArrived": "{name} mengirim foto atau video",
+  "mediaView": "Lihat"
 }

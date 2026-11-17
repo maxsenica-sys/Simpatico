@@ -10,6 +10,7 @@ import { startPhrasebookSchedule } from "./server/phrasebook";
 import { blockRoute, isBlocked, reportRoute } from "./server/blocks";
 import { noteSeat, notifyWaiting, pushKey, pushSubscribe, pushUnsubscribe, readBody } from "./server/push";
 import { getRoom } from "./server/rooms";
+import { saveUpload, serveMedia } from "./server/media";
 import { append, device } from "./server/store";
 
 /** Client events kept on disk to diagnose dropped calls: connection health only. */
@@ -53,6 +54,11 @@ const server = createServer((req, res) => {
     const room = createRoom(kind);
     return room ? json(res, 201, { code: room.code, kind: room.kind, max: room.max }) : json(res, 503, { error: "busy" });
   }
+  // Photos and videos in a call's messages: sent by someone in the call, seen by the others.
+  const up = path.match(/^\/api\/media\/([a-z0-9]{6}|[a-z0-9]{10})$/i);
+  if (up && req.method === "POST") return void mediaUpload(req, res, up[1].toLowerCase());
+  const dl = path.match(/^\/api\/media\/([a-z0-9]{6}|[a-z0-9]{10})\/([0-9a-f]{32})$/i);
+  if (dl && (req.method === "GET" || req.method === "HEAD")) return serveMedia(req, res, dl[1].toLowerCase(), dl[2].toLowerCase());
   const m = path.match(/^\/api\/rooms\/([a-z0-9]{6}|[a-z0-9]{10})$/i);
   if (m && req.method === "GET") {
     const room = ensureRoom(m[1]);
@@ -60,6 +66,24 @@ const server = createServer((req, res) => {
   }
   handle(req, res, url);
 });
+
+async function mediaUpload(req: import("node:http").IncomingMessage, res: import("node:http").ServerResponse, code: string) {
+  const room = getRoom(code);
+  const peerId = String(req.headers["x-peer"] ?? "");
+  const peer = room?.peers.get(peerId);
+  // Only someone in the call right now, with the key they got when they joined.
+  if (!room || !peer || !peer.ws || String(req.headers["x-key"] ?? "") !== peer.mediaKey) {
+    req.resume();
+    return json(res, 403, { error: "not-in-call" });
+  }
+  const r = await saveUpload(req, room.code, peer.id);
+  if (typeof r === "string") {
+    req.resume();
+    return json(res, r === "bad-type" ? 415 : r === "too-big" ? 413 : r === "full" ? 507 : 400, { error: r });
+  }
+  broadcast(room, { t: "media", id: r.id, from: peer.id, kind: r.kind, mime: r.mime, size: r.size }, peer);
+  json(res, 201, { id: r.id, kind: r.kind });
+}
 
 const wss = new WebSocketServer({ noServer: true, maxPayload: 256 * 1024 });
 const nextUpgrade = app.getUpgradeHandler();
@@ -126,6 +150,7 @@ wss.on("connection", (ws, req) => {
         max: room.max,
         peers: rest.map(info),
         iceServers: await getIceServers(),
+        mediaKey: peer.mediaKey,
       });
       if (!sonioxConfigured()) {
         send(ws, { t: "captions", state: "unavailable", side: "theirs" });

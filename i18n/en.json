@@ -301,5 +301,18 @@
   "unblock": "Unblock",
   "personUnavailable": "This person isn't available right now.",
   "ownScroll": "Scroll for earlier",
-  "ownLatest": "Latest"
+  "ownLatest": "Latest",
+  "attachMedia": "Send a photo or video",
+  "mediaPhoto": "Photo",
+  "mediaVideo": "Video",
+  "mediaSending": "Sending… {pct}%",
+  "mediaFailed": "Didn't send",
+  "mediaFailedLong": "That didn't send. Try again.",
+  "mediaTooBig": "That's too big to send (videos up to 100 MB).",
+  "mediaBadType": "That kind of file can't be sent. Try a photo or video.",
+  "mediaOffline": "Not connected right now. Try again in a moment.",
+  "mediaSave": "Save",
+  "mediaKept": "Only kept while the call is on.",
+  "mediaArrived": "{name} sent a photo or video",
+  "mediaView": "View"
 }

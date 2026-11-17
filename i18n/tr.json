@@ -301,5 +301,18 @@
   "unblock": "Engeli kaldır",
   "personUnavailable": "Bu kişi şu anda müsait değil.",
   "ownScroll": "Öncekiler için kaydır",
-  "ownLatest": "En son"
+  "ownLatest": "En son",
+  "attachMedia": "Fotoğraf veya video gönder",
+  "mediaPhoto": "Fotoğraf",
+  "mediaVideo": "Video",
+  "mediaSending": "Gönderiliyor… %{pct}",
+  "mediaFailed": "Gönderilemedi",
+  "mediaFailedLong": "Gönderilemedi. Tekrar dene.",
+  "mediaTooBig": "Bu, gönderilemeyecek kadar büyük (videolar en fazla 100 MB).",
+  "mediaBadType": "Bu tür bir dosya gönderilemez. Fotoğraf veya video dene.",
+  "mediaOffline": "Şu an bağlı değil. Birazdan tekrar dene.",
+  "mediaSave": "Kaydet",
+  "mediaKept": "Yalnızca görüşme sürerken saklanır.",
+  "mediaArrived": "{name} bir fotoğraf veya video gönderdi",
+  "mediaView": "Gör"
 }

@@ -17,7 +17,8 @@ type Line = Caption & { startAt: number };
 
 /**
  * The other person's words in a box that stays still: the text never changes size, the box
- * never changes height, and new words appear at the bottom, pushing older lines up.
+ * never changes height, and new words appear at the bottom, pushing older lines up (centred,
+ * like subtitles).
  *
  * Long speech is kept whole, so you can scroll back through it with your finger (a scroll bar
  * and "Scroll for earlier" show there's more; "Latest" jumps back). Short back-and-forth keeps
@@ -97,21 +98,61 @@ export function CaptionBox({
   const fading = quiet && atBottom;
   const gone = fading && now - last!.doneAt! > LAST_LINGER_MS + FADE_MS;
 
+  // Only a finger or a wheel moves you away from the newest words; the box's own gliding doesn't.
+  const touchedAt = useRef(0);
+  const touched = () => (touchedAt.current = Date.now());
   const measure = () => {
     const el = box.current;
     if (!el) return;
     const over = el.scrollHeight - el.clientHeight;
-    setAtBottom(over - el.scrollTop < 8);
+    const bottom = over - el.scrollTop < 8;
+    if (bottom) setAtBottom(true);
+    else if (Date.now() - touchedAt.current < 1500) setAtBottom(false);
     if (over <= 2) return setBar(null);
     const height = Math.max(16, (el.clientHeight / el.scrollHeight) * el.clientHeight);
     setBar({ height, top: (el.scrollTop / over) * (el.clientHeight - height) });
   };
 
-  // New words: follow them, unless you've scrolled back to read.
+  /**
+   * Keep the text still while a sentence is being translated:
+   * - The newest line never gets shorter. The faint preview at its end grows and shrinks as the
+   *   translation catches up; without this, the line count flickers and everything above it
+   *   jumps down and up again. The space is kept until the next sentence starts.
+   * - New lines glide in (a short ease) instead of the text snapping up.
+   */
+  const reserve = useRef<{ id: string; h: number }>({ id: "", h: 0 });
+  const spacer = useRef<HTMLDivElement>(null);
+  const glide = useRef<number | null>(null);
+  const glideTo = (el: HTMLDivElement) => {
+    if (glide.current !== null) cancelAnimationFrame(glide.current);
+    const from = el.scrollTop;
+    const to = el.scrollHeight - el.clientHeight;
+    if (to - from <= 1) return;
+    const t0 = performance.now();
+    const step = (t: number) => {
+      const k = Math.min(1, (t - t0) / 280);
+      el.scrollTop = from + (to - from) * (1 - Math.pow(1 - k, 3));
+      glide.current = k < 1 ? requestAnimationFrame(step) : null;
+    };
+    glide.current = requestAnimationFrame(step);
+  };
+  useEffect(() => () => void (glide.current !== null && cancelAnimationFrame(glide.current)), []);
+
   const sig = shown.map((x) => `${x.id}:${x.text.length}:${x.tail?.length ?? 0}`).join("|");
   useLayoutEffect(() => {
     const el = box.current;
-    if (el && atBottom) el.scrollTop = el.scrollHeight;
+    if (!el) return;
+    const newest = Array.from(el.querySelectorAll<HTMLElement>("p.cap")).at(-1);
+    const gap = spacer.current;
+    if (newest && gap) {
+      const id = newest.dataset.id ?? "";
+      if (reserve.current.id !== id) reserve.current = { id, h: 0 };
+      const h = newest.offsetHeight;
+      reserve.current.h = Math.max(reserve.current.h, h);
+      gap.style.height = `${reserve.current.h - h}px`;
+    } else if (gap) gap.style.height = "0px";
+    // New words: follow them, unless you've scrolled back to read.
+    if (atBottom) glideTo(el);
     measure();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sig]);
@@ -126,6 +167,10 @@ export function CaptionBox({
           className={`captions cap-box-scroll ${scrolledUp ? "faded" : ""} ${fading ? "fading" : ""}`}
           ref={box}
           onScroll={measure}
+          onTouchStart={touched}
+          onTouchMove={touched}
+          onWheel={touched}
+          onPointerDown={touched}
           aria-live="polite"
           lang={lang}
         >
@@ -144,6 +189,7 @@ export function CaptionBox({
                 )}
               </p>
             ))}
+          <div className="cap-reserve" ref={spacer} aria-hidden="true" />
         </div>
         {bar && !gone && (
           <div className="cap-track-bar" aria-hidden="true">

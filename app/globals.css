@@ -732,7 +732,7 @@ p { margin: 0; line-height: 1.5; }
 .captions-zone.scroll .captions { justify-content: flex-start; max-height: calc(var(--cap-size) * var(--cap-lh) * 2); height: auto; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 0.45em); mask-image: linear-gradient(to bottom, transparent 0, #000 0.45em); }
 @media (min-height: 800px) { .captions-zone.scroll .captions { max-height: calc(var(--cap-size) * var(--cap-lh) * 3); } }
 /* The default caption box: same text size and height all the time, newest words at the bottom,
-   left-aligned so a line doesn't shift sideways as words arrive. Scroll back with a finger. */
+   centred like subtitles. Scroll back with a finger. */
 .captions-zone.boxed { flex-direction: column; align-items: center; }
 /* Touches pass through to the call underneath unless there's something to scroll back through. */
 .cap-frame { position: relative; width: 100%; max-width: 1000px; pointer-events: none; }
@@ -740,14 +740,15 @@ p { margin: 0; line-height: 1.5; }
 .captions.cap-box-scroll {
   height: calc(var(--cap-size) * var(--cap-lh) * var(--cap-lines)); max-height: none; overflow-y: auto; overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch; scrollbar-width: none; touch-action: pan-y; justify-content: flex-start;
-  text-align: start; padding-inline-end: 12px; transition: opacity 0.6s ease;
+  text-align: center; padding-inline: 12px; transition: opacity 0.6s ease;
 }
 @media (min-height: 800px) { :root { --cap-lines: 5; } }
 .captions.cap-box-scroll::-webkit-scrollbar { display: none; }
 .captions.cap-box-scroll.faded { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 0.6em); mask-image: linear-gradient(to bottom, transparent 0, #000 0.6em); }
 .captions.cap-box-scroll.fading { opacity: 0; }
 .cap-fill { flex: 1 0 0; }
-.cap-box .boxed .cap { align-self: flex-start; }
+.cap-reserve { flex-shrink: 0; }
+.cap-box .boxed .cap { align-self: center; }
 .cap-track-bar { position: absolute; right: 0; top: 4px; bottom: 4px; width: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.18); }
 .cap-thumb { position: absolute; left: 0; right: 0; border-radius: 2px; background: rgba(255, 255, 255, 0.8); }
 .cap-scroll-hint { position: absolute; right: 16px; top: 18px; font-size: 0.78rem; font-weight: 650; color: #fff; opacity: 0.85; text-shadow: 0 1px 3px #000; }
@@ -777,7 +778,7 @@ p { margin: 0; line-height: 1.5; }
 .own-box { max-height: calc(0.95rem * 1.35 * 3.2); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: none; touch-action: pan-y; }
 .own-box::-webkit-scrollbar { display: none; }
 .own-box.faded { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 1.1em); mask-image: linear-gradient(to bottom, transparent 0, #000 1.1em); }
-.own-box p { margin: 0 0 0.25em; font-size: 0.95rem; line-height: 1.35; opacity: 0.6; text-align: start; }
+.own-box p { margin: 0 0 0.25em; font-size: 0.95rem; line-height: 1.35; opacity: 0.6; text-align: center; }
 .own-box p.latest { opacity: 1; }
 .own-box p.live { font-style: normal; }
 .own-track { position: absolute; right: 6px; top: 26px; bottom: 8px; width: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.14); }

@@ -8,6 +8,7 @@ import { langInfo } from "@/shared/lang";
 import { useT } from "@/lib/i18n";
 import { BRAND } from "@/shared/brand";
 import { Captions } from "./Captions";
+import { CaptionBox } from "./CaptionBox";
 import { LogoMark } from "./Logo";
 import { Notice } from "./Notice";
 import { SelfView, type SelfMode } from "./SelfView";
@@ -59,7 +60,6 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const [fit, setFit] = useState<"cover" | "contain">("cover");
   const [now, setNow] = useState(() => Date.now());
   const [connectedAt, setConnectedAt] = useState<number | null>(null);
-  const [longCaption, setLongCaption] = useState(false);
   const [reportFor, setReportFor] = useState<{ name: string; seat: string } | null>(null);
 
   // "Recent" on the home screen: remember who we actually talked to, and for how long.
@@ -411,7 +411,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
 
   return (
     <main
-      className={`call ${group ? "group" : ""} ${longCaption && prefs.long === "room" ? "cap-long" : ""} ${prefs.box ? "cap-box" : ""} ${selfView && s.camOn && s.selfVideo && selfMode === "split" ? "split" : ""}`}
+      className={`call ${group ? "group" : ""} ${prefs.box ? "cap-box" : ""} ${selfView && s.camOn && s.selfVideo && selfMode === "split" ? "split" : ""}`}
       style={{ ["--cap-size" as string]: CAPTION_SIZES[prefs.size] }}
     >
       <video
@@ -599,15 +599,11 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
         </button>
       )}
 
-      <Captions
-        captions={s.captions}
-        names={names}
-        lang={call.info.lang.reads}
-        speaking={connected && anySpeaking}
-        mode={prefs.long}
-        onEarlier={() => setTranscript(true)}
-        onLong={setLongCaption}
-      />
+      {prefs.long === "room" ? (
+        <CaptionBox captions={s.captions} names={names} lang={call.info.lang.reads} speaking={connected && anySpeaking} />
+      ) : (
+        <Captions captions={s.captions} names={names} lang={call.info.lang.reads} speaking={connected && anySpeaking} onEarlier={() => setTranscript(true)} />
+      )}
 
       {reportFor && (
         <ReportSheet

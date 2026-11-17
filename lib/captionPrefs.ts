@@ -5,7 +5,7 @@ import type { CaptionStyle } from "@/shared/protocol";
 /** Accessibility: caption size, an optional solid backing box and reading style. Remembered on this device. */
 export type CaptionSize = "s" | "m" | "l" | "xl";
 /** `styleSet`: the person picked a reading style themselves (otherwise the default applies). */
-/** Long speech: "room" (default) = smaller text and the video moves up; "scroll" = a 2-line window at reading pace. */
+/** Long speech: "room" (default) = a fixed box you can scroll back through; "scroll" = a 2-line window at reading pace. */
 export type LongSpeech = "scroll" | "room";
 export type CaptionPrefs = { size: CaptionSize; box: boolean; style: CaptionStyle; styleSet?: boolean; focus: boolean; long: LongSpeech };
 

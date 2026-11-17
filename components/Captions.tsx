@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Caption } from "@/lib/call";
-import type { LongSpeech } from "@/lib/captionPrefs";
 import { useT } from "@/lib/i18n";
 
 /** A finished line stays this long once a newer one is showing… */
@@ -16,25 +15,20 @@ const MIN_LINE_MS = 1300;
 const MAX_LINE_MS = 4000;
 
 /**
- * Captions over the bottom of the video.
+ * Captions over the bottom of the video, "Paced" style (the default is CaptionBox).
  *
- * "scroll" (default): a 2-line window (3 on tall phones). New words appear at the bottom; when
+ * A 2-line window (3 on tall phones). New words appear at the bottom; when
  * the window is full, the text moves up one line at a time, never faster than it can be read.
  * If they talk faster than that, lines wait and catch up (twice as fast) until the next pause.
  * "Earlier" opens the transcript. Each chunk is translated once and never rewritten (lib/call),
  * so a line that has moved up never changes under your eyes.
- *
- * "room": up to 4 lines; during a long run the text gets a size smaller and the call screen
- * moves the video up (onLong), so the face stays clear of the captions.
  */
 export function Captions({
   captions,
   names,
   lang,
   speaking,
-  mode = "room",
   onEarlier,
-  onLong,
 }: {
   captions: Caption[];
   /** Group calls: speaker names by id, shown before each line. */
@@ -42,9 +36,7 @@ export function Captions({
   /** The reader's language, so screen readers pronounce the captions correctly. */
   lang?: string;
   speaking: boolean;
-  mode?: LongSpeech;
   onEarlier?: () => void;
-  onLong?: (long: boolean) => void;
 }) {
   const t = useT();
   const win = useRef<HTMLDivElement>(null);
@@ -56,7 +48,6 @@ export function Captions({
   const lastMove = useRef(0);
   const [, setTick] = useState(0);
   const [now, setNow] = useState(() => Date.now());
-  const [long, setLong] = useState(false);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 250);
@@ -85,19 +76,7 @@ export function Captions({
     if (heights.current.size > 60) heights.current = new Map([...heights.current].slice(-20));
 
     const total = tr.scrollHeight;
-    if (mode === "room") {
-      // Long = more words than about two lines hold at the normal size. Measured on the words,
-      // not on the shrunk text, so it can't flip back and forth.
-      const fontPx = parseFloat(getComputedStyle(tr.firstElementChild ?? tr).fontSize) || 32;
-      const perLine = Math.max(10, w.clientWidth / (fontPx * (long ? 1 / 0.78 : 1) * 0.5));
-      const chars = (shown.at(-1)?.text.length ?? 0) + (shown.at(-1)?.tail?.length ?? 0);
-      const isLong = shown.some((c) => c.doneAt === null) && chars > perLine * 2;
-      if (isLong !== long) {
-        setLong(isLong);
-        onLong?.(isLong);
-      }
-      offset.current = Math.max(0, total - w.clientHeight);
-    } else {
+    {
       // Where each line really starts (lines differ slightly in height), so the window always
       // shows whole lines.
       const trTop = tr.getBoundingClientRect().top;
@@ -141,14 +120,13 @@ export function Captions({
 
   // Keep the pacing moving between caption updates.
   useEffect(() => {
-    if (mode !== "scroll") return;
     const id = setInterval(() => setTick((n) => n + 1), 200);
     return () => clearInterval(id);
-  }, [mode]);
+  }, []);
 
-  const scrolled = mode === "scroll" && offset.current > 2;
+  const scrolled = offset.current > 2;
   return (
-    <div className={`captions-zone ${mode === "room" ? "room" : "scroll"} ${long ? "long" : ""}`}>
+    <div className="captions-zone scroll">
       {scrolled && onEarlier && (
         <button className="cap-earlier" onClick={onEarlier}>
           ↑ {t("earlier")}

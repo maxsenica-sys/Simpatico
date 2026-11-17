@@ -17,8 +17,8 @@ type Line = Caption & { startAt: number };
 
 /**
  * The other person's words in a box that stays still: the text never changes size, the box
- * never changes height, and new words appear at the bottom, pushing older lines up (centred,
- * like subtitles).
+ * never changes height, and new words appear at the bottom, pushing older lines up. Left-aligned
+ * in a column set slightly in from the left, so lines don't shift sideways as words arrive.
  *
  * Long speech is kept whole, so you can scroll back through it with your finger (a scroll bar
  * and "Scroll for earlier" show there's more; "Latest" jumps back). Short back-and-forth keeps
@@ -101,9 +101,16 @@ export function CaptionBox({
   // Only a finger or a wheel moves you away from the newest words; the box's own gliding doesn't.
   const touchedAt = useRef(0);
   const touched = () => (touchedAt.current = Date.now());
+  /** Where the newest sentence sat on screen last time, so an update never moves it down. */
+  const anchor = useRef<{ id: string; top: number } | null>(null);
+  const saveAnchor = (el: HTMLDivElement) => {
+    const a = Array.from(el.querySelectorAll<HTMLElement>("p.cap")).at(-1);
+    anchor.current = a ? { id: a.dataset.id ?? "", top: a.getBoundingClientRect().top } : null;
+  };
   const measure = () => {
     const el = box.current;
     if (!el) return;
+    saveAnchor(el);
     const over = el.scrollHeight - el.clientHeight;
     const bottom = over - el.scrollTop < 8;
     if (bottom) setAtBottom(true);
@@ -118,21 +125,28 @@ export function CaptionBox({
    * - The newest line never gets shorter. The faint preview at its end grows and shrinks as the
    *   translation catches up; without this, the line count flickers and everything above it
    *   jumps down and up again. The space is kept until the next sentence starts.
-   * - New lines glide in (a short ease) instead of the text snapping up.
+   * - New lines glide in (about a quarter of a second) instead of the text snapping up.
    */
   const reserve = useRef<{ id: string; h: number }>({ id: "", h: 0 });
   const spacer = useRef<HTMLDivElement>(null);
   const glide = useRef<number | null>(null);
+  const following = useRef(true);
+  following.current = atBottom;
+  // Glide towards the newest words, chasing the bottom as it moves: translations stream in
+  // several times a second, so the target keeps changing and the glide must always catch up
+  // (a fixed-length animation restarted on each update never reached the last line).
   const glideTo = (el: HTMLDivElement) => {
-    if (glide.current !== null) cancelAnimationFrame(glide.current);
-    const from = el.scrollTop;
-    const to = el.scrollHeight - el.clientHeight;
-    if (to - from <= 1) return;
-    const t0 = performance.now();
-    const step = (t: number) => {
-      const k = Math.min(1, (t - t0) / 280);
-      el.scrollTop = from + (to - from) * (1 - Math.pow(1 - k, 3));
-      glide.current = k < 1 ? requestAnimationFrame(step) : null;
+    if (glide.current !== null) return; // already on its way; it reads the latest target each frame
+    const step = () => {
+      const to = el.scrollHeight - el.clientHeight;
+      const d = to - el.scrollTop;
+      if (!following.current || d <= 0.5) {
+        glide.current = null;
+        return;
+      }
+      el.scrollTop += d < 2 ? d : Math.max(1, d * 0.2);
+      saveAnchor(el);
+      glide.current = requestAnimationFrame(step);
     };
     glide.current = requestAnimationFrame(step);
   };
@@ -146,11 +160,21 @@ export function CaptionBox({
     const gap = spacer.current;
     if (newest && gap) {
       const id = newest.dataset.id ?? "";
-      if (reserve.current.id !== id) reserve.current = { id, h: 0 };
+      // A new sentence inherits the space still held below the last one, so starting it never
+      // pulls the text above down either.
+      if (reserve.current.id !== id) reserve.current = { id, h: parseFloat(gap.style.height) || 0 };
       const h = newest.offsetHeight;
       reserve.current.h = Math.max(reserve.current.h, h);
       gap.style.height = `${reserve.current.h - h}px`;
     } else if (gap) gap.style.height = "0px";
+    // Following the newest words: whatever changed (a line above finishing with slightly longer
+    // wording, the box filling up), the sentence being read must not slip down. Scroll it back
+    // to where it was before anything is drawn; the glide below then moves it up smoothly.
+    if (atBottom && anchor.current) {
+      const a = Array.from(el.querySelectorAll<HTMLElement>("p.cap")).find((x) => x.dataset.id === anchor.current!.id);
+      const slipped = a ? a.getBoundingClientRect().top - anchor.current.top : 0;
+      if (slipped > 0.5) el.scrollTop += slipped;
+    }
     // New words: follow them, unless you've scrolled back to read.
     if (atBottom) glideTo(el);
     measure();
@@ -161,7 +185,8 @@ export function CaptionBox({
   const waiting = speaking && !shown.some((c) => c.doneAt === null && (c.stage === "live" || c.tail));
   return (
     <div className="captions-zone boxed">
-      {bar && !gone && <span className="cap-scroll-hint">{t("ownScroll")}</span>}
+      {/* Under the box, where "Latest" appears once you scroll back. */}
+      {bar && !gone && atBottom && <span className="cap-scroll-hint">{t("ownScroll")}</span>}
       <div className={`cap-frame ${bar ? "scrollable" : ""}`}>
         <div
           className={`captions cap-box-scroll ${scrolledUp ? "faded" : ""} ${fading ? "fading" : ""}`}

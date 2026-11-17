@@ -946,7 +946,9 @@ export class CallController {
     if (offerer) {
       // Always negotiate a two-way video slot, even with the camera off, so the camera can be
       // turned on later (or recovered) with replaceTrack and no renegotiation.
-      link.videoSender = pc.addTransceiver("video", { direction: "sendrecv", streams: [this.local] }).sender;
+      const vt = pc.addTransceiver("video", { direction: "sendrecv", streams: [this.local] });
+      preferHardwareVideo(vt);
+      link.videoSender = vt.sender;
     }
     pc.onicecandidate = (e) => {
       if (e.candidate) this.send({ t: "signal", to: id, data: { kind: "candidate", session, candidate: e.candidate.toJSON() } });
@@ -1035,6 +1037,7 @@ export class CallController {
           const t = pc.getTransceivers().find((x) => x.receiver.track.kind === "video");
           if (t) {
             t.direction = "sendrecv";
+            preferHardwareVideo(t);
             link!.videoSender = t.sender;
             await this.applyVideoSender(link!);
           }
@@ -1470,4 +1473,26 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
       },
     );
   });
+}
+
+/**
+ * Video codec order: H.264 first. iPhones and most Android phones encode and decode it on a
+ * dedicated video chip; VP8 runs on the main processor, which drains the battery and heats the
+ * phone on a long call. The other codecs stay as fallbacks, so a browser without H.264 still
+ * connects as before.
+ */
+export function preferHardwareVideo(t: RTCRtpTransceiver) {
+  try {
+    const caps = typeof RTCRtpReceiver !== "undefined" ? RTCRtpReceiver.getCapabilities?.("video") : null;
+    if (!caps || typeof t.setCodecPreferences !== "function") return;
+    const isH264 = (c: RTCRtpCodec) => /\/h264$/i.test(c.mimeType);
+    const h264 = caps.codecs.filter(isH264);
+    if (!h264.length) return;
+    // Packetization mode 1, constrained baseline first: the most widely hardware-accelerated.
+    const rank = (c: RTCRtpCodec) => (/packetization-mode=1/.test(c.sdpFmtpLine ?? "") ? 2 : 0) + (/profile-level-id=42e0/i.test(c.sdpFmtpLine ?? "") ? 1 : 0);
+    h264.sort((a, b) => rank(b) - rank(a));
+    t.setCodecPreferences([...h264, ...caps.codecs.filter((c) => !isH264(c))]);
+  } catch {
+    // Not supported here: the browser's own order applies.
+  }
 }

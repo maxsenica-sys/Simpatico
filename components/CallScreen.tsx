@@ -166,7 +166,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const stage: Participant | undefined = s.participants.find((p) => p.id === s.activeId) ?? s.participants[0];
 
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 500);
+    const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
 

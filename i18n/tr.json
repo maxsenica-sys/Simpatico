@@ -350,5 +350,10 @@
   "meGroupCaptions": "Altyazılar ve bildirimler",
   "meGroupCaptionsSub": "Okuma şekli, yazı boyutu, uyarılar",
   "meGroupData": "Verilerin",
-  "meGroupDataSub": "Yeni telefona taşı ya da her şeyi sil"
+  "meGroupDataSub": "Yeni telefona taşı ya da her şeyi sil",
+  "allContacts": "Tüm kişiler",
+  "contactsTitle": "Kişiler",
+  "contactsSearch": "Ara",
+  "contactsAdd": "Ekle",
+  "contactsEmpty": "Henüz kimse yok. Biriyle ilk görüşmenden sonra burada görünür."
 }

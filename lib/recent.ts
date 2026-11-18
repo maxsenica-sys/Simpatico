@@ -3,7 +3,8 @@
  * who you call is sent to or stored on the server. One entry per person, matched by name.
  */
 const KEY = "talk.recent.v1";
-const KEEP = 20;
+/** Everyone you have called is a contact; the home screen shows the five most recent. */
+const KEEP = 200;
 
 export type RecentPerson = {
   name: string;

@@ -350,5 +350,10 @@
   "meGroupCaptions": "कैप्शन और सूचनाएँ",
   "meGroupCaptionsSub": "पढ़ने का तरीका, टेक्स्ट का आकार, अलर्ट",
   "meGroupData": "आपका डेटा",
-  "meGroupDataSub": "नए फ़ोन पर ले जाएँ या सब कुछ मिटाएँ"
+  "meGroupDataSub": "नए फ़ोन पर ले जाएँ या सब कुछ मिटाएँ",
+  "allContacts": "सभी संपर्क",
+  "contactsTitle": "संपर्क",
+  "contactsSearch": "खोजें",
+  "contactsAdd": "जोड़ें",
+  "contactsEmpty": "अभी कोई नहीं है। किसी के साथ पहली कॉल के बाद वे यहाँ दिखेंगे।"
 }

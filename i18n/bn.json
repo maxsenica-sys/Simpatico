@@ -350,5 +350,10 @@
   "meGroupCaptions": "ক্যাপশন ও নোটিফিকেশন",
   "meGroupCaptionsSub": "পড়ার ধরন, লেখার আকার, সতর্কবার্তা",
   "meGroupData": "আপনার ডেটা",
-  "meGroupDataSub": "নতুন ফোনে নিন বা সব মুছে ফেলুন"
+  "meGroupDataSub": "নতুন ফোনে নিন বা সব মুছে ফেলুন",
+  "allContacts": "সব পরিচিতি",
+  "contactsTitle": "পরিচিতি",
+  "contactsSearch": "খুঁজুন",
+  "contactsAdd": "যোগ করুন",
+  "contactsEmpty": "এখনও কেউ নেই। কারও সঙ্গে প্রথম কলের পর তাঁরা এখানে দেখাবেন।"
 }

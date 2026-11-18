@@ -350,5 +350,10 @@
   "meGroupCaptions": "Captions and notifications",
   "meGroupCaptionsSub": "Reading style, text size, alerts",
   "meGroupData": "Your data",
-  "meGroupDataSub": "Move to a new phone, or clear everything"
+  "meGroupDataSub": "Move to a new phone, or clear everything",
+  "allContacts": "All contacts",
+  "contactsTitle": "Contacts",
+  "contactsSearch": "Search",
+  "contactsAdd": "Add",
+  "contactsEmpty": "No one yet. People appear here after your first call with them."
 }

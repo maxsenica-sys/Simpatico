@@ -925,3 +925,37 @@ p { margin: 0; line-height: 1.5; }
 .home2.has-recent .home-hero { flex: none; min-height: 0; padding: 4px 4px 0; justify-content: flex-start; }
 .home2.has-recent .slogan { font-size: 1.25rem; max-width: none; line-height: 1.2; letter-spacing: -0.02em; color: rgba(244, 245, 247, 0.78); }
 .home2.has-recent .home-foot { margin-top: auto; }
+
+/* People as a list (home: five most recent; Contacts: everyone). Sizes follow the phone's
+   height (dvh), so five rows fit on a small phone as well as a big one. */
+.recent-list { display: flex; flex-direction: column; border-radius: 20px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.035); overflow: hidden; }
+.recent-list .rp { flex-direction: row; align-items: center; gap: 12px; width: 100%; padding: clamp(5px, 1.05dvh, 10px) 14px; text-align: start; border-radius: 0; }
+.recent-list .rp + .rp { border-top: 1px solid var(--line); }
+.recent-list .rp:active { transform: none; background: rgba(255, 255, 255, 0.06); }
+.recent-list .rp-ring { border-width: 2px; flex: none; }
+.recent-list .rp-av, .has-recent .recent-list .rp-av { width: clamp(32px, 4.9dvh, 42px); height: clamp(32px, 4.9dvh, 42px); font-size: 0.95rem; overflow: hidden; }
+.recent-list .rp-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.recent-list .rp-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.recent-list .rp b, .has-recent .recent-list .rp b { font-size: 1rem; font-weight: 650; }
+.recent-list .rp small { font-size: 0.82rem; margin-top: 0; overflow: hidden; text-overflow: ellipsis; }
+.rp-call { flex: none; width: clamp(32px, 4.6dvh, 38px); height: clamp(32px, 4.6dvh, 38px); border-radius: 50%; display: grid; place-items: center; background: rgba(91, 140, 255, 0.16); color: #8fb0ff; }
+.recent-list .rp-dot { width: 12px; height: 12px; border-width: 2px; right: -1px; bottom: -1px; }
+.all-contacts { color: var(--accent); font-weight: 700; font-size: 0.9rem; text-decoration: none; }
+/* Home sizes that follow the phone: on short screens the buttons tighten and the slogan line
+   gives way, so the five people and the call card stay on screen. */
+.home2.has-recent { gap: clamp(8px, 1.6dvh, 16px); }
+.home2.has-recent .htile.primary { padding: clamp(10px, 1.9dvh, 18px) 16px; }
+@media (max-height: 720px) { .home2.has-recent .home-hero { display: none; } .home2.has-recent .home-foot a[href="/privacy"] { display: none; } }
+
+/* Contacts screen */
+.contacts { gap: 14px; max-width: 560px; margin: 0 auto; }
+.contacts .profile-head h1 { margin: 0; font-size: 1.15rem; }
+.contacts-add { font-weight: 700; text-decoration: none; }
+.contacts-search { width: 100%; padding: 11px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; }
+.contacts-empty { text-align: center; padding: 40px 20px; line-height: 1.5; }
+/* With people in Recent, Group call and In person are compact (icon and name on one line) on
+   every phone, which leaves the room for five people. */
+.home2.has-recent .htile-row .htile { flex-direction: row; align-items: center; gap: 12px; padding: clamp(10px, 1.6dvh, 14px) 14px; }
+.home2.has-recent .htile-row .htile-icon { width: 40px; height: 40px; border-radius: 12px; }
+.home2.has-recent .htile-row .htile-text small { display: none; }
+.home2.has-recent .htile-row .htile-text b { font-size: 1rem; line-height: 1.2; }

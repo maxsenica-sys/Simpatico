@@ -350,5 +350,10 @@
   "meGroupCaptions": "Teks dan notifikasi",
   "meGroupCaptionsSub": "Gaya baca, ukuran teks, peringatan",
   "meGroupData": "Datamu",
-  "meGroupDataSub": "Pindahkan ke ponsel baru atau hapus semuanya"
+  "meGroupDataSub": "Pindahkan ke ponsel baru atau hapus semuanya",
+  "allContacts": "Semua kontak",
+  "contactsTitle": "Kontak",
+  "contactsSearch": "Cari",
+  "contactsAdd": "Tambah",
+  "contactsEmpty": "Belum ada siapa pun. Orang muncul di sini setelah panggilan pertamamu dengan mereka."
 }

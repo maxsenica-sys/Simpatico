@@ -350,5 +350,10 @@
   "meGroupCaptions": "Legendas e notificações",
   "meGroupCaptionsSub": "Estilo de leitura, tamanho do texto, avisos",
   "meGroupData": "Seus dados",
-  "meGroupDataSub": "Leve para outro telefone ou apague tudo"
+  "meGroupDataSub": "Leve para outro telefone ou apague tudo",
+  "allContacts": "Todos os contatos",
+  "contactsTitle": "Contatos",
+  "contactsSearch": "Buscar",
+  "contactsAdd": "Adicionar",
+  "contactsEmpty": "Ainda não há ninguém. As pessoas aparecem aqui depois da primeira chamada com elas."
 }

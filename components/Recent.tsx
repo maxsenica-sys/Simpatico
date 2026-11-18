@@ -60,33 +60,55 @@ function languageName(tag: string) {
 }
 
 /** The home screen's row of the last five people you called. Tap: call them. Hold: details. */
+/** The same colour for the same person on every screen. */
+function colorFor(name: string) {
+  let h = 0;
+  for (const ch of name.trim().toLocaleLowerCase()) h = (h * 31 + ch.codePointAt(0)!) >>> 0;
+  return gradient(h);
+}
+
+/**
+ * People as a list, one per row: tap to call, hold (or right-click) for details. The home screen
+ * shows the five most recent with a way to "All contacts"; the Contacts screen shows everyone,
+ * with the language they speak (it tells two people with the same name apart, and says what
+ * they'll be reading).
+ */
 export function RecentRow({
   people,
   waiting = [],
   active = [],
   onPick,
   onDetails,
+  title,
+  max = 5,
+  showLang = false,
+  headRight,
 }: {
   people: RecentPerson[];
   waiting?: Waiting[];
   active?: RecentPerson[];
   onPick: (p: RecentPerson, color: string) => void;
   onDetails: (p: RecentPerson, color: string) => void;
+  title?: string;
+  max?: number;
+  showLang?: boolean;
+  headRight?: React.ReactNode;
 }) {
   const t = useT();
   const held = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   return (
-    <section className="recent" aria-label={t("recentTitle")}>
+    <section className="recent" aria-label={title ?? t("recentTitle")}>
       <div className="recent-head">
-        <h2>{t("recentTitle")}</h2>
-        <span>{t("recentHint")}</span>
+        <h2>{title ?? t("recentTitle")}</h2>
+        {headRight}
       </div>
-      <div className="recent-row">
-        {people.slice(0, 5).map((p, i) => {
+      <div className="recent-list">
+        {people.slice(0, max).map((p) => {
           const isWaiting = waiting.some((w) => w.person && samePerson(w.person.name, p.name));
           const isActive = !isWaiting && active.some((a) => samePerson(a.name, p.name));
-          const color = gradient(i);
+          const color = colorFor(p.name);
+          const sub = isWaiting ? t("waitingNow") : isActive ? t("activeNow") : when(p.at);
           return (
             <button
               key={p.name}
@@ -115,8 +137,16 @@ export function RecentRow({
                 <Avatar className="rp-av" photo={p.photo} fallback={initials(p.name)} style={{ background: color }} />
                 {isActive && <span className="rp-dot" aria-hidden="true" />}
               </span>
-              <b>{p.name}</b>
-              <small>{isWaiting ? t("waitingNow") : isActive ? t("activeNow") : when(p.at)}</small>
+              <span className="rp-text">
+                <b>{p.name}</b>
+                <small>{showLang ? `${languageName(p.lang)} · ${sub}` : sub}</small>
+              </span>
+              <span className="rp-call" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2.5" y="6" width="13" height="12" rx="3" />
+                  <path d="M15.5 10.5 21 7.5v9l-5.5-3" />
+                </svg>
+              </span>
             </button>
           );
         })}

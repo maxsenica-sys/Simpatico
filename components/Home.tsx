@@ -142,6 +142,11 @@ export function Home() {
             else setPerson({ p, color });
           }}
           onDetails={(p, color) => setPerson({ p, color })}
+          headRight={
+            <Link href="/contacts" className="all-contacts">
+              {t("allContacts")} ›
+            </Link>
+          }
         />
       )}
 

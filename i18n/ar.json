@@ -350,5 +350,10 @@
   "meGroupCaptions": "الترجمة والإشعارات",
   "meGroupCaptionsSub": "طريقة القراءة، حجم النص، التنبيهات",
   "meGroupData": "بياناتك",
-  "meGroupDataSub": "انقلها إلى هاتف آخر أو امسح كل شيء"
+  "meGroupDataSub": "انقلها إلى هاتف آخر أو امسح كل شيء",
+  "allContacts": "كل جهات الاتصال",
+  "contactsTitle": "جهات الاتصال",
+  "contactsSearch": "بحث",
+  "contactsAdd": "إضافة",
+  "contactsEmpty": "لا أحد بعد. يظهر الأشخاص هنا بعد أول مكالمة معهم."
 }

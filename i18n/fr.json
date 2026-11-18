@@ -350,5 +350,10 @@
   "meGroupCaptions": "Sous-titres et notifications",
   "meGroupCaptionsSub": "Style de lecture, taille du texte, alertes",
   "meGroupData": "Vos données",
-  "meGroupDataSub": "Transférer vers un autre téléphone ou tout effacer"
+  "meGroupDataSub": "Transférer vers un autre téléphone ou tout effacer",
+  "allContacts": "Tous les contacts",
+  "contactsTitle": "Contacts",
+  "contactsSearch": "Rechercher",
+  "contactsAdd": "Ajouter",
+  "contactsEmpty": "Personne pour l'instant. Les personnes apparaissent ici après votre premier appel avec elles."
 }

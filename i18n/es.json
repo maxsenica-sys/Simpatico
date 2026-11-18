@@ -350,5 +350,10 @@
   "meGroupCaptions": "Subtítulos y notificaciones",
   "meGroupCaptionsSub": "Estilo de lectura, tamaño del texto, avisos",
   "meGroupData": "Tus datos",
-  "meGroupDataSub": "Pásalos a otro teléfono o bórralo todo"
+  "meGroupDataSub": "Pásalos a otro teléfono o bórralo todo",
+  "allContacts": "Todos los contactos",
+  "contactsTitle": "Contactos",
+  "contactsSearch": "Buscar",
+  "contactsAdd": "Añadir",
+  "contactsEmpty": "Aún no hay nadie. Las personas aparecen aquí después de tu primera llamada con ellas."
 }

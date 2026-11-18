@@ -350,5 +350,10 @@
   "meGroupCaptions": "字幕和通知",
   "meGroupCaptionsSub": "阅读方式、字号、提醒",
   "meGroupData": "你的数据",
-  "meGroupDataSub": "转移到新手机，或清除全部"
+  "meGroupDataSub": "转移到新手机，或清除全部",
+  "allContacts": "全部联系人",
+  "contactsTitle": "联系人",
+  "contactsSearch": "搜索",
+  "contactsAdd": "添加",
+  "contactsEmpty": "还没有联系人。与某人第一次通话后，对方会出现在这里。"
 }

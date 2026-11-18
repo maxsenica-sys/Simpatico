@@ -350,5 +350,10 @@
   "meGroupCaptions": "Субтитры и уведомления",
   "meGroupCaptionsSub": "Стиль чтения, размер текста, оповещения",
   "meGroupData": "Ваши данные",
-  "meGroupDataSub": "Перенести на другой телефон или всё удалить"
+  "meGroupDataSub": "Перенести на другой телефон или всё удалить",
+  "allContacts": "Все контакты",
+  "contactsTitle": "Контакты",
+  "contactsSearch": "Поиск",
+  "contactsAdd": "Добавить",
+  "contactsEmpty": "Пока никого нет. Люди появляются здесь после первого звонка с ними."
 }

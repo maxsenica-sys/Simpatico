@@ -919,3 +919,9 @@ p { margin: 0; line-height: 1.5; }
 @keyframes splash-bing-r { 0% { transform: scale(1) rotate(0); } 35% { transform: scale(1.22) rotate(9deg); } 65% { transform: scale(0.94) rotate(-4deg); } 100% { transform: scale(1) rotate(0); } }
 @keyframes splash-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes splash-pop { from { opacity: 0; transform: translateY(14px) scale(0.96); } to { opacity: 1; transform: none; } }
+
+/* Home, once you have people in Recent: the slogan is one small line (you've seen it full
+   size in the opening animation), so the buttons and your people sit higher. */
+.home2.has-recent .home-hero { flex: none; min-height: 0; padding: 4px 4px 0; justify-content: flex-start; }
+.home2.has-recent .slogan { font-size: 1.25rem; max-width: none; line-height: 1.2; letter-spacing: -0.02em; color: rgba(244, 245, 247, 0.78); }
+.home2.has-recent .home-foot { margin-top: auto; }

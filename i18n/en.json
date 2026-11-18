@@ -355,5 +355,12 @@
   "contactsTitle": "Contacts",
   "contactsSearch": "Search",
   "contactsAdd": "Add",
-  "contactsEmpty": "No one yet. People appear here after your first call with them."
+  "contactsEmpty": "No one yet. People appear here after your first call with them.",
+  "howTitle": "How it works",
+  "how1": "Start a call",
+  "how1Sub": "One tap. No sign-up.",
+  "how2": "Send them the link",
+  "how2Sub": "They tap it. No app or account needed.",
+  "how3": "Speak your own language",
+  "how3Sub": "Each of you reads the other, translated live."
 }

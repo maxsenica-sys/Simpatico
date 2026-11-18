@@ -355,5 +355,12 @@
   "contactsTitle": "Contacts",
   "contactsSearch": "Rechercher",
   "contactsAdd": "Ajouter",
-  "contactsEmpty": "Personne pour l'instant. Les personnes apparaissent ici après votre premier appel avec elles."
+  "contactsEmpty": "Personne pour l'instant. Les personnes apparaissent ici après votre premier appel avec elles.",
+  "howTitle": "Comment ça marche",
+  "how1": "Lancez un appel",
+  "how1Sub": "Un geste. Sans inscription.",
+  "how2": "Envoyez-lui le lien",
+  "how2Sub": "Il suffit de le toucher. Ni appli ni compte.",
+  "how3": "Parlez votre langue",
+  "how3Sub": "Chacun lit l'autre, traduit en direct."
 }

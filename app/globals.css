@@ -959,3 +959,22 @@ p { margin: 0; line-height: 1.5; }
 .home2.has-recent .htile-row .htile-icon { width: 40px; height: 40px; border-radius: 12px; }
 .home2.has-recent .htile-row .htile-text small { display: none; }
 .home2.has-recent .htile-row .htile-text b { font-size: 1rem; line-height: 1.2; }
+
+/* Home, first time: "How it works" (plain, quiet; gone once you have someone in Recent) */
+.how { border-radius: 20px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.03); padding: 4px 16px; }
+.how-title { margin: 12px 0 4px; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+.how-step { display: flex; align-items: center; gap: 14px; padding: clamp(6px, 1.1dvh, 10px) 0; }
+.how-step + .how-step { border-top: 1px solid var(--line); }
+.how-step svg { flex: none; width: 22px; height: 22px; color: rgba(244, 245, 247, 0.55); stroke-width: 1.8; }
+.how-step b { display: block; font-size: 0.98rem; font-weight: 650; }
+.how-step small { color: var(--muted); font-size: 0.86rem; line-height: 1.35; }
+@media (max-height: 700px) { .home2:not(.has-recent) .how-step small { display: none; } }
+/* First time, sized to the phone: compact tiles so the three steps fit; on short screens the
+   steps lose their second line and the slogan shrinks; on very short ones the steps give way. */
+.home2:not(.has-recent) .htile-row .htile { flex-direction: row; align-items: center; gap: 12px; padding: clamp(10px, 1.6dvh, 14px) 14px; }
+.home2:not(.has-recent) .htile-row .htile-icon { width: 40px; height: 40px; border-radius: 12px; }
+.home2:not(.has-recent) .htile-row .htile-text small { display: none; }
+.home2:not(.has-recent) .htile-row .htile-text b { font-size: 1rem; line-height: 1.2; }
+.home2:not(.has-recent) { gap: clamp(8px, 1.6dvh, 14px); }
+@media (max-height: 720px) { .home2:not(.has-recent) .slogan { font-size: 1.45rem; } .home2:not(.has-recent) .home-hero { padding: 4px 4px 0; } .home2:not(.has-recent) .how-step small { display: none; } .home2:not(.has-recent) .home-foot a[href="/privacy"] { display: none; } }
+@media (max-height: 600px) { .home2:not(.has-recent) .how { display: none; } }

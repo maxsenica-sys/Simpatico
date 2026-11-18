@@ -355,5 +355,12 @@
   "contactsTitle": "联系人",
   "contactsSearch": "搜索",
   "contactsAdd": "添加",
-  "contactsEmpty": "还没有联系人。与某人第一次通话后，对方会出现在这里。"
+  "contactsEmpty": "还没有联系人。与某人第一次通话后，对方会出现在这里。",
+  "howTitle": "使用方法",
+  "how1": "发起通话",
+  "how1Sub": "点一下即可，无需注册。",
+  "how2": "把链接发给对方",
+  "how2Sub": "对方点开即可，无需应用或账号。",
+  "how3": "说你自己的语言",
+  "how3Sub": "双方都能实时看到对方话语的翻译。"
 }

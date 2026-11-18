@@ -150,6 +150,34 @@ export function Home() {
         />
       )}
 
+      {/* First time here (nobody in Recent yet): what the app does, in three plain lines. */}
+      {recent.length === 0 && !first && (
+        <section className="how" aria-label={t("howTitle")}>
+          <p className="how-title">{t("howTitle")}</p>
+          <div className="how-step">
+            <VideoIcon />
+            <div>
+              <b>{t("how1")}</b>
+              <small>{t("how1Sub")}</small>
+            </div>
+          </div>
+          <div className="how-step">
+            <LinkIcon />
+            <div>
+              <b>{t("how2")}</b>
+              <small>{t("how2Sub")}</small>
+            </div>
+          </div>
+          <div className="how-step">
+            <CaptionIcon />
+            <div>
+              <b>{t("how3")}</b>
+              <small>{t("how3Sub")}</small>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* The call card: shared once, so it's a slim row rather than a big button. */}
       <button className="card-row" onClick={() => setShowLink(true)} disabled={!myLink}>
         <span className="card-row-icon" aria-hidden="true">
@@ -242,6 +270,24 @@ function FaceIcon() {
     <svg {...ICON}>
       <path d="M4.5 3.5h8a2 2 0 0 1 2 2V9a2 2 0 0 1-2 2H8.5l-3 2.5V11h-1a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2z" />
       <path d="M19.5 20.5h-8a2 2 0 0 1-2-2V15a2 2 0 0 1 2-2h4l3-2.5V13h1a2 2 0 0 1 2 2v3.5a2 2 0 0 1-2 2z" />
+    </svg>
+  );
+}
+
+function LinkIcon() {
+  return (
+    <svg {...ICON}>
+      <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" />
+      <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
+    </svg>
+  );
+}
+
+function CaptionIcon() {
+  return (
+    <svg {...ICON}>
+      <rect x="3" y="5" width="18" height="14" rx="3" />
+      <path d="M7 12h4M7 15.5h7M14 12h3" />
     </svg>
   );
 }

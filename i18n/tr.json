@@ -355,5 +355,12 @@
   "contactsTitle": "Kişiler",
   "contactsSearch": "Ara",
   "contactsAdd": "Ekle",
-  "contactsEmpty": "Henüz kimse yok. Biriyle ilk görüşmenden sonra burada görünür."
+  "contactsEmpty": "Henüz kimse yok. Biriyle ilk görüşmenden sonra burada görünür.",
+  "howTitle": "Nasıl çalışır",
+  "how1": "Bir arama başlat",
+  "how1Sub": "Tek dokunuş. Kayıt yok.",
+  "how2": "Bağlantıyı gönder",
+  "how2Sub": "Dokunması yeter. Uygulama ya da hesap gerekmez.",
+  "how3": "Kendi dilinde konuş",
+  "how3Sub": "İkiniz de karşınızdakini anında çevrilmiş olarak okursunuz."
 }

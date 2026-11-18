@@ -355,5 +355,12 @@
   "contactsTitle": "Kontak",
   "contactsSearch": "Cari",
   "contactsAdd": "Tambah",
-  "contactsEmpty": "Belum ada siapa pun. Orang muncul di sini setelah panggilan pertamamu dengan mereka."
+  "contactsEmpty": "Belum ada siapa pun. Orang muncul di sini setelah panggilan pertamamu dengan mereka.",
+  "howTitle": "Cara kerjanya",
+  "how1": "Mulai panggilan",
+  "how1Sub": "Satu ketukan. Tanpa daftar.",
+  "how2": "Kirim tautannya",
+  "how2Sub": "Dia tinggal mengetuknya. Tanpa aplikasi atau akun.",
+  "how3": "Bicara dalam bahasamu",
+  "how3Sub": "Kalian saling membaca ucapan satu sama lain, diterjemahkan langsung."
 }

@@ -8,6 +8,7 @@ import { useT } from "@/lib/i18n";
 import { getMicTrack } from "@/lib/media";
 import { loadLang } from "@/lib/prefs";
 import { loadProfile } from "@/lib/profile";
+import { loadRecent } from "@/lib/recent";
 import { ScreenAwake } from "@/lib/wakeLock";
 import { en, loadStrings, type StringKey, type Strings } from "@/i18n";
 import { baseLang, isRtl, langInfo } from "@/shared/lang";
@@ -18,7 +19,7 @@ import { LanguageLine } from "./LanguageLine";
 import { Logo } from "./Logo";
 
 /** Languages people most often need face to face; the rest are under "More". */
-const COMMON = ["es", "zh", "ar", "hi", "fr", "pt", "ru", "ja", "ko", "de", "it", "tr", "id", "vi", "th", "en"];
+const COMMON = ["tr", "es", "zh", "ar", "hi", "fr", "pt", "ru", "ja", "ko", "de", "it", "id", "vi", "th", "en"];
 const SORTED = [...LANGUAGES].sort((a, b) => a.name.localeCompare(b.name));
 const SIZES = ["clamp(20px, 5.4vw, 28px)", "clamp(25px, 6.6vw, 34px)", "clamp(30px, 8vw, 42px)"];
 
@@ -52,9 +53,14 @@ export function InPerson() {
   const [phase, setPhase] = useState<"setup" | "starting" | "live">("setup");
   const [error, setError] = useState<"mic" | "unavailable" | null>(null);
 
-  useEffect(() => setMine(loadLang().speaks), []);
+  // The languages of people you talk to (Recent) come first, then the most common ones.
+  const [known, setKnown] = useState<string[]>([]);
+  useEffect(() => {
+    setMine(loadLang().speaks);
+    setKnown(loadRecent().flatMap((r) => (baseLang(r.lang) ? [baseLang(r.lang)!] : [])));
+  }, []);
   const myBase = baseLang(mine);
-  const choices = COMMON.filter((c) => c !== myBase);
+  const choices = [...new Set([...known, ...COMMON])].filter((c) => c !== myBase);
 
   if (phase !== "live" || !session.current)
     return (

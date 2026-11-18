@@ -11,6 +11,8 @@ import { blockRoute, isBlocked, reportRoute } from "./server/blocks";
 import { noteSeat, notifyWaiting, pushKey, pushSubscribe, pushUnsubscribe, readBody } from "./server/push";
 import { getRoom } from "./server/rooms";
 import { saveUpload, serveMedia } from "./server/media";
+import { InPersonSession } from "./server/inperson";
+import type { InPersonClientMsg } from "./shared/protocol";
 import { append, device } from "./server/store";
 
 /** Client events kept on disk to diagnose dropped calls: connection health only. */
@@ -87,9 +89,45 @@ async function mediaUpload(req: import("node:http").IncomingMessage, res: import
 
 const wss = new WebSocketServer({ noServer: true, maxPayload: 256 * 1024 });
 const nextUpgrade = app.getUpgradeHandler();
+// In person: one phone, two people, one stream (server/inperson.ts).
+const ipWss = new WebSocketServer({ noServer: true, maxPayload: 256 * 1024 });
+ipWss.on("connection", (ws, req) => {
+  const session = new InPersonSession(ws, device(req.headers["user-agent"]));
+  alive.add(ws);
+  ws.on("pong", () => alive.add(ws));
+  ws.on("message", (data, isBinary) => {
+    const buf = data as Buffer;
+    if (isBinary) {
+      if (buf.length > 1) session.audio(buf.subarray(1));
+      return;
+    }
+    let msg: InPersonClientMsg;
+    try {
+      msg = JSON.parse(buf.toString());
+    } catch {
+      return;
+    }
+    session.message(msg);
+  });
+  ws.on("close", () => session.close("closed"));
+});
+setInterval(() => {
+  for (const ws of ipWss.clients) {
+    if (!alive.has(ws)) {
+      ws.terminate();
+      continue;
+    }
+    alive.delete(ws);
+    ws.ping();
+  }
+}, 20_000).unref();
+
 server.on("upgrade", (req, socket, head) => {
-  if (parse(req.url ?? "").pathname === "/ws") {
+  const path = parse(req.url ?? "").pathname;
+  if (path === "/ws") {
     wss.handleUpgrade(req, socket, head, (ws) => wss.emit("connection", ws, req));
+  } else if (path === "/ws/inperson") {
+    ipWss.handleUpgrade(req, socket, head, (ws) => ipWss.emit("connection", ws, req));
   } else {
     nextUpgrade(req, socket, head); // dev HMR
   }

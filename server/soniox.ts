@@ -31,6 +31,12 @@ export type SonioxStreamConfig = {
   ref: string;
   /** Names in the call and words to recognise (see vocab.ts). */
   context?: SonioxContext;
+  /**
+   * In person (one phone, two people): the languages that may be spoken, and per-word language
+   * identification so each sentence can be given to the right side. Default: just `source`.
+   */
+  hints?: string[];
+  identify?: boolean;
 };
 
 const URL = process.env.SONIOX_URL ?? "wss://stt-rt.soniox.com/transcribe-websocket";
@@ -79,9 +85,11 @@ export class SonioxStream extends EventEmitter {
           audio_format: "pcm_s16le",
           sample_rate: 16000,
           num_channels: 1,
-          // Each stream carries exactly one person's own mic, so the source language is known.
-          language_hints: [source],
-          language_hints_strict: true,
+          // A call's stream carries one person's own mic, so the source language is known. In
+          // person, two languages share one mic and each word is tagged with its language.
+          language_hints: this.config.hints ?? [source],
+          language_hints_strict: !this.config.identify,
+          ...(this.config.identify ? { enable_language_identification: true } : {}),
           enable_endpoint_detection: true,
           max_endpoint_delay_ms: Number(process.env.SONIOX_MAX_ENDPOINT_MS ?? 1200),
           // Endpoints a little sooner (0-3, higher = sooner, slightly lower accuracy). v5/v6 models.

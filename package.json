@@ -10,14 +10,15 @@
     "translate-ui": "tsx scripts/translate-ui.ts",
     "mock-soniox": "tsx test/mock-soniox.ts",
     "e2e": "node test/e2e.mjs",
-    "test": "ECHO_CHECK=off SONIOX_API_KEY=x SONIOX_URL=ws://localhost:3997 tsx test/pipeline.test.ts && tsx test/rooms.test.ts && tsx test/vad.test.ts && tsx test/push.test.ts && tsx test/subtitle.test.ts && tsx test/phrasebook.test.ts",
+    "test": "ECHO_CHECK=off SONIOX_API_KEY=x SONIOX_URL=ws://localhost:3997 tsx test/pipeline.test.ts && tsx test/rooms.test.ts && tsx test/vad.test.ts && tsx test/push.test.ts && tsx test/subtitle.test.ts && tsx test/phrasebook.test.ts && tsx test/inperson.test.ts",
     "e2e:group": "node test/e2e-group.mjs",
     "e2e:perms": "node test/e2e-perms.mjs",
     "e2e:pair": "node test/e2e-pair.mjs",
     "e2e:move": "node test/e2e-move.mjs",
     "e2e:block": "node test/e2e-block.mjs",
     "e2e:media": "node test/e2e-media.mjs",
-    "test:captions": "node test/captionbox/run.mjs"
+    "test:captions": "node test/captionbox/run.mjs",
+    "e2e:inperson": "node test/e2e-inperson.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.4.0",

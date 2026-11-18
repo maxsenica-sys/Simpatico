@@ -13,7 +13,16 @@ let openSockets = 0;
 wss.on("connection", (ws, req) => {
   openSockets++;
   const auth = req.headers.authorization;
-  let config: { language_hints: string[]; translation?: { target_language: string } } | null = null;
+  let config: { language_hints: string[]; translation?: { target_language: string }; enable_language_identification?: boolean } | null = null;
+  // In person (language identification on): sentences alternate between the two people, the
+  // second one speaking Spanish unless the hints name their language.
+  let sentence = 0;
+  const lang = () => {
+    if (!config?.enable_language_identification) return {};
+    const [a, b] = [config.language_hints[0], config.language_hints[1] ?? "es"];
+    return { language: sentence % 2 ? b : a };
+  };
+  const word = (w: string) => (config?.enable_language_identification && sentence % 2 ? `${config.language_hints[1] ?? "es"}~${w}` : w);
   let bytes = 0;
   let wordIdx = 0;
   let pendingWords: string[] = [];
@@ -29,9 +38,10 @@ wss.on("connection", (ws, req) => {
   const finalizeAll = (marker: string) => {
     const words = pendingWords;
     pendingWords = [];
-    const toks = words.map((w, i) => ({ text: (i ? " " : "") + w, is_final: true, translation_status: config?.translation ? "original" : "none" }));
-    send([...toks, { text: marker, is_final: true, translation_status: config?.translation ? "original" : "none" }]);
+    const toks = words.map((w, i) => ({ text: (i ? " " : "") + word(w), is_final: true, translation_status: config?.translation ? "original" : "none", ...lang() }));
+    send([...toks, { text: marker, is_final: true, translation_status: config?.translation ? "original" : "none", ...lang() }]);
     translate(words);
+    sentence++;
   };
 
   ws.on("message", (data, isBinary) => {
@@ -52,7 +62,7 @@ wss.on("connection", (ws, req) => {
     while (bytes >= 9600) {
       bytes -= 9600;
       pendingWords.push(WORDS[wordIdx++ % WORDS.length]);
-      send(pendingWords.map((w, i) => ({ text: (i ? " " : "") + w, is_final: false, translation_status: config?.translation ? "original" : "none" })));
+      send(pendingWords.map((w, i) => ({ text: (i ? " " : "") + word(w), is_final: false, translation_status: config?.translation ? "original" : "none", ...lang() })));
       if (pendingWords.length >= 8) finalizeAll("<end>"); // endpoint on long runs
     }
   });

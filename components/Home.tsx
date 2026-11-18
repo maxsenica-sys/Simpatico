@@ -115,13 +115,13 @@ export function Home() {
               <small>{t("tileGroupSub")}</small>
             </span>
           </button>
-          <button className="htile" onClick={() => setShowLink(true)} disabled={!myLink}>
+          <button className="htile" onClick={() => router.push("/talk")}>
             <span className="htile-icon mint" aria-hidden="true">
-              <CardIcon />
+              <FaceIcon />
             </span>
             <span className="htile-text">
-              <b>{t("myLinkBtn")}</b>
-              <small>{t("tileLinkSub")}</small>
+              <b>{t("ipTile")}</b>
+              <small>{t("ipTileSub")}</small>
             </span>
           </button>
         </div>
@@ -143,6 +143,17 @@ export function Home() {
           onDetails={(p, color) => setPerson({ p, color })}
         />
       )}
+
+      {/* The call card: shared once, so it's a slim row rather than a big button. */}
+      <button className="card-row" onClick={() => setShowLink(true)} disabled={!myLink}>
+        <span className="card-row-icon" aria-hidden="true">
+          <CardIcon />
+        </span>
+        <span className="card-row-text">
+          <b>{t("cardRowTitle")}</b> · {t("cardRowSub")}
+        </span>
+        <span className="card-row-share">{t("cardRowShare")}</span>
+      </button>
 
       <footer className="home-foot">
         {install ? (
@@ -214,6 +225,16 @@ function CardIcon() {
       <rect x="2.5" y="5" width="19" height="14" rx="3" />
       <circle cx="8.5" cy="11" r="2.2" />
       <path d="M5.5 16c.6-1.5 1.7-2.3 3-2.3s2.4.8 3 2.3M14 10h4.5M14 13.5h3" />
+    </svg>
+  );
+}
+
+/** Two speech bubbles facing each other: a conversation across one phone. */
+function FaceIcon() {
+  return (
+    <svg {...ICON}>
+      <path d="M4.5 3.5h8a2 2 0 0 1 2 2V9a2 2 0 0 1-2 2H8.5l-3 2.5V11h-1a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2z" />
+      <path d="M19.5 20.5h-8a2 2 0 0 1-2-2V15a2 2 0 0 1 2-2h4l3-2.5V13h1a2 2 0 0 1 2 2v3.5a2 2 0 0 1-2 2z" />
     </svg>
   );
 }

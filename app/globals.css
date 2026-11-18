@@ -478,9 +478,10 @@ p { margin: 0; line-height: 1.5; }
 }
 .home-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; }
 .home2 .me-btn { position: static; background: rgba(255, 255, 255, 0.06); backdrop-filter: blur(12px); }
-.home-hero { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 12px 4px; min-height: 180px; }
+/* A short slogan, so the buttons sit within reach of a thumb. */
+.home-hero { display: flex; flex-direction: column; justify-content: flex-end; padding: 18px 4px 2px; }
 .home2 .hello { margin: 0 0 10px; font-size: 1.05rem; }
-.home2 .slogan { margin: 0; max-width: 13ch; font-size: clamp(2.3rem, 10.5vw, 3.1rem); line-height: 1.05; letter-spacing: -0.035em; }
+.home2 .slogan { margin: 0; max-width: 18ch; font-size: clamp(1.75rem, 7.6vw, 2.4rem); line-height: 1.1; letter-spacing: -0.03em; }
 .home-actions { display: flex; flex-direction: column; gap: 12px; }
 .htile-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .htile {
@@ -535,7 +536,7 @@ p { margin: 0; line-height: 1.5; }
   .bsheet-backdrop { align-items: center; }
   .bsheet { border-radius: 28px; border-bottom: 1px solid var(--line); }
 }
-@media (max-height: 640px) { .home-hero { min-height: 120px; } .home2 .slogan { font-size: 2.1rem; } }
+@media (max-height: 640px) { .home2 .slogan { font-size: 1.6rem; } }
 
 /* ways back out: join screen back arrow, cancel while nobody has answered */
 .join-head { position: relative; min-height: 44px; padding-inline: 56px; }
@@ -805,3 +806,49 @@ p { margin: 0; line-height: 1.5; }
 .media-viewer-bar { display: flex; align-items: center; gap: 12px; padding-top: 10px; }
 .media-viewer-bar .muted { flex: 1; }
 .ctrl .badge { position: absolute; top: -2px; right: -2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 800; display: grid; place-items: center; }
+
+/* Home: the call card as one slim row */
+.card-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 14px; border-radius: 14px; border: 1px dashed rgba(255, 255, 255, 0.18); background: none; color: var(--muted); font: inherit; font-size: 0.9rem; text-align: start; cursor: pointer; margin-top: auto; }
+.card-row-icon { color: #5fe0bd; display: grid; place-items: center; }
+.card-row-icon svg { width: 22px; height: 22px; }
+.card-row-text { flex: 1; min-width: 0; }
+.card-row-text b { color: var(--text); font-weight: 650; }
+.card-row-share { color: var(--accent); font-weight: 700; }
+
+/* In person: setup */
+.ip-setup { gap: 14px; max-width: 520px; margin: 0 auto; padding: calc(var(--safe-t) + 16px) 20px calc(var(--safe-b) + 20px); }
+.ip-setup h1 { margin: 4px 0 0; font-size: 1.7rem; letter-spacing: -0.02em; }
+.ip-setup > p { margin: 0; line-height: 1.45; }
+.ip-choice { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 18px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; text-align: start; cursor: pointer; }
+.ip-choice.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.ip-choice b { font-size: 1.05rem; }
+.ip-choice small { color: var(--muted); font-size: 0.9rem; line-height: 1.35; }
+.ip-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.ip-chips .chip { padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); font: inherit; font-size: 0.92rem; font-weight: 600; cursor: pointer; }
+.ip-chips .chip.on { background: var(--accent); border-color: transparent; color: #fff; }
+.ip-more { margin-top: 8px; width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; }
+
+/* In person: the conversation. Their half is upside down; "Flip" turns the whole screen round. */
+.ip-live { position: fixed; inset: 0; display: flex; flex-direction: column; background: var(--bg); --cap-bottom: 0px; --cap-lines: 6; }
+.ip-live.flipped { transform: rotate(180deg); }
+.ip-half { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 14px 18px; }
+.ip-half.them { transform: rotate(180deg); background: linear-gradient(to top, #0f1a15, var(--bg) 70%); padding-top: calc(var(--safe-b) + 14px); }
+.ip-half.me { background: linear-gradient(to bottom, #0f1422, var(--bg) 70%); padding-bottom: calc(var(--safe-b) + 14px); }
+.ip-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.ip-talking { display: inline-flex; align-items: center; gap: 6px; color: #34c759; text-transform: none; letter-spacing: 0; font-size: 0.85rem; }
+.ip-talking::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #34c759; box-shadow: 0 0 8px #34c759; }
+.ip-status { color: #ffc24b; text-transform: none; letter-spacing: 0; font-size: 0.85rem; }
+.ip-caps { position: relative; flex: 1; min-height: 0; }
+.ip-caps .captions-zone { position: absolute; inset: 0; padding: 0; min-height: 0; background: none; justify-content: flex-end; }
+.ip-caps .cap-frame { width: 100%; max-width: none; margin: 0; height: 100%; }
+.ip-caps .captions.cap-box-scroll { height: 100%; }
+.ip-caps .cap { font-weight: 650; }
+.ip-caps .cap-scroll-hint { top: -22px; bottom: auto; right: 0; }
+.ip-caps .cap-latest { bottom: 4px; right: 8px; }
+.ip-caps .typing { position: absolute; left: 4px; bottom: 4px; }
+.ip-empty { margin: auto 0 0; color: var(--muted); font-size: 1.05rem; line-height: 1.45; }
+.ip-own { padding: 9px 12px; border-radius: 14px; background: rgba(255, 255, 255, 0.06); font-size: 0.95rem; line-height: 1.35; color: rgba(255, 255, 255, 0.85); max-height: 4.2em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.ip-own i { display: block; font-style: normal; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 1px; }
+.ip-mid { flex: none; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 10px; border-block: 1px solid var(--line); background: #111419; flex-wrap: wrap; }
+.ip-mid .pill { padding: 8px 13px; border-radius: 999px; border: 0; background: var(--surface-2); color: var(--text); font: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+.ip-mid .pill.end { background: var(--danger); }

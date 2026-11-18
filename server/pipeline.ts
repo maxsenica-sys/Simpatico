@@ -241,6 +241,16 @@ export class SpeakerPipeline {
     this.idleTimer = setTimeout(() => this.stopStream("idle"), IDLE_CLOSE_MS);
   }
 
+  /** In person: words from a shared stream (see server/inperson.ts) instead of our own. */
+  feed(tokens: SonioxToken[]) {
+    this.onTokens(tokens);
+  }
+
+  /** In person: the shared stream went away; settle what we have. */
+  flush() {
+    this.flushOpen();
+  }
+
   /** Client-side voice activity ended (after its hangover): finalize instead of waiting for the endpoint. */
   speechEnded() {
     if (this.open && (this.open.origFinal || this.open.origLive)) this.stream?.finalize();

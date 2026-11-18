@@ -108,3 +108,20 @@ export type ServerMsg =
   /** Someone's speech is being captioned right now (sent to everyone, the speaker included). */
   | { t: "speaking"; peer: string; on: boolean }
   | { t: "error"; code: "room-not-found" | "room-full" | "bad-request" | "unavailable" };
+
+/** In person (one phone, two people): the phone to the server. Audio goes as binary frames. */
+export type InPersonClientMsg =
+  | { t: "start"; mine: string; theirs: string | null; names?: string[]; words?: string[] }
+  /** Their language, picked after starting (or corrected). */
+  | { t: "theirs"; lang: string }
+  | { t: "speech"; on: boolean }
+  | { t: "end" };
+
+/** In person: the server to the phone. `for`: whose half a caption goes on; `by`: who said it. */
+export type InPersonServerMsg =
+  | { t: "ready" }
+  | { t: "lang"; theirs: string }
+  | { t: "cap"; for: "me" | "them"; id: string; stage: CaptionStage; text: string; tail?: string }
+  | { t: "own"; by: "me" | "them"; id: string; text: string; final: boolean }
+  | { t: "status"; state: CaptionState }
+  | { t: "error"; code: "bad-request" | "unavailable" };

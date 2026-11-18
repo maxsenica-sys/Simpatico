@@ -16,7 +16,8 @@
     "e2e:pair": "node test/e2e-pair.mjs",
     "e2e:move": "node test/e2e-move.mjs",
     "e2e:block": "node test/e2e-block.mjs",
-    "e2e:media": "node test/e2e-media.mjs"
+    "e2e:media": "node test/e2e-media.mjs",
+    "test:captions": "node test/captionbox/run.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.4.0",

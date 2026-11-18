@@ -88,19 +88,24 @@ export function CaptionBox({
     }
     shown = [...earlier, ...run];
   }
-  // Reading back: keep everything that was on screen, add new lines below it.
-  if (!atBottom && held.current) {
-    const keep = new Set(held.current);
+  // Reading back: keep everything from the first line that was on screen down to the newest,
+  // with nothing taken out of the middle (a line dropping out moved the text you were reading).
+  if (!atBottom && held.current?.length) {
+    const firstHeld = h.findIndex((x) => x.id === held.current![0]);
     const firstShown = shown[0] ? h.indexOf(shown[0]) : h.length;
-    const extra = h.filter((x, k) => keep.has(x.id) && k < firstShown);
-    shown = [...extra, ...shown];
+    const from = firstHeld >= 0 ? Math.min(firstHeld, firstShown) : firstShown;
+    shown = h.slice(from);
   }
   held.current = shown.map((x) => x.id);
 
-  const last = shown.at(-1);
-  const quiet = !!last && last.doneAt !== null && now - last.doneAt > LAST_LINGER_MS;
+  // Quiet = nobody's words still arriving, and the last ones finished a while ago. (It used to
+  // look only at the newest line: in a group, someone's short "ok" going stale hid the person
+  // still talking.)
+  const anyActive = shown.some((x) => x.doneAt === null);
+  const lastDone = Math.max(0, ...shown.map((x) => x.doneAt ?? 0));
+  const quiet = shown.length > 0 && !anyActive && now - lastDone > LAST_LINGER_MS;
   const fading = quiet && atBottom;
-  const gone = fading && now - last!.doneAt! > LAST_LINGER_MS + FADE_MS;
+  const gone = fading && now - lastDone > LAST_LINGER_MS + FADE_MS;
 
   // Only a finger or a wheel moves you away from the newest words; the box's own gliding doesn't.
   // While a finger is on the box (and just after), the box never moves the text itself: it
@@ -120,28 +125,34 @@ export function CaptionBox({
     const a = Array.from(el.querySelectorAll<HTMLElement>("p.cap")).at(-1);
     anchor.current = a ? { id: a.dataset.id ?? "", top: a.getBoundingClientRect().top } : null;
   };
-  const measure = () => {
+  /** The last scroll position seen, to tell a finger moving the text up from new words arriving. */
+  const lastScroll = useRef(0);
+  const measure = (fromScroll = false) => {
     const el = box.current;
     if (!el) return;
     saveAnchor(el);
     const over = el.scrollHeight - el.clientHeight;
     const bottom = over - el.scrollTop < 8;
     if (bottom) setAtBottom(true);
-    else if (Date.now() - touchedAt.current < 1500) setAtBottom(false);
+    // Only a scroll the person made, towards earlier lines, stops following the newest words.
+    // (New words arriving also leave the view short of the bottom for a moment; just after a
+    // touch that used to be taken for scrolling back, and the box stopped following.)
+    else if (fromScroll && Date.now() - touchedAt.current < 1500 && el.scrollTop < lastScroll.current - 2) setAtBottom(false);
+    lastScroll.current = el.scrollTop;
     if (over <= 2) return setBar(null);
     const height = Math.max(16, (el.clientHeight / el.scrollHeight) * el.clientHeight);
     setBar({ height, top: (el.scrollTop / over) * (el.clientHeight - height) });
   };
 
   /**
-   * Keep the text still while a sentence is being translated:
-   * - The newest line never gets shorter. The faint preview at its end grows and shrinks as the
-   *   translation catches up; without this, the line count flickers and everything above it
-   *   jumps down and up again. The space is kept until the next sentence starts.
+   * Keep the text still while sentences are being translated:
+   * - No line ever takes less room than it once did. The faint preview at the end of a line
+   *   grows and shrinks as the translation catches up; without this, the line count flickers
+   *   and the text around it jumps. In a group several people's lines can be changing at once,
+   *   so every line keeps its own space (an invisible spacer under it), not just the newest.
    * - New lines glide in (about a quarter of a second) instead of the text snapping up.
    */
-  const reserve = useRef<{ id: string; h: number }>({ id: "", h: 0 });
-  const spacer = useRef<HTMLDivElement>(null);
+  const reserve = useRef(new Map<string, number>());
   const following = useRef(true);
   following.current = atBottom;
   // Glide towards the newest words, chasing the bottom as it moves: translations stream in
@@ -168,17 +179,17 @@ export function CaptionBox({
   useLayoutEffect(() => {
     const el = box.current;
     if (!el) return;
-    const newest = Array.from(el.querySelectorAll<HTMLElement>("p.cap")).at(-1);
-    const gap = spacer.current;
-    if (newest && gap) {
-      const id = newest.dataset.id ?? "";
-      // A new sentence inherits the space still held below the last one, so starting it never
-      // pulls the text above down either.
-      if (reserve.current.id !== id) reserve.current = { id, h: parseFloat(gap.style.height) || 0 };
-      const h = newest.offsetHeight;
-      reserve.current.h = Math.max(reserve.current.h, h);
-      gap.style.height = `${reserve.current.h - h}px`;
-    } else if (gap) gap.style.height = "0px";
+    const kept = new Map<string, number>();
+    for (const p of Array.from(el.querySelectorAll<HTMLElement>("p.cap"))) {
+      const id = p.dataset.id ?? "";
+      const gap = p.nextElementSibling as HTMLElement | null;
+      if (!gap?.classList.contains("cap-reserve")) continue;
+      const h = p.offsetHeight;
+      const r = Math.max(reserve.current.get(id) ?? 0, h);
+      gap.style.height = `${r - h}px`;
+      kept.set(id, r);
+    }
+    reserve.current = kept;
     // Following the newest words: whatever changed (a line above finishing with slightly longer
     // wording, the box filling up), the sentence being read must not slip down. Scroll it back
     // to where it was before anything is drawn; the glide below then moves it up smoothly.
@@ -203,7 +214,7 @@ export function CaptionBox({
         <div
           className={`captions cap-box-scroll ${scrolledUp ? "faded" : ""} ${fading ? "fading" : ""}`}
           ref={box}
-          onScroll={measure}
+          onScroll={() => measure(true)}
           onTouchStart={() => {
             holding.current = true;
             touched();
@@ -224,7 +235,7 @@ export function CaptionBox({
         >
           <div className="cap-fill" />
           {!gone &&
-            shown.map((c, i) => (
+            shown.map((c, i) => [
               <p key={c.id} data-id={c.id} className={`cap ${c.doneAt === null ? (c.stage === "steady" ? "steady" : "live") : "done"}`} dir="auto">
                 {/* Who is talking: once, where the speaker changes, not on every line. */}
                 {names && shown[i - 1]?.from !== c.from && <span className="cap-who">{names[c.from] ?? ""}</span>}
@@ -235,9 +246,9 @@ export function CaptionBox({
                     {c.tail}
                   </span>
                 )}
-              </p>
-            ))}
-          <div className="cap-reserve" ref={spacer} aria-hidden="true" />
+              </p>,
+              <div key={`${c.id}-gap`} className="cap-reserve" aria-hidden="true" />,
+            ])}
         </div>
         {bar && !gone && (
           <div className="cap-track-bar" aria-hidden="true">

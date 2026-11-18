@@ -743,12 +743,13 @@ p { margin: 0; line-height: 1.5; }
 .captions.cap-box-scroll {
   height: calc(var(--cap-size) * var(--cap-lh) * var(--cap-lines)); max-height: none; overflow-y: auto; overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch; scrollbar-width: none; touch-action: pan-y; justify-content: flex-start;
-  text-align: start; padding-inline: 4px 14px; transition: opacity 0.6s ease;
+  text-align: start; padding-inline: 4px 14px;
 }
 @media (min-height: 800px) { :root { --cap-lines: 5; } }
 .captions.cap-box-scroll::-webkit-scrollbar { display: none; }
 .captions.cap-box-scroll.faded { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 0.6em); mask-image: linear-gradient(to bottom, transparent 0, #000 0.6em); }
-.captions.cap-box-scroll.fading { opacity: 0; }
+/* Fades out after a quiet spell; comes back instantly when someone speaks again. */
+.captions.cap-box-scroll.fading { opacity: 0; transition: opacity 0.6s ease; }
 .cap-fill { flex: 1 0 0; }
 .cap-reserve { flex-shrink: 0; }
 .cap-box .boxed .cap { align-self: flex-start; }

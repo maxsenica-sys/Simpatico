@@ -202,6 +202,7 @@ export function JoinScreen({
             </label>
           </div>
         )}
+        {editing && !missing && !missingGender && <p className="gender-why">{t("genderWhy")}</p>}
         {missing && (
           <span id="name-error" className="field-error" role="alert">
             {t("nameRequired")}

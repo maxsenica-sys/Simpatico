@@ -15,6 +15,7 @@ import { PersonSheet, RecentRow } from "./Recent";
 import { loadRecent, type RecentPerson } from "@/lib/recent";
 import { usePresence } from "@/lib/waiting";
 import { samePerson } from "@/lib/recent";
+import { Splash } from "./Splash";
 
 type InstallEvent = Event & { prompt: () => Promise<void> };
 
@@ -192,6 +193,7 @@ export function Home() {
           }}
         />
       )}
+      <Splash />
       {showLink && myLink && <LinkSheet url={myLink} onClose={() => setShowLink(false)} onOpen={() => router.push(new URL(myLink).pathname)} />}
     </main>
   );

@@ -32,6 +32,11 @@ export function initials(name: string): string {
 export function ProfileScreen() {
   const t = useT();
   const { lang, setLang } = useLang();
+  // "Your data" (move, clear) stays closed unless you came for it (the home screen's "Bring your data").
+  const [dataOpen, setDataOpen] = useState(false);
+  useEffect(() => {
+    if (location.hash === "#move") setDataOpen(true);
+  }, []);
   const [p, setP] = useState<Profile | null>(null);
   const [prefs, setPrefs] = useState<CaptionPrefs | null>(null);
   const [word, setWord] = useState("");
@@ -222,6 +227,14 @@ export function ProfileScreen() {
         <p className="muted small">{t("fromHint")}</p>
       </section>
 
+      <details className="pgroup">
+        <summary>
+          <span>
+            {t("meGroupWords")}
+            <small>{t("meGroupWordsSub")}</small>
+          </span>
+        </summary>
+        <div className="pgroup-body">
       <section className="pcard">
         <h2>{t("wordsTitle")}</h2>
         <p className="muted small">{t("wordsHint")}</p>
@@ -274,6 +287,17 @@ export function ProfileScreen() {
         </div>
       </section>
 
+        </div>
+      </details>
+
+      <details className="pgroup">
+        <summary>
+          <span>
+            {t("meGroupCaptions")}
+            <small>{t("meGroupCaptionsSub")}</small>
+          </span>
+        </summary>
+        <div className="pgroup-body">
       <section className="pcard">
         <h2>{t("captionsTitle")}</h2>
         <div className="caption-prefs flat">
@@ -324,8 +348,19 @@ export function ProfileScreen() {
         )}
       </section>
 
+        </div>
+      </details>
+
       <BlockedList />
 
+      <details className="pgroup" open={dataOpen} onToggle={(e) => setDataOpen((e.target as HTMLDetailsElement).open)}>
+        <summary>
+          <span>
+            {t("meGroupData")}
+            <small>{t("meGroupDataSub")}</small>
+          </span>
+        </summary>
+        <div className="pgroup-body">
       <MoveSection />
 
       <section className="pcard quiet">
@@ -372,6 +407,8 @@ export function ProfileScreen() {
           </div>
         )}
       </section>
+        </div>
+      </details>
     </main>
   );
 }

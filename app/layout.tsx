@@ -2,9 +2,17 @@ import type { Metadata, Viewport } from "next";
 import { BRAND } from "@/shared/brand";
 import "./globals.css";
 
+/** The site's own address, for link previews (set SITE_URL when the real domain is live). */
+const SITE = process.env.SITE_URL ?? "https://talk-calls.fly.dev";
+const DESCRIPTION = `${BRAND.tagline} Live translated captions on video calls. No app, no account.`;
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE),
   title: BRAND.appName,
-  description: `${BRAND.tagline} Live translated captions on video calls. No app, no account.`,
+  description: DESCRIPTION,
+  // What WhatsApp, iMessage and others show when a link is shared: a picture, a title, a line.
+  openGraph: { type: "website", siteName: BRAND.appName, title: `${BRAND.appName}: ${BRAND.tagline}`, description: DESCRIPTION, images: [{ url: "/og.png", width: 1200, height: 630, alt: `${BRAND.appName}: ${BRAND.tagline}` }] },
+  twitter: { card: "summary_large_image", title: `${BRAND.appName}: ${BRAND.tagline}`, description: DESCRIPTION, images: ["/og.png"] },
   applicationName: BRAND.appName,
   appleWebApp: { capable: true, title: BRAND.appName, statusBarStyle: "black-translucent" },
   formatDetection: { telephone: false },

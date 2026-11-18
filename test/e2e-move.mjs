@@ -26,6 +26,7 @@ try {
     return Object.fromEntries(Object.keys(localStorage).filter((k) => k.startsWith("talk.") && k !== "talk.mediaOk").map((k) => [k, localStorage.getItem(k)]));
   });
   await oldApp.goto(BASE + "/profile");
+  await oldApp.locator("summary", { hasText: "Your data" }).click(); // the group is closed until asked for
   await oldApp.getByRole("button", { name: "Copy everything" }).click();
   await oldApp.getByText(/^Copied\. Now open Simpatico/).waitFor();
   const code = await oldApp.evaluate(() => navigator.clipboard.readText());

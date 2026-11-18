@@ -74,7 +74,9 @@ p { margin: 0; line-height: 1.5; }
 /* ---------------------------------------------------------------- join */
 .join { display: flex; flex-direction: column; gap: 16px; max-width: 520px; margin: 0 auto; }
 .join-head { display: flex; justify-content: center; }
-.preview { position: relative; width: 100%; aspect-ratio: 3 / 4; max-height: 56dvh; border-radius: 20px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
+/* Short enough that the name fields and both Join buttons are on screen without scrolling,
+   on a first visit too (Safari's bars take a good part of the height). */
+.preview { position: relative; width: 100%; aspect-ratio: 3 / 4; max-height: 34dvh; border-radius: 20px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
 .preview video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .preview-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); }
 .mirror { transform: scaleX(-1); }
@@ -115,10 +117,11 @@ p { margin: 0; line-height: 1.5; }
   /* Padding so the green "talking" ring around a button (3px outside it) is never cut off. */
   max-height: 96px; padding: 4px 4px 0; overflow: hidden; opacity: 1; transition: opacity 0.25s ease, max-height 0.25s ease;
 }
-.ctrl { display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: 0; padding: 0; cursor: pointer; width: 56px; }
+.ctrl { display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: 0; padding: 0; cursor: pointer; width: 68px; }
+/* One line, never broken mid-word; a label too long for its button ends in "…". */
 .ctrl-label {
-  font-size: 0.66rem; font-weight: 600; line-height: 1.15; text-align: center; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-  max-width: 100%; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  font-size: 0.7rem; font-weight: 600; line-height: 1.15; text-align: center; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .round {
   position: relative; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
@@ -155,7 +158,7 @@ p { margin: 0; line-height: 1.5; }
 .remote.hidden-video { opacity: 0; }
 .no-video { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; background: radial-gradient(ellipse at center, #1a1f29, #07080a); color: var(--muted); }
 .no-video-icon { width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, 0.07); color: var(--text); }
-.self-restore { position: absolute; right: 12px; bottom: calc(var(--safe-b) + var(--cap-bottom) + var(--cap-size) * var(--cap-lh) * var(--cap-lines) + 12px); width: 40px; height: 40px; border-radius: 50%; border: 0; display: grid; place-items: center; background: rgba(20, 22, 26, 0.6); cursor: pointer; }
+.self-restore { position: absolute; right: 12px; bottom: calc(var(--safe-b) + var(--cap-bottom) + var(--cap-size) * var(--cap-lh) * (var(--cap-lines) + 0.7) + 16px); width: 40px; height: 40px; border-radius: 50%; border: 0; display: grid; place-items: center; background: rgba(20, 22, 26, 0.6); cursor: pointer; }
 
 .typing { position: absolute; left: 0; right: 0; bottom: calc(var(--safe-b) + 6px); display: flex; gap: 8px; justify-content: center; opacity: 0.75; pointer-events: none; }
 .typing span { width: 9px; height: 9px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.8); animation: blink 1.2s infinite ease-in-out; }
@@ -173,7 +176,8 @@ p { margin: 0; line-height: 1.5; }
 /* Self view: a corner preview (drag to any corner; bottom corners sit above the caption band),
    tap for bigger, tap again for a 50/50 split with the other person. */
 .self {
-  --self-bottom: calc(var(--safe-b) + var(--cap-bottom) + var(--cap-size) * var(--cap-lh) * var(--cap-lines) + 12px);
+  /* Above the caption box (its preview strip adds about two thirds of a line), never over it. */
+  --self-bottom: calc(var(--safe-b) + var(--cap-bottom) + var(--cap-size) * var(--cap-lh) * (var(--cap-lines) + 0.7) + 16px);
   --self-top: calc(max(var(--safe-t), 8px) + 150px);
   position: absolute; width: clamp(84px, 22vw, 180px); aspect-ratio: 3 / 4; border-radius: 14px; overflow: hidden;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.14); background: #111;
@@ -279,7 +283,7 @@ p { margin: 0; line-height: 1.5; }
 .avatar.big { width: 132px; height: 132px; font-size: 2.6rem; }
 .stage-name { font-size: 1.3rem; font-weight: 650; color: var(--text); }
 .stage-label {
-  position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(var(--safe-b) + var(--cap-bottom) + var(--cap-size) * var(--cap-lh) * var(--cap-lines) + 20px);
+  position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(var(--safe-b) + var(--cap-bottom) + var(--cap-size) * var(--cap-lh) * (var(--cap-lines) + 0.7) + 22px);
   padding: 4px 12px; border-radius: 999px; background: rgba(0, 0, 0, 0.45); font-weight: 600; font-size: 0.9rem;
 }
 .cap-who { font-size: 0.5em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.75; margin-inline-end: 0.5em; vertical-align: 0.25em; }
@@ -374,19 +378,17 @@ p { margin: 0; line-height: 1.5; }
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
 }
 
-/* Phones: every call button fits on one row (up to 7: mic, camera, flip, audio only, in room, text, end). */
+/* Phones: the five call buttons (mic, camera, chat, more, end) on one row with room for labels. */
 @media (max-width: 440px) {
   .controls { column-gap: 2px; }
-  .ctrl { width: 50px; }
-  .round { width: 44px; height: 44px; }
-  .ctrl-label { font-size: 0.62rem; }
+  .ctrl { width: 64px; }
 }
 /* Smallest phones (iPhone SE / mini): still one row. */
 @media (max-width: 380px) {
   .controls { column-gap: 1px; }
-  .ctrl { width: 47px; }
-  .round { width: 41px; height: 41px; }
-  .ctrl-label { font-size: 0.6rem; }
+  .ctrl { width: 58px; }
+  .round { width: 44px; height: 44px; }
+  .ctrl-label { font-size: 0.66rem; }
 }
 
 /* ---------------------------------------------------------------- "Me" (profile) */
@@ -872,3 +874,48 @@ p { margin: 0; line-height: 1.5; }
 .cap-preview p { margin: 0; font-size: calc(var(--cap-size) * 0.82); line-height: var(--cap-lh); font-weight: 600; color: rgba(255, 255, 255, 0.62); text-shadow: 0 2px 3px rgba(0, 0, 0, 0.9), 0 0 2px #000; overflow-wrap: anywhere; }
 .cap-preview.fading { opacity: 0; transition: opacity 0.6s ease; }
 .cap-new { font-weight: 600; opacity: 0.9; }
+
+/* Call screen: "More" (flip camera, audio only, same room) */
+.topbar { position: relative; }
+.more-menu { position: absolute; z-index: 6; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 6px; width: min(320px, calc(100vw - 32px)); padding: 6px; border-radius: 18px; background: rgba(21, 24, 29, 0.97); border: 1px solid var(--line); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6); display: flex; flex-direction: column; }
+.more-menu button { display: flex; align-items: center; gap: 12px; padding: 12px; border: 0; border-radius: 12px; background: none; color: var(--text); font: inherit; font-weight: 600; text-align: start; cursor: pointer; }
+.more-menu button:active { background: rgba(255, 255, 255, 0.07); }
+.more-menu button span { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.more-menu button small { font-weight: 400; color: var(--muted); font-size: 0.8rem; }
+.more-menu button.on { color: #7ee2a0; }
+.more-check { font-style: normal; font-weight: 800; width: 18px; }
+
+/* Join screen: why gender is asked */
+.gender-why { margin: -6px 0 0; font-size: 0.82rem; color: var(--muted); text-align: start; }
+
+/* Me page: sections that open and close */
+.pgroup { border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); }
+.pgroup > summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; cursor: pointer; font-weight: 700; font-size: 1.05rem; }
+.pgroup > summary::-webkit-details-marker { display: none; }
+.pgroup > summary small { display: block; font-weight: 400; font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
+.pgroup > summary::after { content: "›"; font-size: 1.5rem; line-height: 1; color: var(--muted); transition: transform 0.15s ease; }
+.pgroup[open] > summary::after { transform: rotate(90deg); }
+.pgroup-body { display: flex; flex-direction: column; gap: 12px; padding: 0 12px 12px; }
+.pgroup-body .pcard { background: var(--surface-2); }
+
+/* Opening animation (components/Splash.tsx) */
+.splash { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px;
+  background: radial-gradient(ellipse at 30% 20%, rgba(91, 140, 255, 0.22), transparent 55%), radial-gradient(ellipse at 80% 30%, rgba(95, 224, 189, 0.14), transparent 50%), var(--bg); }
+.splash.fade { opacity: 0; transition: opacity 0.35s ease; pointer-events: none; }
+.splash-card { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 30px 40px 26px; border-radius: 34px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5); opacity: 0; }
+.splash-name { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.03em; opacity: 0; }
+.splash-slogan { margin: 0; text-align: center; font-size: 1.5rem; font-weight: 750; line-height: 1.25; letter-spacing: -0.02em; opacity: 0; }
+.splash-slogan span { display: block; }
+.splash-bubble { transform-box: fill-box; }
+.splash-bubble.left { transform-origin: 30% 80%; }
+.splash-bubble.right { transform-origin: 70% 80%; }
+.splash.play .splash-card, .splash.fade .splash-card { animation: splash-up 0.4s cubic-bezier(0.2, 1.3, 0.4, 1) forwards; }
+.splash.play .splash-bubble.left { animation: splash-bing 0.42s 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+.splash.play .splash-bubble.right { animation: splash-bing-r 0.42s 0.68s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+.splash.play .splash-name, .splash.fade .splash-name { animation: splash-in 0.3s 1s ease-out forwards; }
+.splash.play .splash-slogan, .splash.fade .splash-slogan { animation: splash-pop 0.35s 1.25s cubic-bezier(0.2, 1.3, 0.4, 1) forwards; }
+@keyframes splash-up { from { opacity: 0; transform: translateY(70px) scale(0.92); } to { opacity: 1; transform: none; } }
+@keyframes splash-bing { 0% { transform: scale(1) rotate(0); } 35% { transform: scale(1.22) rotate(-9deg); } 65% { transform: scale(0.94) rotate(4deg); } 100% { transform: scale(1) rotate(0); } }
+@keyframes splash-bing-r { 0% { transform: scale(1) rotate(0); } 35% { transform: scale(1.22) rotate(9deg); } 65% { transform: scale(0.94) rotate(-4deg); } 100% { transform: scale(1) rotate(0); } }
+@keyframes splash-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes splash-pop { from { opacity: 0; transform: translateY(14px) scale(0.96); } to { opacity: 1; transform: none; } }

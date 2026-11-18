@@ -38,7 +38,7 @@ try {
   await max.waitForTimeout(1500);
 
   step("Max sends a photo from the Text sheet: made smaller on his phone, shown to him straight away");
-  await max.getByRole("button", { name: "Show transcript" }).first().click();
+  await max.getByRole("button", { name: "Open chat" }).first().click();
   await max.locator('.sheet input[type="file"]').setInputFiles(fixture("photo.png"));
   await max.waitForFunction(() => { const i = document.querySelector(".tline.me .media-thumb img"); return i && i.naturalWidth > 0; }, null, { timeout: 15000 });
   await max.waitForFunction(() => !document.querySelector(".media-status"), null, { timeout: 15000 });
@@ -55,7 +55,7 @@ try {
   await ezgi.waitForFunction(() => document.querySelector(".ctrl .badge")?.textContent === "2", null, { timeout: 10000 });
 
   step("Ezgi opens the messages: the photo (1600 px, JPEG) and the video play; the count clears");
-  await ezgi.getByRole("button", { name: "View" }).first().click().catch(() => ezgi.getByRole("button", { name: "Show transcript" }).first().click());
+  await ezgi.getByRole("button", { name: "View" }).first().click().catch(() => ezgi.getByRole("button", { name: "Open chat" }).first().click());
   await ezgi.waitForFunction(() => { const i = document.querySelector(".tline.them .media-thumb img"); return i && i.naturalWidth > 0; }, null, { timeout: 15000 });
   const size = await ezgi.evaluate(() => { const i = document.querySelector(".tline.them .media-thumb img"); return [i.naturalWidth, i.naturalHeight]; });
   if (size[0] !== 1600) throw new Error("photo should arrive at 1600 px wide, got " + size);

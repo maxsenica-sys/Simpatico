@@ -57,6 +57,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const [selfView, setSelfView] = useState(true);
   const [selfMode, setSelfMode] = useState<SelfMode>("small");
   const [transcript, setTranscript] = useState(false);
+  const [more, setMore] = useState(false);
   const [fit, setFit] = useState<"cover" | "contain">("cover");
   const [now, setNow] = useState(() => Date.now());
   const [connectedAt, setConnectedAt] = useState<number | null>(null);
@@ -530,29 +531,75 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
             <Ctrl label={t("lblMic")} title={s.muted ? t("unmute") : t("mute")} danger={s.muted} active={s.meSpeaking && !s.muted} onClick={() => call.setMuted(!s.muted)}>
               <MicIcon off={s.muted} />
             </Ctrl>
-            {!s.audioOnly && (
+            {/* Second slot: the camera, or the way back to video once on audio only. */}
+            {!s.audioOnly ? (
               <Ctrl label={t("lblCamera")} title={s.camOn ? t("cameraOff") : t("cameraOn")} danger={!s.camOn} onClick={() => call.setCamera(!s.camOn)}>
                 <CameraIcon off={!s.camOn} />
               </Ctrl>
-            )}
-            {s.camOn && s.canSwitchCamera && (
-              <Ctrl label={t("lblFlip")} title={t("switchCamera")} onClick={() => call.switchCamera()}>
-                <FlipIcon />
+            ) : (
+              <Ctrl label={t("lblVideo")} title={t("goVideo")} onClick={() => call.setAudioOnly(false)}>
+                <CameraIcon off={false} />
               </Ctrl>
             )}
-            <Ctrl label={s.audioOnly ? t("lblVideo") : t("lblAudioOnly")} title={s.audioOnly ? t("goVideo") : t("goAudioOnly")} onClick={() => call.setAudioOnly(!s.audioOnly)}>
-              {s.audioOnly ? <CameraIcon off={false} /> : <AudioOnlyIcon />}
-            </Ctrl>
-            <Ctrl label={t("lblInRoom")} title={s.inRoom ? t("inRoomOn") : t("inRoomOff")} active={s.inRoom} onClick={() => call.setInRoom(!s.inRoom)}>
-              <RoomIcon />
-            </Ctrl>
             <Ctrl label={t("lblText")} title={t("showTranscript")} badge={s.unreadMedia} onClick={() => setTranscript(true)}>
               <TextIcon />
+            </Ctrl>
+            {/* Things changed once or rarely live under More, so five buttons fit in one row
+                with their labels on one line in every language. */}
+            <Ctrl label={t("lblMore")} title={t("moreTitle")} active={s.inRoom} onClick={() => setMore((v) => !v)}>
+              <MoreIcon />
             </Ctrl>
             <Ctrl label={t("lblEnd")} title={t("endCall")} danger onClick={end}>
               <HangupIcon />
             </Ctrl>
           </div>
+          {more && (
+            <div className="more-menu" role="menu">
+              {s.camOn && s.canSwitchCamera && (
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    void call.switchCamera();
+                    setMore(false);
+                  }}
+                >
+                  <FlipIcon />
+                  <span>{t("switchCamera")}</span>
+                </button>
+              )}
+              {!s.audioOnly && (
+                <button
+                  role="menuitem"
+                  aria-label={t("goAudioOnly")}
+                  onClick={() => {
+                    call.setAudioOnly(true);
+                    setMore(false);
+                  }}
+                >
+                  <AudioOnlyIcon />
+                  <span>{t("lblAudioOnly")}</span>
+                </button>
+              )}
+              <button
+                role="menuitemcheckbox"
+                aria-checked={s.inRoom}
+                className={s.inRoom ? "on" : ""}
+                onClick={() => {
+                  call.setInRoom(!s.inRoom);
+                  setMore(false);
+                }}
+              >
+                <RoomIcon />
+                <span>
+                  {t("inRoomLabel")}
+                  <small>{t("inRoomHint")}</small>
+                </span>
+                <i className="more-check" aria-hidden="true">
+                  {s.inRoom ? "✓" : ""}
+                </i>
+              </button>
+            </div>
+          )}
         </div>
 
         {group && s.participants.length > 0 && (
@@ -921,6 +968,16 @@ function CameraIcon({ off, size = 22 }: { off: boolean; size?: number }) {
     </svg>
   );
 }
+function MoreIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+      <circle cx="5" cy="12" r="2" />
+      <circle cx="12" cy="12" r="2" />
+      <circle cx="19" cy="12" r="2" />
+    </svg>
+  );
+}
+
 function FlipIcon() {
   return (
     <svg viewBox="0 0 24 24" width="22" height="22" {...svg} aria-hidden="true">

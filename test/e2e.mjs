@@ -135,20 +135,20 @@ try {
   console.log("  B captions:", await b.$$eval(".cap", (els) => els.map((e) => `[${e.className}] ${e.textContent}`)));
 
   step("The Text button opens the transcript; caption settings sit behind their own button");
-  await b.locator(".controls").getByRole("button", { name: "Konuşma dökümünü göster" }).click();
-  await b.getByRole("heading", { name: "Konuşma dökümü" }).waitFor();
+  await b.locator(".controls").getByRole("button", { name: "Sohbeti aç" }).click();
+  await b.getByRole("heading", { name: "Sohbet" }).waitFor();
   if (await b.getByRole("radiogroup", { name: "Altyazı boyutu" }).count()) throw new Error("caption settings should start hidden");
   await b.getByRole("button", { name: "Altyazı ayarları" }).click();
   await b.getByRole("radiogroup", { name: "Altyazı boyutu" }).waitFor();
 
   step("Type to talk: A types a message, B gets it as a caption in Turkish");
   await b.getByRole("button", { name: "Kapat", exact: true }).click().catch(() => {});
-  await a.locator(".controls").getByRole("button", { name: "Show transcript" }).click();
+  await a.locator(".controls").getByRole("button", { name: "Open chat" }).click();
   await a.getByPlaceholder("Type a message…").fill("my flat is number 12");
   await a.getByRole("button", { name: "Send", exact: true }).click();
   await b.waitForFunction(() => [...document.querySelectorAll(".cap")].some((e) => e.textContent.includes("(Turkish) my flat is number 12")), null, { timeout: 10000 });
   await a.getByRole("button", { name: "Close", exact: true }).click();
-  await b.locator(".controls").getByRole("button", { name: "Konuşma dökümünü göster" }).click();
+  await b.locator(".controls").getByRole("button", { name: "Sohbeti aç" }).click();
   await b.getByRole("button", { name: "Altyazı ayarları" }).click();
   await b.getByRole("radiogroup", { name: "Altyazı boyutu" }).waitFor();
 
@@ -242,7 +242,8 @@ try {
 
   step("B switches to audio only: no video either way, A is told, captions still arrive at B");
   await show(b);
-  await b.getByRole("button", { name: "Sadece sese geç" }).click();
+  await b.getByRole("button", { name: "Diğer seçenekler" }).click(); // More
+  await b.getByRole("menuitem", { name: "Sadece sese geç" }).click();
   await b.waitForFunction(() => document.querySelector(".no-video p:not(.stage-name)")?.textContent?.includes("Sadece ses"), null, { timeout: 10000 });
   await a.getByText("They're on audio only").waitFor({ timeout: 10000 });
   await b.waitForFunction(() => document.querySelectorAll(".cap").length > 0, null, { timeout: 15000 });

@@ -4,7 +4,7 @@ import { log } from "./log";
 import { phraseTranslate, refine, refineConfigured, type ContextLine, type People } from "./refine";
 import { SonioxStream, sonioxConfigured, type SonioxToken } from "./soniox";
 import { sonioxContext } from "./vocab";
-import { isTrivialEdit } from "./text";
+import { dropRepeat, isTrivialEdit } from "./text";
 
 /**
  * Hard deadline for pass 2, measured from the moment the utterance is finalised.
@@ -49,6 +49,18 @@ const PREVIEW_TIMEOUT_MS = 2500;
 const VERB_FINAL = new Set(["tr", "hi", "ur", "bn", "ja", "ko", "fa", "ta", "te", "mr", "kn", "ml", "gu", "pa", "az", "kk", "uz", "mn", "my", "ne", "si"]);
 /** Short joining words a phrase shouldn't end on (the main Latin-script app languages). */
 const JOINING = /^(and|or|but|so|when|if|that|which|who|where|while|because|the|a|an|of|to|in|on|at|for|with|from|by|as|than|then|ve|ama|ile|için|gibi|de|da|ki|и|а|но|что|когда|в|на|с|y|o|pero|que|cuando|el|la|los|las|de|en|con|para|e|ou|mas|quando|o|os|as|do|da|em|com|et|ou|mais|quand|le|les|du|des|dans|avec|pour|dan|atau|tapi|yang|di|ke|dari|untuk)$/i;
+/**
+ * Turkish and Azerbaijani "de/da" (too) and "ki" attach to the word BEFORE them, so a phrase may
+ * end on them (in Spanish or French "de" joins forward). "bi"/"bir" (a) never ends a phrase.
+ */
+const ENCLITIC = new Set(["tr", "az"]);
+/** Turkish words that lean on the word after them: a phrase cut here reads wrongly ("ne | iş yapıyorsun", "o kadar | yoruldum"). */
+const TR_LEANS = /^(bi|bir|ne|neden|niye|nasıl|hangi|kaç|çok|en|daha|pek|hiç|her|bu|şu|o|böyle|öyle|şöyle|biraz|kadar|hem|ya|veya|yoksa|çünkü|eğer|sanki|bile|sadece|yalnız|tam|artık|hala|hâlâ|yine|gene|zaten|belki|galiba|herhalde|mutlaka|kesin)$/i;
+export function joinsForward(word: string, lang: string): boolean {
+  const w = word.replace(/[^\p{L}\p{N}'’]+/gu, "");
+  if (ENCLITIC.has(lang)) return TR_LEANS.test(w) || (JOINING.test(w) && !/^(de|da|ki)$/i.test(w));
+  return JOINING.test(w);
+}
 const CLAUSE_END = /[.!?;:,…。！？，、；：؟،।]["'”’)\]]*\s*$/u;
 const BACKOFF_MS = [0, 250, 1000, 2000, 5000];
 /**
@@ -491,7 +503,10 @@ export class SpeakerPipeline {
     if (pending.length >= Math.round(STEADY_MAX_WORDS * scale * this.phraseScale)) {
       // Don't end a phrase on a joining word ("when", "and", "the"): it belongs with what follows.
       let n = pending.length;
-      while (n > STEADY_MIN_WORDS * scale && n > pending.length - 3 && JOINING.test(pending[n - 1])) n--;
+      const lang = baseLang(this.speaks) ?? "";
+      while (n > STEADY_MIN_WORDS * scale && n > pending.length - 4 && joinsForward(pending[n - 1], lang)) n--;
+      // Turkish "bi de" / "bir de" (and another thing) opens what follows: it goes with the next phrase.
+      if (ENCLITIC.has(lang) && n - 2 >= STEADY_MIN_WORDS * scale && /^(bi|bir)$/i.test(pending[n - 2]) && /^(de|da)$/i.test(pending[n - 1])) n -= 2;
       return this.steadyPhrase(u, false, n);
     }
     // A short pause mid-sentence also ends a phrase, so the reader isn't kept waiting.
@@ -513,6 +528,9 @@ export class SpeakerPipeline {
       before: units.slice(0, u.steadyWords).join(sep).trim(),
       shown: u.steadyText,
       final,
+      // The next few words already heard: lets the translator see the verb that is coming
+      // (verb-last languages) without translating it yet.
+      ahead: final ? undefined : units.slice(upTo, upTo + 3).join(sep).trim() || undefined,
       sourceLang: this.speaks!,
       targetLang: this.reads!,
       context: this.host.context(),
@@ -535,6 +553,8 @@ export class SpeakerPipeline {
       } else {
         u.steadyFails = 0;
         u.steadyWords = upTo;
+        // Never the same words twice: a phrase that starts by repeating the end of the line.
+        if (text) text = dropRepeat(u.steadyText, text);
         if (text) u.steadyText = joinText(u.steadyText, text);
         this.steadyEmit(u, false);
       }

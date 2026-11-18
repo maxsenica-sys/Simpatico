@@ -208,4 +208,5 @@ export default {
       ],
     },
   ],
+  leftIn: ["sih", "deh", "kok", "nih", "lho", "loh", "gitu", "banget"],
 } satisfies SlangSet;

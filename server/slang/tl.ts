@@ -15,4 +15,5 @@ export default {
       ],
     },
   ],
+  leftIn: ["opo", "naman", "kasi", "kuya", "diba"],
 } satisfies SlangSet;

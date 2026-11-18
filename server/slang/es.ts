@@ -273,4 +273,5 @@ export default {
       ],
     },
   ],
+  leftIn: ["güey", "wey", "pues", "o sea", "tío", "tía", "órale", "ándale", "chévere", "bacán", "parce", "híjole"],
 } satisfies SlangSet;

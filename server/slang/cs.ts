@@ -14,4 +14,5 @@ export default {
       ],
     },
   ],
+  leftIn: ["hele", "prostě", "vole", "kámo"],
 } satisfies SlangSet;

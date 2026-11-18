@@ -14,4 +14,5 @@ export default {
       ],
     },
   ],
+  leftIn: ["alltså", "liksom", "väl"],
 } satisfies SlangSet;

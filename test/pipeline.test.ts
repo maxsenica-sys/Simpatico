@@ -4,8 +4,8 @@ import assert from "node:assert/strict";
 import { WebSocketServer, type WebSocket } from "ws";
 
 import { SpeakerPipeline } from "../server/pipeline";
-import { isTrivialEdit } from "../server/text";
-import { looksUntranslated, namesTag, relevantPeople, subtitleOnly } from "../server/refine";
+import { dropRepeat, isTrivialEdit } from "../server/text";
+import { guessedGender, leftovers, looksUntranslated, namesTag, relevantPeople, subtitleOnly } from "../server/refine";
 import { sonioxContext } from "../server/vocab";
 import { reply } from "./sse";
 
@@ -290,6 +290,39 @@ assert.equal(looksUntranslated("bugün akşam yemeğe çıkalım mı", "bugün a
 assert.equal(looksUntranslated("bugün akşam yemeğe çıkalım mı", "Shall we go out for dinner tonight?"), false);
 assert.equal(looksUntranslated("Ayşe", "Ayşe"), false);
 console.log("✓ untranslated replies are rejected");
+
+// Words of the speaker's language left in a translation are caught (and names are not).
+assert.deepEqual(leftovers("Allah Allah bu da nerden çıktı şimdi", "Allah Allah, where did that come from now?", "tr-TR", "en-AU"), ["Allah Allah"]);
+assert.deepEqual(leftovers("ya hani geçen sene konuşmuştuk", "ya, you know, we talked about it last year", "tr", "en"), ["ya"]);
+assert.deepEqual(leftovers("ya hani geçen sene konuşmuştuk", "you know, we talked about it last year", "tr", "en"), []);
+assert.deepEqual(leftovers("ya geliyorum", "ya voy", "tr", "es"), [], "Spanish has its own 'ya'");
+assert.deepEqual(leftovers("привет, как дела", "hi, как дела", "ru", "en"), ["как дела"]);
+assert.deepEqual(leftovers("Ezgi geldi", "Ezgi came", "tr", "en", ["Ezgi"]), []);
+assert.deepEqual(leftovers("Мия спит", "Мия is asleep", "ru", "en", ["Мия"]), [], "a saved name in its own script is fine");
+console.log("✓ words left in the speaker's language are caught; names are left alone");
+
+// A phrase that starts by repeating the end of the line loses the repeat.
+assert.equal(dropRepeat("we'd need to rent a car, because public transport is pretty limited there", "public transport is pretty limited there, what do you reckon?"), "what do you reckon?");
+assert.equal(dropRepeat("I went to the market", "and bought some fish"), "and bought some fish");
+assert.equal(dropRepeat("it's very very", "very good"), "very good", "one or two repeated words are left alone");
+assert.equal(dropRepeat("so we should look at hotels now", "so we should look at hotels now"), "");
+assert.equal(dropRepeat("otherwise the prices", "prices are going up a lot"), "are going up a lot");
+assert.equal(dropRepeat("no", "no, wait, I meant tomorrow"), "no, wait, I meant tomorrow");
+console.log("✓ a phrase never repeats the end of the subtitle");
+
+// "her" for a Turkish "o" with nothing saying who it is gets a second look; "annem" explains it.
+assert.deepEqual(guessedGender("I'll call her again", "içim rahat etmedi bi daha arıycam onu", "tr", "en"), ["her"]);
+assert.deepEqual(guessedGender("I'll call her again", "annem hasta bi daha arıycam onu", "tr", "en"), []);
+assert.deepEqual(guessedGender("I'll call them again", "bi daha arıycam onu", "tr", "en"), []);
+assert.deepEqual(guessedGender("she is tired", "она устала", "ru", "en"), [], "Russian says so itself");
+assert.deepEqual(guessedGender("she still talks non-stop", "kilo vermiş ama hala aynı çok konuşuyo", "tr", "en"), ["she"], "'hala' (still) and 'kızma' (don't be angry) are not family words");
+console.log("✓ a guessed he/she from a language without one is checked");
+
+// The translator explaining itself, or saying there's nothing to add, never reaches the screen.
+assert.equal(subtitleOnly('The subtitle so far already ends with "walked the rest of the way", so "gittim" (I went) adds nothing new.'), "");
+assert.equal(subtitleOnly("[nothing]"), "");
+assert.equal(subtitleOnly("there's nothing new at work"), "there's nothing new at work");
+console.log("✓ the translator's notes to itself are never shown");
 
 // Gender only goes to the translator where the words need it (English source).
 assert.deepEqual(relevantPeople("I'm so tired", "en-AU", { speaker: "f" }), { speaker: "f", listener: undefined });

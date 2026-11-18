@@ -13,4 +13,5 @@ export default {
       ],
     },
   ],
+  leftIn: ["nha", "nhé", "nhỉ", "ơi"],
 } satisfies SlangSet;

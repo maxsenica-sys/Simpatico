@@ -37,3 +37,33 @@ export function isTrivialEdit(literal: string, refined: string): boolean {
   const len = Math.max(Array.from(a).length, Array.from(b).length);
   return d <= 2 || d / len < 0.08;
 }
+
+/**
+ * A new phrase of a subtitle that starts by repeating the end of what is already on screen
+ * (the translator sometimes says the last few words again): drop the repeated start. Returns
+ * the phrase unchanged when nothing repeats. Two or more repeated words always count; a single
+ * word only when it is a longer one ("the prices | prices are going up"), so "very | very good"
+ * and "no | no, wait" are left alone.
+ */
+export function dropRepeat(shown: string, next: string): string {
+  const words = (t: string) => t.split(/\s+/).filter(Boolean);
+  const key = (w: string) => normalize(w);
+  const a = words(shown).map(key).filter(Boolean);
+  const raw = words(next);
+  const b = raw.map(key);
+  for (let k = Math.min(a.length, b.filter(Boolean).length, 12); k >= 1; k--) {
+    // The first k real words of `next` (skipping pure punctuation) against the last k of `shown`.
+    const idx: number[] = [];
+    for (let i = 0; i < b.length && idx.length < k; i++) if (b[i]) idx.push(i);
+    if (idx.length < k) continue;
+    if (k === 1 && Array.from(b[idx[0]]).length < 5) continue;
+    if (idx.every((i, n) => b[i] === a[a.length - k + n])) {
+      return raw
+        .slice(idx[k - 1] + 1)
+        .join(" ")
+        .replace(/^[\s,;:.…-]+/u, "")
+        .trim();
+    }
+  }
+  return next;
+}

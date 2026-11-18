@@ -15,4 +15,5 @@ export default {
       ],
     },
   ],
+  leftIn: ["gewoon", "eigenlijk", "joh"],
 } satisfies SlangSet;

@@ -13,4 +13,5 @@ export default {
       ],
     },
   ],
+  leftIn: ["hát", "szóval", "izé", "haver", "tesó"],
 } satisfies SlangSet;

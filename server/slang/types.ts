@@ -16,4 +16,10 @@ export type SlangSet = {
   /** Base language code (BCP-47 primary subtag), e.g. "en", "tr". */
   lang: string;
   groups: SlangGroup[];
+  /**
+   * Fillers, particles and terms of address that must never be left in a translation OUT of
+   * this language (checked after each translation; one corrective retry). Only words that are
+   * not also ordinary words in other languages written with the same letters.
+   */
+  leftIn?: string[];
 };

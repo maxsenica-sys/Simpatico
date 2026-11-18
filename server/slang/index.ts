@@ -50,6 +50,11 @@ const RULES = [
   "Sports talk (volleyball and others): keep the terms players of the target language really use; many are borrowed from English (\"spike\", \"set\", \"libero\", \"timeout\"), so use those rather than a literal translation."
 ];
 
+/** Words of this language that must not be left in a translation out of it (see SlangSet.leftIn). */
+export function leftInWords(lang: string): string[] {
+  return SETS[baseLang(lang) ?? lang]?.leftIn ?? [];
+}
+
 /** Lines approved from real calls (vocab-extra.json), keyed by base language. */
 export type Extra = Record<string, string[]>;
 

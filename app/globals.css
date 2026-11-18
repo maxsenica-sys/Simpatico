@@ -978,3 +978,7 @@ p { margin: 0; line-height: 1.5; }
 .home2:not(.has-recent) { gap: clamp(8px, 1.6dvh, 14px); }
 @media (max-height: 720px) { .home2:not(.has-recent) .slogan { font-size: 1.45rem; } .home2:not(.has-recent) .home-hero { padding: 4px 4px 0; } .home2:not(.has-recent) .how-step small { display: none; } .home2:not(.has-recent) .home-foot a[href="/privacy"] { display: none; } }
 @media (max-height: 600px) { .home2:not(.has-recent) .how { display: none; } }
+
+/* Caption box: earlier stretches of the call, one box-height above the current one */
+.cap-break { flex: none; border-top: 1px solid rgba(255, 255, 255, 0.14); margin-top: 0.5em; }
+.cap.old { opacity: 0.8; }

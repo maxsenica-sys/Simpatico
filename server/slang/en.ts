@@ -448,4 +448,5 @@ export default {
       ],
     },
   ],
+  leftIn: ["yeah nah", "nah yeah", "heaps", "arvo", "y'all", "gonna", "wanna", "gotta", "innit", "bruv", "no worries", "uh-huh", "mm-hmm"],
 } satisfies SlangSet;

@@ -258,4 +258,5 @@ export default {
       ],
     },
   ],
+  leftIn: ["né", "tipo assim", "beleza", "valeu", "pô", "poxa", "tá bom", "então"],
 } satisfies SlangSet;

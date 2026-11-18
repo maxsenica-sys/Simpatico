@@ -37,7 +37,29 @@ const ENGLISH: string[] = [
   "libero", "setter", "spike", "dig", "ace", "rotation", "block", "pancake", "timeout", "side out",
 ];
 
-const TURKISH: string[] = ["kanka", "kanki", "valla", "eyvallah", "inşallah", "maşallah", "hocam", "abi", "abla", "aynen", "naber", "boşver", "libero", "smaç", "manşet", "pasör"];
+const TURKISH: string[] = [
+  // Everyday spoken words and particles
+  "kanka", "kanki", "valla", "vallahi", "eyvallah", "inşallah", "maşallah", "hocam", "abi", "abla", "aynen", "naber", "boşver",
+  "napıyorsun", "napıyosun", "noldu", "nolur", "bi şey", "bi daha", "bi dakika", "değil mi", "di mi", "yani", "hani", "işte", "şey",
+  "hadi ya", "yok ya", "of ya", "ay", "aman", "tamam", "olur", "bence", "galiba", "herhalde", "keşke", "resmen", "cidden", "harbiden",
+  "geliyorum", "gelicem", "gidiyorum", "gidicem", "yapıyorum", "yapıcam", "diyorum", "dicem", "arıycam", "bakıcam", "görüşürüz",
+  "kolay gelsin", "eline sağlık", "elinize sağlık", "geçmiş olsun", "afiyet olsun", "hayırlı olsun", "nazar değmesin", "Allah Allah",
+  "kafana takma", "boş yapma", "saçmalama", "abartma", "şaka maka", "kusura bakma", "sağ ol", "teşekkür ederim", "rica ederim",
+  // Affection and family
+  "canım", "aşkım", "hayatım", "bebeğim", "tatlım", "birtanem", "özledim", "seni seviyorum", "anne", "baba", "annem", "babam",
+  "teyze", "hala", "dayı", "amca", "yenge", "enişte", "kuzen", "anneanne", "babaanne", "dede", "kardeşim", "teyzecim", "ablacım",
+  // Food and drink
+  "mantı", "börek", "dolma", "sarma", "menemen", "simit", "lahmacun", "künefe", "baklava", "ayran", "rakı", "çay", "kahvaltı",
+  "köfte", "döner", "pide", "çorba", "mercimek", "kumpir", "gözleme", "poğaça", "lokum",
+  // Places
+  "İstanbul", "Ankara", "İzmir", "Antalya", "Bodrum", "Bursa", "Kadıköy", "Beşiktaş", "Üsküdar", "Taksim", "Şişli", "Bakırköy",
+  "Kapadokya", "Fethiye", "Marmaris", "Çeşme", "Alaçatı", "Trabzon", "Eskişehir", "Adana", "Gaziantep", "Kayseri", "Konya",
+  // Names people mention
+  "Ayşe", "Fatma", "Elif", "Zeynep", "Merve", "Büşra", "Esra", "Ezgi", "Selin", "Deniz", "Mehmet", "Ahmet", "Mustafa", "Emre",
+  "Burak", "Murat", "Can", "Cem", "Kerem", "Yusuf", "Ömer", "Alperen", "Muammer", "Hakan", "Serkan", "Oğuz", "Tolga",
+  // Sport
+  "libero", "smaç", "manşet", "pasör", "Galatasaray", "Fenerbahçe", "Beşiktaş", "Trabzonspor", "derbi",
+];
 const SPANISH: string[] = ["güey", "neta", "vale", "chévere", "bacán", "pana", "libero", "remate"];
 const PORTUGUESE: string[] = ["mano", "beleza", "valeu", "tipo", "gambiarra", "líbero", "levantador"];
 const RUSSIAN: string[] = ["короче", "блин", "прикол", "кайф", "норм", "либеро", "связующий"];

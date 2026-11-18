@@ -11,8 +11,8 @@ const FADE_MS = 600;
 const RUN_GAP_MS = 3000;
 /** Before the current run: only the last few short lines (about two lines' worth). */
 const EARLIER_MAX = 3;
-/** Lines kept for reading back (a long monologue is many lines). */
-const HISTORY = 40;
+/** Lines kept for reading back: the whole of a long call. */
+const HISTORY = 300;
 
 type Line = Caption & { startAt: number };
 
@@ -45,7 +45,10 @@ export function CaptionBox({
   const t = tr ?? appT;
   const box = useRef<HTMLDivElement>(null);
   const history = useRef<Line[]>([]);
-  const held = useRef<string[] | null>(null);
+  /** Reading back: where the current stretch of talking began when you scrolled away (kept still). */
+  const frozen = useRef<string | null>(null);
+  /** When you last came back to the newest words (they stay a while longer for you to read). */
+  const backAt = useRef(0);
   const [atBottom, setAtBottom] = useState(true);
   const [bar, setBar] = useState<{ top: number; height: number } | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -62,9 +65,14 @@ export function CaptionBox({
     if (i < 0) h.push({ ...c, startAt: c.updatedAt });
     else if (h[i].doneAt === null) h[i] = { ...c, startAt: h[i].startAt };
   }
-  if (h.length > HISTORY) h.splice(0, h.length - HISTORY);
+  // (Never trimmed while you're reading back: nothing may move under you.)
+  if (h.length > HISTORY && atBottom) h.splice(0, h.length - HISTORY);
 
-  // Which lines to show: the current run whole, plus a little of what came before.
+  // Everything said stays in the box, so you can always scroll back to it. What you see while
+  // following is the current stretch of talking (the run whole, plus a little of what came
+  // just before); everything earlier sits one box-height further up, out of view until you
+  // scroll back. `start` is where the current stretch begins.
+  let start = h.length;
   let shown: Line[] = [];
   if (h.length) {
     let i = h.length - 1;
@@ -91,26 +99,28 @@ export function CaptionBox({
       if (earlier.length && chars > lineChars * 2) break;
       earlier.unshift(h[j]);
     }
-    shown = [...earlier, ...run];
+    start = i - earlier.length;
   }
-  // Reading back: keep everything from the first line that was on screen down to the newest,
-  // with nothing taken out of the middle (a line dropping out moved the text you were reading).
-  if (!atBottom && held.current?.length) {
-    const firstHeld = h.findIndex((x) => x.id === held.current![0]);
-    const firstShown = shown[0] ? h.indexOf(shown[0]) : h.length;
-    const from = firstHeld >= 0 ? Math.min(firstHeld, firstShown) : firstShown;
-    shown = h.slice(from);
-  }
-  held.current = shown.map((x) => x.id);
+  // Reading back: the stretch keeps the starting point it had when you scrolled away, so
+  // nothing above or around what you're reading changes; new words only add at the bottom.
+  if (!atBottom && frozen.current) {
+    const at = h.findIndex((x) => x.id === frozen.current);
+    if (at >= 0) start = Math.min(start, at);
+  } else frozen.current = h[start]?.id ?? null;
+  shown = h.slice(start);
+  const older = h.slice(0, start);
 
   // Quiet = nobody's words still arriving, and the last ones finished a while ago. (It used to
   // look only at the newest line: in a group, someone's short "ok" going stale hid the person
   // still talking.)
   const anyActive = shown.some((x) => x.doneAt === null);
   const lastDone = Math.max(0, ...shown.map((x) => x.doneAt ?? 0));
-  const quiet = shown.length > 0 && !anyActive && now - lastDone > LAST_LINGER_MS;
+  // Coming back from reading earlier lines counts as fresh: the newest words stay for you to
+  // read (they used to vanish the instant you tapped Latest after a quiet spell).
+  const freshAt = Math.max(lastDone, backAt.current);
+  const quiet = shown.length > 0 && !anyActive && now - freshAt > LAST_LINGER_MS;
   const fading = quiet && atBottom;
-  const gone = fading && now - lastDone > LAST_LINGER_MS + FADE_MS;
+  const gone = fading && now - freshAt > LAST_LINGER_MS + FADE_MS;
 
   // Only a finger or a wheel moves you away from the newest words; the box's own gliding doesn't.
   // While a finger is on the box (and just after), the box never moves the text itself: it
@@ -148,6 +158,7 @@ export function CaptionBox({
     const over = el.scrollHeight - el.clientHeight;
     const bottom = over - el.scrollTop < 8;
     if (bottom) {
+      if (!following.current) backAt.current = Date.now();
       setAtBottom(true);
       setNewLines(0);
     }
@@ -222,12 +233,15 @@ export function CaptionBox({
   const usesPreview = useRef(false);
   if (previews.length) usesPreview.current = true;
 
-  const sig = shown.map((x) => `${x.id}:${x.text.length}`).join("|");
+  const sig = `${older.length}:${gone}|` + shown.map((x) => `${x.id}:${x.text.length}`).join("|");
   useLayoutEffect(() => {
     const el = box.current;
     if (!el) return;
+    // Earlier stretches sit one full box above the current one.
+    const gapEl = el.querySelector<HTMLElement>(".cap-break");
+    if (gapEl) gapEl.style.height = `${el.clientHeight}px`;
     const kept = new Map<string, number>();
-    for (const p of Array.from(el.querySelectorAll<HTMLElement>("p.cap"))) {
+    for (const p of Array.from(el.querySelectorAll<HTMLElement>("p.cap:not(.old)"))) {
       const id = p.dataset.id ?? "";
       const gap = p.nextElementSibling as HTMLElement | null;
       if (!gap?.classList.contains("cap-reserve")) continue;
@@ -275,6 +289,17 @@ export function CaptionBox({
           lang={lang}
         >
           <div className="cap-fill" />
+          {/* Everything said before the current stretch: there when you scroll back. */}
+          {!gone &&
+            older.map((c, i) =>
+              c.text ? (
+                <p key={c.id} data-id={c.id} className="cap done old" dir="auto">
+                  {names && older.slice(0, i).filter((x) => x.text).at(-1)?.from !== c.from && <span className="cap-who">{names[c.from] ?? ""}</span>}
+                  {c.text}
+                </p>
+              ) : null,
+            )}
+          {!gone && older.some((c) => c.text) && <div className="cap-break" aria-hidden="true" />}
           {!gone &&
             shown.map((c, i) => [
               c.text ? (
@@ -309,8 +334,13 @@ export function CaptionBox({
         <button
           className="cap-latest"
           onClick={() => {
+            // Straight to the newest words, and they stay a while for you to read.
             const el = box.current;
-            if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+            backAt.current = Date.now();
+            following.current = true;
+            setAtBottom(true);
+            setNewLines(0);
+            if (el) el.scrollTop = el.scrollHeight;
           }}
         >
           ↓ {t("ownLatest")}

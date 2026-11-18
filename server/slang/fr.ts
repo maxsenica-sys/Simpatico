@@ -267,4 +267,5 @@ export default {
       ],
     },
   ],
+  leftIn: ["du coup", "bah", "en fait", "mec", "meuf", "frérot", "wesh", "ouais"],
 } satisfies SlangSet;

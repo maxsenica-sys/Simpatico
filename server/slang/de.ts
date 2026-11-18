@@ -17,4 +17,5 @@ export default {
       ],
     },
   ],
+  leftIn: ["naja", "na ja", "digga", "krass", "eben"],
 } satisfies SlangSet;

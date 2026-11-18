@@ -17,4 +17,5 @@ export default {
       ],
     },
   ],
+  leftIn: ["allora", "cioè", "boh", "raga"],
 } satisfies SlangSet;

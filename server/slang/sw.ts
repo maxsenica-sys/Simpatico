@@ -14,4 +14,5 @@ export default {
       ],
     },
   ],
+  leftIn: ["bwana", "jamani", "yaani"],
 } satisfies SlangSet;

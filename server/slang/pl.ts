@@ -14,4 +14,5 @@ export default {
       ],
     },
   ],
+  leftIn: ["kurde", "ziom", "znaczy", "właśnie"],
 } satisfies SlangSet;

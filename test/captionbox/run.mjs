@@ -91,6 +91,11 @@ async function scenario(name) {
       lastSettled = settledSig;
       const idle = glideIdle();
       for (const p of ps) {
+        // Lines from earlier stretches sit above the box, out of view while following.
+        if (p.classList.contains("old")) {
+          lastTop.delete(p.dataset.id);
+          continue;
+        }
         const top = p.offsetTop - el.scrollTop;
         const was0 = lastTop.get(p.dataset.id);
         if (following && settledSame && idle && was0 !== undefined && Math.abs(top - was0) > 3) note("movedByPreview", `${p.dataset.id} ${Math.round(top - was0)}px with no new settled words`);
@@ -297,6 +302,73 @@ async function scenario(name) {
     await A;
     await say("a", 20);
     await sleep(1500);
+  } else if (name === "latest-after-quiet") {
+    // Read back while they finish talking, keep reading for 25 s of quiet, then tap Latest:
+    // the words must still be there (they used to vanish the instant you came back).
+    window.setNames(null);
+    const A = say("a", 40);
+    await sleep(6000);
+    await fingerBack();
+    await A;
+    await sleep(25000);
+    readBack = null;
+    document.querySelector(".cap-latest")?.click();
+    await sleep(1200);
+    touch.until = 0;
+    lastTop.clear();
+    const el = box();
+    const lines = el.querySelectorAll("p.cap").length;
+    const op = parseFloat(getComputedStyle(el).opacity);
+    if (!lines || op < 0.99) note("missing", `after Latest: ${lines} lines, opacity ${op}`);
+    if (el.scrollHeight - el.clientHeight - el.scrollTop > 6) note("newestOutOfView", "Latest didn't reach the newest words");
+    // ...and it stays long enough to read (10 s later still there), and new speech carries on.
+    await sleep(10000);
+    if (!box().querySelectorAll("p.cap").length || parseFloat(getComputedStyle(box()).opacity) < 0.99) note("missing", "gone again 10 s after Latest");
+    await say("a", 12);
+    await sleep(1500);
+  } else if (name === "deep-readback") {
+    // Three stretches of talking with long pauses between. Scrolling back reaches the very
+    // first words of the call, not just the latest stretch; Latest returns to the newest.
+    window.setNames(null);
+    await say("a", 14);
+    const firstId = [...state.keys()][0];
+    await sleep(22000);
+    await say("a", 14);
+    await sleep(22000);
+    const A = say("a", 45);
+    await sleep(8000);
+    await fingerBack();
+    await sleep(600);
+    {
+      const el = box();
+      const t = (type) => el.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, touches: [], changedTouches: [] }));
+      touch.on = true;
+      t("touchstart");
+      for (let i = 0; i < 12; i++) {
+        el.scrollTop = Math.max(0, el.scrollTop - 60);
+        el.dispatchEvent(new Event("scroll"));
+        t("touchmove");
+        await sleep(40);
+      }
+      el.scrollTop = 0;
+      el.dispatchEvent(new Event("scroll"));
+      await sleep(200);
+      t("touchend");
+      touch.on = false;
+      await sleep(400);
+      el.scrollTop = 0;
+      el.dispatchEvent(new Event("scroll"));
+      await sleep(300);
+      const first = el.querySelector(`p.cap[data-id="${firstId}"]`);
+      if (!first) note("readBackLost", "the first words of the call can't be reached by scrolling back");
+      const p = [...el.querySelectorAll("p.cap")].find((x) => x.offsetTop + x.offsetHeight > el.scrollTop + 4);
+      readBack = p ? { id: p.dataset.id, top: p.offsetTop - el.scrollTop } : null;
+    }
+    await sleep(5000);
+    await latest();
+    await A;
+    await sleep(1500);
+    if (document.querySelector(".cap-latest")) note("newestOutOfView", "still showing Latest at the end");
   } else if (name === "long-quiet-other") {
     // Group: Coach says "ok" and goes quiet; Ezgi keeps talking for 30 s.
     window.setNames({ a: "Ezgi", b: "Coach" });
@@ -311,7 +383,7 @@ async function scenario(name) {
   return { problems, examples };
 }
 
-const names = ["monologue", "group", "readback", "readback-group", "long-readback", "scroll-down-resume", "tap-while-talking", "rewording", "upside-down", "pause", "long-quiet-other"].filter((n) => !only || n === only);
+const names = ["monologue", "group", "readback", "readback-group", "long-readback", "scroll-down-resume", "tap-while-talking", "rewording", "upside-down", "latest-after-quiet", "deep-readback", "pause", "long-quiet-other"].filter((n) => !only || n === only);
 let total = 0;
 for (const name of names) {
   const page = await (await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })).newPage();

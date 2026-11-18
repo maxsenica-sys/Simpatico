@@ -1,4 +1,4 @@
-import { slangFor } from "./slang";
+import { leftInWords, slangFor } from "./slang";
 import { phrasebookTag } from "./phrasebook";
 import Anthropic from "@anthropic-ai/sdk";
 import { baseLang, langInfo } from "../shared/lang";
@@ -88,6 +88,15 @@ function profileTag(p: SpeakerProfile | undefined): string {
   return parts.length ? `<speaker_profile>${parts.join(" ")}</speaker_profile>` : "";
 }
 
+/**
+ * Target languages whose grammar changes with the speaker's or listener's gender ("I'm tired":
+ * Russian "устала", Portuguese "cansada", Arabic "أنتِ"). For the others (English, Turkish,
+ * Indonesian, Chinese…) nothing in "I" or "you" depends on it, and saying "the speaker is a
+ * woman" only tempts the translator to turn an unknown third person into "she".
+ */
+const GENDERED_TARGET = new Set(["ru", "uk", "be", "pl", "cs", "sk", "bg", "sr", "hr", "bs", "sl", "mk", "ar", "he", "hi", "ur", "mr", "pa", "gu", "pt", "es", "fr", "it", "ro", "ca", "gl", "el", "lt", "lv"]);
+const peopleFor = (targetLang: string, p: People | undefined) => (GENDERED_TARGET.has(baseLang(targetLang) ?? "") ? p : undefined);
+
 function peopleTag(p: People | undefined): string {
   const parts: string[] = [];
   const sp = p?.speaker === "f" ? ["a woman", "feminine", "she", "herself"] : p?.speaker === "m" ? ["a man", "masculine", "he", "himself"] : null;
@@ -95,6 +104,54 @@ function peopleTag(p: People | undefined): string {
   if (sp) parts.push(`The speaker is ${sp[0]}: use ${sp[1]} forms only where ${sp[2]} refers to ${sp[3]} alone (I, me, my). This says nothing about "we" or "us", or about anyone ${sp[2]} mentions (friends, teachers, colleagues, family): for them use the context, else neutral wording or the grammatical default.`);
   if (li) parts.push(`The listener is ${li[0]}: use ${li[1]} forms only where ${li[2]} alone is addressed as "you".`);
   return parts.length ? `<people>${parts.join(" ")}</people>` : "";
+}
+
+/** Languages whose everyday speech has no "he"/"she" (one word, or none): the translator must not guess one. */
+const GENDERLESS = new Set(["tr", "az", "fa", "hu", "fi", "et", "id", "ms", "tl", "sw", "zh", "ja", "ko", "bn", "th", "vi", "ka", "hy", "eu", "uz", "kk", "mn"]);
+
+/** A reminder placed next to the words themselves (a rule far away in the instructions gets missed). */
+function pronounTag(sourceLang: string, targetLang: string): string {
+  const s = baseLang(sourceLang) ?? "";
+  const t = baseLang(targetLang) ?? "";
+  if (!GENDERLESS.has(s) || GENDERLESS.has(t)) return "";
+  return `<pronouns>${langInfo(sourceLang).name} doesn't say whether someone is a man or a woman. For a third person, write the gender-neutral wording of the target language ("they" in English) or the person's name, and keep that choice through the whole sentence; use "he" or "she" only if this conversation has already made it clear. A verb in the third person is never "you".</pronouns>`;
+}
+
+const SCRIPTS: [RegExp, string[]][] = [
+  [/\p{Script=Cyrillic}/u, ["ru", "uk", "bg", "sr", "be", "kk", "mk", "mn"]],
+  [/\p{Script=Arabic}/u, ["ar", "fa", "ur"]],
+  [/\p{Script=Hebrew}/u, ["he"]],
+  [/\p{Script=Devanagari}/u, ["hi", "mr", "ne"]],
+  [/\p{Script=Bengali}/u, ["bn"]],
+  [/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u, ["zh", "ja"]],
+  [/\p{Script=Hangul}/u, ["ko"]],
+  [/\p{Script=Thai}/u, ["th"]],
+  [/\p{Script=Greek}/u, ["el"]],
+];
+const scriptOf = (lang: string) => SCRIPTS.find(([, langs]) => langs.includes(baseLang(lang) ?? ""))?.[0] ?? null;
+
+/**
+ * Words of the speaker's language still sitting in the translation: a filler or term of address
+ * left as it was ("ya", "Allah Allah", "hocam"), or text in the speaker's script. Names people
+ * saved, and names in the call, are allowed.
+ */
+export function leftovers(source: string, out: string, sourceLang: string, targetLang: string, allow: string[] = []): string[] {
+  if (process.env.ECHO_CHECK === "off" || !out) return [];
+  const found: string[] = [];
+  const src = scriptOf(sourceLang);
+  if (src && src !== scriptOf(targetLang)) {
+    const runs = out.match(new RegExp(`(?:${src.source}[\\p{M}]*)+(?:[\\s'’-]+(?:${src.source}[\\p{M}]*)+)*`, "gu")) ?? [];
+    for (const r of runs) if (!allow.some((a) => a.includes(r) || r.includes(a))) found.push(r);
+    return found.slice(0, 5);
+  }
+  const english = baseLang(targetLang) === "en";
+  const has = (text: string, w: string) => new RegExp(`(?<![\\p{L}\\p{N}])${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "iu").test(text);
+  for (const w of leftInWords(sourceLang)) {
+    // Very short particles are only safe to judge against English (Spanish "ya", Indonesian "ya").
+    if (w.length <= 3 && !english) continue;
+    if (has(out, w) && has(source, w) && !allow.some((a) => a.toLowerCase() === w.toLowerCase())) found.push(w);
+  }
+  return found.slice(0, 5);
 }
 
 export type RefineInput = {
@@ -152,7 +209,11 @@ const SYSTEM = `You write the subtitles for a live, face-to-face video call betw
 /** Signs that a reply is the model talking to itself rather than a subtitle. */
 const SELF_TALK = /(["”»]\s*[—–-]+\s*(no|wait|actually|hmm|or)\b|\b(is an exclamation|is a nickname|is slang for|literally means|here means|so the (subtitle|translation)|the translation (is|would be))\b|,\s*so:\s*["“])/i;
 
+/** The translator describing its own work, or saying there is nothing to add: never shown. */
+const META = /(\[nothing\]|subtitle so far|per the instructions|as instructed|next_words|new_phrase|said_so_far|adds nothing new|no new text|nothing new to add|already on screen|is already (written|covered|translated|there|on screen)|no new words)/i;
+
 export function subtitleOnly(text: string): string {
+  if (META.test(text)) return "";
   const lines = text
     .split(/\n+/)
     .map((l) => l.trim())
@@ -194,6 +255,46 @@ function slangReference(sourceLang: string, targetLang: string): string {
   return slangFor(sourceLang, targetLang, vocabExtra().slang ?? {});
 }
 
+/**
+ * Words of the speaker's language left in the subtitle ("Allah Allah", "ya", a word still in
+ * Cyrillic): ask once more, naming them. The retry is kept only if it is cleaner; on any failure
+ * (or when time is up) the first version stands.
+ */
+async function fixLeftovers(text: string, source: string, sourceLang: string, targetLang: string, allow: string[], again: (extra: Anthropic.MessageParam[]) => Promise<Anthropic.Message>, said = ""): Promise<string> {
+  const left = leftovers(source, text, sourceLang, targetLang, allow);
+  const guessed = left.length ? [] : guessedGender(text, `${said} ${source}`, sourceLang, targetLang);
+  if (!left.length && !guessed.length) return text;
+  const ask = left.length
+    ? `<left_untranslated>${left.join(", ")}</left_untranslated>\nThose words are still in ${langName(sourceLang)}. Write the subtitle again, complete, with their meaning in ${langName(targetLang)} (or without them if they add nothing). Reply with the subtitle only.`
+    : `<check_gender>${guessed.join(", ")}</check_gender>\n${langName(sourceLang)} didn't say whether that person is a man or a woman. If the conversation above makes it clear (a name that is plainly a woman's or a man's counts, and so does a word like mother or brother), repeat the subtitle unchanged. If not, write it again with "they", "them", "their" (or the person's name) instead, changing nothing else. Reply with the subtitle only.`;
+  try {
+    const res = await again([
+      { role: "assistant", content: text },
+      { role: "user", content: ask },
+    ]);
+    const fixed = subtitleOnly(res.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join(""));
+    const better = left.length ? !!fixed && leftovers(source, fixed, sourceLang, targetLang, allow).length < left.length : !!fixed && fixed.length < text.length * 1.6 + 12;
+    log(left.length ? "leftover_fix" : "gender_check", { src: baseLang(sourceLang), tgt: baseLang(targetLang), words: left.length || guessed.length, changed: better && fixed !== text });
+    return better ? fixed : text;
+  } catch {
+    return text;
+  }
+}
+
+/** Words that say who someone is (so "she" for "annem" is knowledge, not a guess). Turkish and English. */
+const GENDER_CUE = /(?<![\p{L}])(anne(m|si|n|miz|ler)?|annecim|baba(m|sı|n|mız)?|kızı?|oğlu?|oğlan|erkek|kadın|adam|abla(m|sı|n)?|ağabey\p{L}*|teyze(m|si|n)?|amca(m|sı|n)?|dayı(m|sı)?|yenge(m|si)?|enişte(m|si)?|karı(m|sı)|koca(m|sı)|hanım|hanımefendi|beyefendi|nine(m|si)?|babaanne\p{L}*|anneanne\p{L}*|dede(m|si)?|kız ?kardeş\p{L}*|erkek ?kardeş\p{L}*|mum|mom|mother|dad|father|sister|brother|wife|husband|girlfriend|boyfriend|aunt|auntie|uncle|girl|boy|woman|man|lady|guy|she|he|her|his|him|daughter|son|grandma|grandpa)(?![\p{L}])/iu;
+
+/**
+ * English "he"/"she" for someone the speaker's language didn't give a gender (Turkish "o",
+ * Indonesian "dia"…), with nothing in what was said that tells us: worth one more look.
+ */
+export function guessedGender(out: string, said: string, sourceLang: string, targetLang: string): string[] {
+  if (process.env.ECHO_CHECK === "off" || baseLang(targetLang) !== "en" || !GENDERLESS.has(baseLang(sourceLang) ?? "")) return [];
+  const found = [...new Set((out.match(/(?<![\p{L}'’])(she|he|her|hers|him|his|herself|himself)(?![\p{L}])/giu) ?? []).map((w) => w.toLowerCase()))];
+  if (!found.length || GENDER_CUE.test(said)) return [];
+  return found;
+}
+
 let client: Anthropic | null = null;
 let warned = false;
 
@@ -218,10 +319,11 @@ export async function refine(input: RefineInput): Promise<string | null> {
     `<languages>${src} to ${tgt}</languages>`,
     glossary.length ? `<glossary>\n${glossary.map(([k, v]) => `${k} = ${v}`).join("\n")}\n</glossary>` : "",
     context ? `<recent_conversation>\n${context}\n</recent_conversation>` : "",
-    peopleTag(relevantPeople(input.source, input.sourceLang, input.people)),
+    peopleTag(relevantPeople(input.source, input.sourceLang, peopleFor(input.targetLang, input.people))),
     profileTag(input.profile),
     namesTag(input.callNames, input.source, input.speakerName, input.callWords),
     phrasebookTag(input.source, input.sourceLang, input.targetLang),
+    pronounTag(input.sourceLang, input.targetLang),
     `<utterance speaker="${input.speaker}">${input.source}</utterance>`,
   ]
     .filter(Boolean)
@@ -248,11 +350,18 @@ export async function refine(input: RefineInput): Promise<string | null> {
     const raw = res.content
       .flatMap((b) => (b.type === "text" ? [b.text] : []))
       .join("");
-    const text = subtitleOnly(raw);
+    let text = subtitleOnly(raw);
     if (text && looksUntranslated(input.source, text)) {
       log("refine_untranslated", { ms: Date.now() - started, src: input.sourceLang, tgt: input.targetLang });
       return null;
     }
+    text = await fixLeftovers(text, input.source, input.sourceLang, input.targetLang, [...(input.callNames ?? []), ...(input.callWords ?? [])], (extra) =>
+      client!.messages.create(
+        { model: MODEL, max_tokens: 400, thinking: { type: "disabled" }, output_config: { effort: "medium" }, system: [{ type: "text", text: SYSTEM }, { type: "text", text: slangReference(input.sourceLang, input.targetLang), cache_control: { type: "ephemeral" } }], messages: [{ role: "user", content: user }, ...extra] },
+        { signal: input.signal, maxRetries: 0 },
+      ),
+      context,
+    );
     log("refine_ok", { ms: Date.now() - started, src: input.sourceLang, tgt: input.targetLang, cached: res.usage.cache_read_input_tokens ?? 0 });
     return text || null;
   } catch (err) {
@@ -273,9 +382,13 @@ const PHRASE_SYSTEM = `You write the subtitles for a live video call between peo
 - Words that differ by region or context (Australian "footy": AFL or rugby league) follow the conversation and <speaker_profile>; if still unclear, keep the neutral meaning rather than guessing.
 - Gender: <people> gives the speaker's and listener's gender. Apply the speaker's only where they refer to themselves (I, me, my) and the listener's only where they are addressed as one person (you). Everyone else follows the conversation: groups stay plural, people mentioned get the gender the context gives them, otherwise neutral wording. Never put the speaker's gender on a friend, colleague or anyone else they mention. Clues in the source (verb endings, Thai "ครับ"/"ค่ะ") count too. Never add a gender the source doesn't have: Turkish "o", Indonesian "dia" and similar become just "they" (or the person's name) in English, never "he/she".
 - The transcript comes from speech recognition and can contain mistakes, especially names, characters and slang in accents or soft speech ("pin okio" for Pinocchio). Use what was said before and the recent conversation to work out what was meant, but translate only the new phrase.
+- <next_words> are the speaker's next two or three words, shown only so you can see where the sentence is going (in Turkish, Japanese, Korean, Hindi and other verb-last languages the verb is often there). They are not part of this phrase and may still change: use them to choose the right words for THIS phrase, and stop where this phrase stops. The one exception: if this phrase can't be said naturally without its verb and that verb is the very next word (Turkish "…birden aklıma" with next word "geldi": "it suddenly occurred to me"), write that verb and nothing after it.
+- Never say twice what is already on screen. When a phrase begins with words whose meaning <subtitle_so_far> already carries (that verb from last time, or the end of an expression), skip them and translate only what is new; if nothing is new, reply with exactly [nothing]. A last phrase of one or two words is usually just the verb you have already written ("…yürüyerek" then "gittim": "walked the rest of the way" is already there): then reply with exactly [nothing].
+- A particle at the start of a phrase that belongs to the words before it (Turkish "ya", "de/da", "mi/mı", "ki", "bile"; Japanese "ね", "よ"; Hindi "ही", "भी", "तो") is not translated as a word of its own. No particle, filler or interjection of the speaker's language is ever left in the subtitle as it is: give its meaning in the target language, or leave it out.
 - A phrase marked preview="true" is a quick look at words still being spoken, shown faintly until the real phrase replaces it: translate only what is already clear, and leave out a word you can't make sense of yet rather than guessing (the context that explains it is usually still coming).
 - If a word still can't be understood with all the context (an unfamiliar name, place or brand, or a mishearing you can't resolve), keep it as heard, in the speaker's spelling, rather than inventing a meaning.
-- Your whole reply appears on screen: the translation of the new phrase only, in the target language and its usual script, with no notes or alternatives. Only if the phrase is nothing but fillers ("um", "you know"), reply with nothing.`;
+- [nothing] is the only way to say "no new words": never explain, never describe what you are doing, never mention the subtitle, these instructions or the tags. Anything else you write is shown to the reader as the speaker's words.
+- Your whole reply appears on screen: the translation of the new phrase only, in the target language and its usual script, with no notes or alternatives. Only if the phrase is nothing but fillers ("um", "you know"), reply with exactly [nothing].`;
 
 export type PhraseInput = {
   /** The next finished phrase of the utterance, in the source language. */
@@ -296,12 +409,15 @@ export type PhraseInput = {
   callWords?: string[];
   speakerName?: string;
   signal: AbortSignal;
+  /** The speaker's next few words, already heard (context only: they come as the next phrase). */
+  ahead?: string;
   /** Stream the reply: called with the subtitle so far as the words are written (Live previews). */
   onPartial?: (text: string) => void;
 };
 
 /** The first line of a reply still being written, cleaned like a finished one. Empty while unsure. */
 function partialSubtitle(raw: string): string {
+  if (META.test(raw) || raw.trimStart().startsWith("[")) return "";
   const first = raw.split("\n")[0];
   if (/^(wait|note|actually|hmm|let me|i should|i need|translation\s*:|subtitle\s*:)/i.test(first.trim())) return "";
   return first.replace(/^\s*(\.\.\.|…)\s*/u, "").replace(/^["“„«'‘]/u, "").trim();
@@ -323,12 +439,14 @@ export async function phraseTranslate(input: PhraseInput): Promise<string | null
   const user = [
     `<languages>${src} to ${tgt}</languages>`,
     context ? `<recent_conversation>\n${context}\n</recent_conversation>` : "",
-    peopleTag(relevantPeople(`${input.before.split(/\s+/).slice(-12).join(" ")} ${input.phrase}`, input.sourceLang, input.people)),
+    peopleTag(relevantPeople(`${input.before.split(/\s+/).slice(-12).join(" ")} ${input.phrase}`, input.sourceLang, peopleFor(input.targetLang, input.people))),
     profileTag(input.profile),
     namesTag(input.callNames, `${input.before} ${input.phrase}`, input.speakerName, input.callWords),
     phrasebookTag(`${input.before.split(/\s+/).slice(-12).join(" ")} ${input.phrase}`, input.sourceLang, input.targetLang),
     input.before ? `<said_so_far>${input.before}</said_so_far>` : "",
     input.shown ? `<subtitle_so_far>${input.shown}</subtitle_so_far>` : "",
+    pronounTag(input.sourceLang, input.targetLang),
+    input.ahead ? `<next_words>${input.ahead}</next_words>` : "",
     `<new_phrase final="${input.final}"${input.onPartial ? ' preview="true"' : ""}>${input.phrase}</new_phrase>`,
   ]
     .filter(Boolean)
@@ -365,11 +483,17 @@ export async function phraseTranslate(input: PhraseInput): Promise<string | null
     log("phrase_ok", { ms: Date.now() - started, chars: input.phrase.length, final: input.final, cached: res.usage.cache_read_input_tokens ?? 0 });
     // Test harness only: never set in production, where no words of a conversation are logged.
     if (process.env.DEBUG_PHRASES === "1") console.log(JSON.stringify({ phrase: input.phrase, final: input.final, out: raw }));
-    const text = subtitleOnly(raw);
+    let text = subtitleOnly(raw);
     if (text && looksUntranslated(input.phrase, text)) {
       log("phrase_untranslated", { ms: Date.now() - started });
       return null;
     }
+    // Settled phrases only: a preview is replaced within a second anyway.
+    if (!input.onPartial)
+      text = await fixLeftovers(text, input.phrase, input.sourceLang, input.targetLang, [...(input.callNames ?? []), ...(input.callWords ?? [])], (extra) =>
+        client!.messages.create({ ...params, messages: [...params.messages, ...extra] }, { signal: input.signal, maxRetries: 0 }),
+        `${context} ${input.before} ${input.shown}`,
+      );
     return text;
   } catch (err) {
     log(input.signal.aborted ? "phrase_late" : "phrase_error", { ms: Date.now() - started, error: input.signal.aborted ? undefined : String(err) });

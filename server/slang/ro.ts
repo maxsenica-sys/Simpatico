@@ -14,4 +14,5 @@ export default {
       ],
     },
   ],
+  leftIn: ["bă", "mă", "adică", "deci", "păi"],
 } satisfies SlangSet;

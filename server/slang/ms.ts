@@ -13,4 +13,5 @@ export default {
       ],
     },
   ],
+  leftIn: ["lah", "abang", "weh"],
 } satisfies SlangSet;

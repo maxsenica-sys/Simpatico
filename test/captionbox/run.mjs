@@ -19,11 +19,11 @@ async function scenario(name) {
   const box = () => document.querySelector(".cap-box-scroll");
   const state = new Map(); // id -> { text, tail, active }
   const send = (m) => {
-    state.set(m.id, { text: m.text, tail: m.tail ?? "", active: m.stage !== "final", from: m.from });
+    state.set(m.id, { text: m.text, tail: m.tail ?? "", active: m.stage !== "final", from: m.from, at: performance.now() });
     window.push(m);
   };
   const touch = { on: false, until: 0 };
-  const problems = { missing: 0, hiddenWhileTalking: 0, newestOutOfView: 0, jumpsDown: 0, readBackMoved: 0, readBackLost: 0 };
+  const problems = { missing: 0, hiddenWhileTalking: 0, newestOutOfView: 0, jumpsDown: 0, movedByPreview: 0, readBackMoved: 0, readBackLost: 0 };
   const examples = {};
   const note = (k, s) => {
     problems[k]++;
@@ -36,6 +36,15 @@ async function scenario(name) {
   let readBack = null; // { id, top } of the first visible line while reading back
   let outSince = 0;
   const lastTop = new Map();
+  let lastSettled = "";
+  // Settled text still gliding into place is movement we expect; only count it once at rest.
+  let lastScrollTop = 0;
+  const glideIdle = () => {
+    const el = box();
+    const idle = Math.abs(el.scrollTop - lastScrollTop) < 1;
+    lastScrollTop = el.scrollTop;
+    return idle;
+  };
   let stop = false;
   (async () => {
     while (!stop) {
@@ -49,9 +58,16 @@ async function scenario(name) {
       const following = !touch.on && Date.now() > touch.until && !document.querySelector(".cap-latest");
       // 1. Every line still being translated is on screen, with its words.
       // (Counted when it's still wrong on the next check: a line sent a moment ago may not be drawn yet.)
+      // Settled words are in the box; the words still being spoken (the newest preview) are in
+      // the preview strip under it.
+      const newestTail = [...state.entries()].filter(([, s]) => s.active && s.tail).sort((a, b) => b[1].at - a[1].at)[0];
+      const strip = document.querySelector(".cap-preview")?.textContent ?? "";
       for (const [id, s] of active) {
         const p = shown.get(id);
-        const wrong = !p ? `${id} not in the box` : s.text && !p.textContent.includes(s.text.slice(-20)) ? `${id} lacks "${s.text.slice(-20)}"` : null;
+        let wrong = null;
+        if (s.text && !p) wrong = `${id} not in the box`;
+        else if (s.text && !p.textContent.includes(s.text.slice(-20))) wrong = `${id} lacks "${s.text.slice(-20)}"`;
+        else if (newestTail?.[0] === id && !strip.includes(s.tail.slice(-15))) wrong = `${id}'s preview "${s.tail.slice(-15)}" not shown`;
         if (wrong && pendingMissing.has(id + wrong)) note("missing", wrong);
         if (wrong) nextMissing.add(id + wrong);
       }
@@ -59,19 +75,25 @@ async function scenario(name) {
       nextMissing = new Set();
       // 2. The box isn't hidden while someone is talking.
       const op = parseFloat(getComputedStyle(el).opacity);
-      if (active.length && (op < 0.99 || !ps.length)) note("hiddenWhileTalking", `opacity ${op}, ${ps.length} lines`);
+      if (active.length && (op < 0.99 || (!ps.length && !strip))) note("hiddenWhileTalking", `opacity ${op}, ${ps.length} lines`);
       // 3. Following: the newest words are in view (a glide may lag up to 0.5 s).
       if (following && active.length) {
         const newest = ps.at(-1);
-        const nb = newest?.getBoundingClientRect().bottom ?? 0;
-        if (nb > r.bottom + 6) {
+        const nb = newest ? newest.offsetTop + newest.offsetHeight - el.scrollTop : 0;
+        if (nb > el.clientHeight + 6) {
           outSince ||= Date.now();
-          if (Date.now() - outSince > 500) note("newestOutOfView", `${Math.round(nb - r.bottom)}px below for ${Date.now() - outSince} ms`);
+          if (Date.now() - outSince > 700) note("newestOutOfView", `${Math.round(nb - el.clientHeight)}px below for ${Date.now() - outSince} ms`);
         } else outSince = 0;
       } else outSince = 0;
-      // 4. Following: no line moves down.
+      // 4. Following: no line moves down; and nothing moves at all when only the preview changed.
+      const settledSig = ps.map((p) => p.textContent).join("|");
+      const settledSame = settledSig === lastSettled;
+      lastSettled = settledSig;
+      const idle = glideIdle();
       for (const p of ps) {
-        const top = p.getBoundingClientRect().top;
+        const top = p.offsetTop - el.scrollTop;
+        const was0 = lastTop.get(p.dataset.id);
+        if (following && settledSame && idle && was0 !== undefined && Math.abs(top - was0) > 3) note("movedByPreview", `${p.dataset.id} ${Math.round(top - was0)}px with no new settled words`);
         const was = lastTop.get(p.dataset.id);
         if (following && was !== undefined && top - was > 3) note("jumpsDown", `${p.dataset.id} +${Math.round(top - was)}px`);
         lastTop.set(p.dataset.id, top);
@@ -81,7 +103,7 @@ async function scenario(name) {
         const p = shown.get(readBack.id);
         if (!p) note("readBackLost", `${readBack.id} removed while reading`);
         else {
-          const top = p.getBoundingClientRect().top;
+          const top = p.offsetTop - box().scrollTop;
           if (Math.abs(top - readBack.top) > 2) {
             note("readBackMoved", `${Math.round(top - readBack.top)}px`);
             readBack.top = top;
@@ -131,8 +153,8 @@ async function scenario(name) {
     touch.on = false;
     touch.until = Infinity; // reading back until Latest
     await sleep(100);
-    const p = [...el.querySelectorAll("p.cap")].find((x) => x.getBoundingClientRect().bottom > el.getBoundingClientRect().top + 4);
-    readBack = p ? { id: p.dataset.id, top: p.getBoundingClientRect().top } : null;
+    const p = [...el.querySelectorAll("p.cap")].find((x) => x.offsetTop + x.offsetHeight > el.scrollTop + 4);
+    readBack = p ? { id: p.dataset.id, top: p.offsetTop - el.scrollTop } : null;
   };
   const latest = async () => {
     readBack = null;
@@ -247,6 +269,34 @@ async function scenario(name) {
     await A;
     await sleep(1500);
     if (document.querySelector(".cap-latest")) note("newestOutOfView", "a tap stopped it following the newest words");
+  } else if (name === "rewording") {
+    // Turkish-style: the meaning comes at the end, so the preview keeps being reworded, growing
+    // to three lines and shrinking back; settled phrases arrive now and then.
+    window.setNames(null);
+    const id = "a-rw~s";
+    const long = "when you get to the station after the long walk past the old mill and the river please call me";
+    const short = "please call me";
+    let settled = "";
+    for (let i = 0; i < 40; i++) {
+      await sleep(250);
+      const tail = i % 4 === 3 ? short : long.split(" ").slice(0, 6 + (i % 4) * 5).join(" ");
+      if (i % 10 === 9) settled = (settled + " " + `phrase ${i} settled with several words in it`).trim();
+      send({ from: "a", id, stage: "steady", text: settled, tail });
+    }
+    send({ from: "a", id, stage: "final", text: settled + " please call me." });
+    await sleep(1500);
+  } else if (name === "upside-down") {
+    // In person's top half: the same box, rotated. Long speech, reading back, Latest.
+    window.setRotated(true);
+    window.setNames(null);
+    const A = say("a", 45);
+    await sleep(6000);
+    await fingerBack();
+    await sleep(5000);
+    await latest();
+    await A;
+    await say("a", 20);
+    await sleep(1500);
   } else if (name === "long-quiet-other") {
     // Group: Coach says "ok" and goes quiet; Ezgi keeps talking for 30 s.
     window.setNames({ a: "Ezgi", b: "Coach" });
@@ -261,7 +311,7 @@ async function scenario(name) {
   return { problems, examples };
 }
 
-const names = ["monologue", "group", "readback", "readback-group", "long-readback", "scroll-down-resume", "tap-while-talking", "pause", "long-quiet-other"].filter((n) => !only || n === only);
+const names = ["monologue", "group", "readback", "readback-group", "long-readback", "scroll-down-resume", "tap-while-talking", "rewording", "upside-down", "pause", "long-quiet-other"].filter((n) => !only || n === only);
 let total = 0;
 for (const name of names) {
   const page = await (await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })).newPage();

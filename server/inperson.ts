@@ -82,12 +82,31 @@ export class InPersonSession {
       this.send({ t: "ready" });
     } else if (msg.t === "theirs") {
       const t = typeof msg.lang === "string" && baseLang(msg.lang) && baseLang(msg.lang) !== baseLang(this.mine) ? msg.lang : null;
-      if (t) this.setTheirs(t, true);
+      if (t) {
+        this.setTheirs(t, true);
+        this.relisten("theirs");
+      }
+    } else if (msg.t === "mine") {
+      const m = typeof msg.lang === "string" && baseLang(msg.lang) && baseLang(msg.lang) !== baseLang(this.theirs) ? msg.lang : null;
+      if (m) {
+        this.mine = m;
+        this.setTheirs(this.theirs, false);
+        this.relisten("mine");
+      }
     } else if (msg.t === "speech") {
       if (!msg.on) this.stream?.finalize();
     } else if (msg.t === "end") {
       this.close("ended");
     }
+  }
+
+  /**
+   * A language was changed by hand: listen for the new pair from the next word (the stream was
+   * opened for the old pair, and would keep mishearing the new language until it went quiet).
+   */
+  private relisten(why: string) {
+    if (this.stream) this.stop(`language:${why}`);
+    this.pending = [];
   }
 
   private setTheirs(lang: string | null, tell: boolean) {

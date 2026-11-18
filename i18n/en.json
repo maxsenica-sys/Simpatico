@@ -338,5 +338,8 @@
   "ipTheySpeak": "They speak {lang}",
   "ipFlip": "Flip",
   "ipSize": "Text size",
-  "ipEnd": "End"
+  "ipEnd": "End",
+  "capNew": "{n} new",
+  "ipYourLang": "Your language",
+  "ipDetecting": "Detecting…"
 }

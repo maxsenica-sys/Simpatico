@@ -338,5 +338,8 @@
   "ipTheySpeak": "উনি {lang} বলেন",
   "ipFlip": "উল্টান",
   "ipSize": "লেখার আকার",
-  "ipEnd": "শেষ করুন"
+  "ipEnd": "শেষ করুন",
+  "capNew": "{n}টি নতুন",
+  "ipYourLang": "আপনার ভাষা",
+  "ipDetecting": "শনাক্ত করা হচ্ছে…"
 }

@@ -118,7 +118,7 @@ const llm = createServer((req, res) => {
     const j = JSON.parse(body);
     const interim = JSON.stringify(j.system).includes("still talking");
     if (interim) interimCalls++;
-    const phrase = String(j.messages[0].content).match(/<new_phrase final="(\w+)">([\s\S]*?)<\/new_phrase>/);
+    const phrase = String(j.messages[0].content).match(/<new_phrase final="(\w+)"[^>]*>([\s\S]*?)<\/new_phrase>/);
     if (llmFail === "all" || (llmFail === "rewrite" && !phrase)) {
       res.writeHead(500, { "content-type": "application/json" });
       res.end(JSON.stringify({ type: "error", error: { type: "api_error", message: "down" } }));

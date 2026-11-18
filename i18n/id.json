@@ -338,5 +338,8 @@
   "ipTheySpeak": "Dia berbahasa {lang}",
   "ipFlip": "Balik",
   "ipSize": "Ukuran teks",
-  "ipEnd": "Selesai"
+  "ipEnd": "Selesai",
+  "capNew": "{n} baru",
+  "ipYourLang": "Bahasamu",
+  "ipDetecting": "Mendeteksi…"
 }

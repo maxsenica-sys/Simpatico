@@ -273,6 +273,8 @@ const PHRASE_SYSTEM = `You write the subtitles for a live video call between peo
 - Words that differ by region or context (Australian "footy": AFL or rugby league) follow the conversation and <speaker_profile>; if still unclear, keep the neutral meaning rather than guessing.
 - Gender: <people> gives the speaker's and listener's gender. Apply the speaker's only where they refer to themselves (I, me, my) and the listener's only where they are addressed as one person (you). Everyone else follows the conversation: groups stay plural, people mentioned get the gender the context gives them, otherwise neutral wording. Never put the speaker's gender on a friend, colleague or anyone else they mention. Clues in the source (verb endings, Thai "ครับ"/"ค่ะ") count too. Never add a gender the source doesn't have: Turkish "o", Indonesian "dia" and similar become just "they" (or the person's name) in English, never "he/she".
 - The transcript comes from speech recognition and can contain mistakes, especially names, characters and slang in accents or soft speech ("pin okio" for Pinocchio). Use what was said before and the recent conversation to work out what was meant, but translate only the new phrase.
+- A phrase marked preview="true" is a quick look at words still being spoken, shown faintly until the real phrase replaces it: translate only what is already clear, and leave out a word you can't make sense of yet rather than guessing (the context that explains it is usually still coming).
+- If a word still can't be understood with all the context (an unfamiliar name, place or brand, or a mishearing you can't resolve), keep it as heard, in the speaker's spelling, rather than inventing a meaning.
 - Your whole reply appears on screen: the translation of the new phrase only, in the target language and its usual script, with no notes or alternatives. Only if the phrase is nothing but fillers ("um", "you know"), reply with nothing.`;
 
 export type PhraseInput = {
@@ -327,7 +329,7 @@ export async function phraseTranslate(input: PhraseInput): Promise<string | null
     phrasebookTag(`${input.before.split(/\s+/).slice(-12).join(" ")} ${input.phrase}`, input.sourceLang, input.targetLang),
     input.before ? `<said_so_far>${input.before}</said_so_far>` : "",
     input.shown ? `<subtitle_so_far>${input.shown}</subtitle_so_far>` : "",
-    `<new_phrase final="${input.final}">${input.phrase}</new_phrase>`,
+    `<new_phrase final="${input.final}"${input.onPartial ? ' preview="true"' : ""}>${input.phrase}</new_phrase>`,
   ]
     .filter(Boolean)
     .join("\n\n");

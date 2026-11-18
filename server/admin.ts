@@ -54,7 +54,7 @@ export async function clientError(req: IncomingMessage, res: ServerResponse) {
   const b = await readJson(req);
   const message = str(b?.message, 500);
   if (!message) return send(res, 400, { error: "bad-request" });
-  append("errors", { message, stack: str(b?.stack, 2000), path: str(b?.path, 120), device: device(req.headers["user-agent"]) });
+  append("errors", { message, stack: str(b?.stack, 2000), path: str(b?.path, 120), tapped: str(b?.tapped, 100), device: device(req.headers["user-agent"]) });
   send(res, 201, { ok: true });
 }
 
@@ -143,7 +143,7 @@ th{color:#9aa0a8;font-weight:600}.wrap{overflow-x:auto}.great{color:#3ddc84}.bad
   )}</div>
 <h2>Client errors</h2><div class="wrap">${table(
     ["When (UTC)", "Message", "Where", "Device"],
-    errs.map((e) => [when(e.ts), `${esc(e.message)}${e.stack ? `<br><code>${esc(String(e.stack).slice(0, 600))}</code>` : ""}`, esc(e.path), esc(e.device)]),
+    errs.map((e) => [when(e.ts), `${esc(e.message)}${e.tapped ? `<br><small>after tapping: ${esc(e.tapped)}</small>` : ""}${e.stack ? `<br><code>${esc(String(e.stack).slice(0, 600))}</code>` : ""}`, esc(e.path), esc(e.device)]),
   )}</div>
 </main></body></html>`;
   res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Robots-Tag": "noindex" });

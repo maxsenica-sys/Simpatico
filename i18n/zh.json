@@ -338,5 +338,8 @@
   "ipTheySpeak": "对方说{lang}",
   "ipFlip": "翻转",
   "ipSize": "文字大小",
-  "ipEnd": "结束"
+  "ipEnd": "结束",
+  "capNew": "{n} 条新内容",
+  "ipYourLang": "你的语言",
+  "ipDetecting": "正在识别…"
 }

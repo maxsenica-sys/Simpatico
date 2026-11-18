@@ -13,7 +13,11 @@ const out = (f) => fileURLToPath(new URL(`./out/${f}`, import.meta.url));
 const wav = fileURLToPath(new URL("./speech.wav", import.meta.url));
 const browser = await chromium.launch({ args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", `--use-file-for-fake-audio-capture=${wav}`, "--autoplay-policy=no-user-gesture-required"] });
 const page = await (await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "en-AU", permissions: ["microphone"] })).newPage();
-page.on("pageerror", (e) => console.log("  page error:", e.message));
+const errors = [];
+page.on("pageerror", (e) => {
+  errors.push(e.message);
+  console.log("  page error:", e.message);
+});
 
 try {
   step("Home: Start a call, then Group call and In person side by side; the call card is a slim row");
@@ -37,7 +41,7 @@ try {
 
   step("My words show on my half; their language is worked out (Spanish) from what they say");
   await page.waitForFunction(() => /You said/.test(document.querySelector(".ip-half.me .ip-own")?.textContent ?? ""), null, { timeout: 15000 });
-  await page.getByText(/They speak Español/).waitFor({ timeout: 20000 });
+  await page.waitForFunction(() => /Español/.test(document.querySelector(".ip-half.them .ip-lang")?.textContent ?? ""), null, { timeout: 20000 });
 
   step("Each half shows the other person's words translated: theirs on mine (English), mine on theirs (Spanish)");
   await page.waitForFunction(() => document.querySelector(".ip-half.me .cap")?.textContent.includes("✨") || document.querySelector(".ip-half.me .cap")?.textContent.length > 3, null, { timeout: 20000 });
@@ -51,10 +55,40 @@ try {
   }));
   console.log("  my half:", halves.mine, "\n  their half:", halves.theirs, "\n  their own words:", halves.theirOwn, "\n  their label:", halves.theirLabel);
   if (!/es~/.test(halves.theirOwn ?? "")) throw new Error("their half should show their own (Spanish) words");
-  if (!/Para ti/.test(halves.theirLabel ?? "")) throw new Error("their half should be labelled in Spanish");
+  if (!/Dijiste/.test(halves.theirOwn ?? "")) throw new Error("their half should be labelled in Spanish");
   if (halves.rotated === "none") throw new Error("their half should be upside down");
   await page.waitForTimeout(2500);
   await page.screenshot({ path: out("inperson-2-live.png") });
+
+  step("Text keeps well clear of the screen edges (28 px), in a panel on each half");
+  const edges = await page.evaluate(() => [...document.querySelectorAll(".ip-caps")].map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(innerWidth - r.right)]; }));
+  if (edges.some(([l, r]) => l < 28 || r < 28)) throw new Error("caption panels too close to the edges: " + JSON.stringify(edges));
+
+  step("Their language button: the list opens on their half, in their language; pick Türkçe");
+  await page.locator(".ip-half.them .ip-lang").click();
+  await page.locator(".ip-half.them .ip-langs").waitFor();
+  const head = await page.locator(".ip-half.them .ip-langs-head b").textContent();
+  if (head !== "Tu idioma") throw new Error("their list should be titled in Spanish, got " + head);
+  await page.locator(".ip-half.them .ip-lang-item", { hasText: "Türkçe" }).click();
+  await page.waitForFunction(() => /Türkçe/.test(document.querySelector(".ip-half.them .ip-lang")?.textContent ?? ""));
+  await page.waitForFunction(() => /Senin için|Söylediğin|Kendi dilinde/.test(document.querySelector(".ip-half.them")?.textContent ?? ""), null, { timeout: 5000 }).catch(() => {});
+
+  step("Flip, then change their language again: still works, no errors");
+  await page.getByRole("button", { name: "Flip" }).click();
+  await page.locator(".ip-half.them .ip-lang").click();
+  await page.locator(".ip-half.them .ip-lang-item", { hasText: "Español" }).click();
+  await page.waitForFunction(() => /Español/.test(document.querySelector(".ip-half.them .ip-lang")?.textContent ?? ""));
+  await page.getByRole("button", { name: "Flip" }).click();
+
+  step("My language button: change mine (Français), then back to English");
+  await page.locator(".ip-half.me .ip-lang").click();
+  await page.locator(".ip-half.me .ip-lang-item", { hasText: "Français" }).click();
+  await page.waitForFunction(() => /Français/.test(document.querySelector(".ip-half.me .ip-lang")?.textContent ?? ""));
+  await page.locator(".ip-half.me .ip-lang").click();
+  await page.locator(".ip-half.me .ip-lang-item", { hasText: "English" }).first().click();
+  await page.waitForTimeout(3000);
+  await page.screenshot({ path: out("inperson-3-after-changes.png") });
+  if (errors.length) throw new Error("page errors: " + errors.join("; "));
 
   step("Flip turns the whole screen round; End goes home");
   await page.getByRole("button", { name: "Flip" }).click();

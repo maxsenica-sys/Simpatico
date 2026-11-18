@@ -338,5 +338,8 @@
   "ipTheySpeak": "{lang} konuşuyor",
   "ipFlip": "Çevir",
   "ipSize": "Yazı boyutu",
-  "ipEnd": "Bitir"
+  "ipEnd": "Bitir",
+  "capNew": "{n} yeni",
+  "ipYourLang": "Senin dilin",
+  "ipDetecting": "Algılanıyor…"
 }

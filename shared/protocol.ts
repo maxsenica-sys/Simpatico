@@ -114,6 +114,8 @@ export type InPersonClientMsg =
   | { t: "start"; mine: string; theirs: string | null; names?: string[]; words?: string[] }
   /** Their language, picked after starting (or corrected). */
   | { t: "theirs"; lang: string }
+  /** My language, changed during the conversation. */
+  | { t: "mine"; lang: string }
   | { t: "speech"; on: boolean }
   | { t: "end" };
 

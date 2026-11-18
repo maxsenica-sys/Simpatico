@@ -338,5 +338,8 @@
   "ipTheySpeak": "Parle {lang}",
   "ipFlip": "Retourner",
   "ipSize": "Taille du texte",
-  "ipEnd": "Terminer"
+  "ipEnd": "Terminer",
+  "capNew": "{n} nouvelles",
+  "ipYourLang": "Votre langue",
+  "ipDetecting": "Détection…"
 }

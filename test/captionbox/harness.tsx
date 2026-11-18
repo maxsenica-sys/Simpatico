@@ -25,12 +25,15 @@ function apply(captions: Caption[], m: Msg): Caption[] {
 function App() {
   const [captions, setCaptions] = useState<Caption[]>([]);
   const [names, setNames] = useState<Record<string, string> | null>({ a: "Ezgi" });
+  // In person shows one half upside down: the box must behave the same either way up.
+  const [rotated, setRotated] = useState(false);
   useEffect(() => {
     push = (m) => setCaptions((c) => apply(c, m));
-    (window as unknown as { setNames: typeof setNames }).setNames = setNames;
+    (window as unknown as { setNames: typeof setNames; setRotated: typeof setRotated }).setNames = setNames;
+    (window as unknown as { setRotated: typeof setRotated }).setRotated = setRotated;
   }, []);
   return (
-    <div className="call" style={{ position: "fixed", inset: 0, ["--cap-size" as string]: "clamp(24px, 3.6vw, 38px)" }}>
+    <div className="call" style={{ position: "fixed", inset: 0, transform: rotated ? "rotate(180deg)" : undefined, ["--cap-size" as string]: "clamp(24px, 3.6vw, 38px)" }}>
       <CaptionBox captions={captions} names={names} lang="en" speaking={captions.some((c) => c.doneAt === null)} />
     </div>
   );

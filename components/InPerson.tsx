@@ -122,7 +122,10 @@ export function InPerson() {
           onClick={async () => {
             setError(null);
             setPhase("starting");
-            const s = new Session(mine, detect ? null : theirs, () => setPhase("live"));
+            // Whatever "change" below last set, not what it was when this screen opened.
+            const myNow = loadLang().speaks;
+            setMine(myNow);
+            const s = new Session(myNow, detect ? null : theirs, () => setPhase("live"));
             session.current = s;
             const r = await s.start();
             if (r) {
@@ -260,6 +263,12 @@ class Session {
     this.changed();
   }
 
+  setMine(lang: string) {
+    this.mine = lang;
+    this.send({ t: "mine", lang });
+    this.changed();
+  }
+
   end() {
     this.ended = true;
     this.send({ t: "end" });
@@ -276,7 +285,8 @@ function Live({ session: s, onEnd }: { session: Session; onEnd: () => void }) {
   const [, setTick] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [size, setSize] = useState(1);
-  const [picking, setPicking] = useState(false);
+  /** Whose language list is open (each opens inside that person's half, the right way up). */
+  const [picking, setPicking] = useState<"me" | "them" | null>(null);
   const [them, setThem] = useState<Strings>(en);
   useEffect(() => {
     const f = () => setTick((n) => n + 1);
@@ -299,18 +309,19 @@ function Live({ session: s, onEnd }: { session: Session; onEnd: () => void }) {
 
   const theyTalk = !!s.ownThem && !s.ownThem.final;
   const iTalk = !!s.ownMe && !s.ownMe.final;
-  const theirName = s.theirs ? langInfo(s.theirs).native : null;
 
   return (
     <main className={`ip-live ${flipped ? "flipped" : ""}`} style={{ ["--cap-size" as string]: SIZES[size] }}>
       <section className="ip-half them" lang={s.theirs ?? undefined} dir={s.theirs && isRtl(s.theirs) ? "rtl" : "ltr"}>
         <div className="ip-head">
-          <span>{tt("ipForYou")}</span>
+          <button className="ip-lang" onClick={() => setPicking("them")}>
+            {s.theirs ? langInfo(s.theirs).native : tt("ipDetecting")} ▾
+          </button>
           {iTalk ? <span className="ip-talking">{tt("ipTalking")}</span> : null}
         </div>
         <div className="ip-caps">
           {s.forThem.length ? (
-            <CaptionBox captions={s.forThem} names={null} lang={s.theirs ?? undefined} speaking={iTalk} />
+            <CaptionBox captions={s.forThem} names={null} lang={s.theirs ?? undefined} speaking={iTalk} tr={tt} />
           ) : (
             <p className="ip-empty">{tt("ipThemHint")}</p>
           )}
@@ -321,12 +332,22 @@ function Live({ session: s, onEnd }: { session: Session; onEnd: () => void }) {
             {s.ownThem.text}
           </div>
         )}
+        {picking === "them" && (
+          <LangList
+            title={tt("ipYourLang")}
+            current={s.theirs}
+            exclude={s.mine}
+            onPick={(code) => {
+              s.setTheirs(code);
+              setPicking(null);
+            }}
+            onClose={() => setPicking(null)}
+          />
+        )}
       </section>
 
+      {/* The owner's controls, in the owner's language. */}
       <nav className="ip-mid">
-        <button className="pill" onClick={() => setPicking(true)}>
-          {theirName ? t("ipTheySpeak", { lang: theirName }) : t("ipListening")}
-        </button>
         <button className="pill" onClick={() => setFlipped((f) => !f)} aria-label={t("ipFlip")}>
           ⇅ {t("ipFlip")}
         </button>
@@ -346,7 +367,9 @@ function Live({ session: s, onEnd }: { session: Session; onEnd: () => void }) {
 
       <section className="ip-half me">
         <div className="ip-head">
-          <span>{t("ipForYou")}</span>
+          <button className="ip-lang" onClick={() => setPicking("me")}>
+            {langInfo(s.mine).native} ▾
+          </button>
           {theyTalk ? <span className="ip-talking">{t("ipTalking")}</span> : s.status !== "ok" ? <span className="ip-status">{t(s.status === "paused" ? "captionsPaused" : "captionsUnavailable")}</span> : null}
         </div>
         <div className="ip-caps">
@@ -362,33 +385,51 @@ function Live({ session: s, onEnd }: { session: Session; onEnd: () => void }) {
             {s.ownMe.text}
           </div>
         )}
+        {picking === "me" && (
+          <LangList
+            title={t("ipYourLang")}
+            current={s.mine}
+            exclude={s.theirs}
+            onPick={(code) => {
+              s.setMine(code);
+              setPicking(null);
+            }}
+            onClose={() => setPicking(null)}
+          />
+        )}
       </section>
-
-      {picking && (
-        <div className="bsheet-backdrop" onClick={() => setPicking(false)}>
-          <div className="bsheet" onClick={(e) => e.stopPropagation()}>
-            <div className="bsheet-handle" />
-            <h2>{t("ipPick")}</h2>
-            <select
-              className="ip-more"
-              autoFocus
-              value={baseLang(s.theirs) ?? ""}
-              onChange={(e) => {
-                if (e.target.value) s.setTheirs(e.target.value);
-                setPicking(false);
-              }}
-            >
-              <option value="">{t("ipMore")}</option>
-              {SORTED.filter((l) => l.code !== baseLang(s.mine)).map((l) => (
-                <option key={l.code} value={l.code}>
-                  {l.native} · {l.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
 
+/**
+ * A language list that opens inside one person's half (so it's the right way up for them).
+ * Our own list rather than the phone's picker, which misbehaves inside an upside-down screen.
+ */
+function LangList({ title, current, exclude, onPick, onClose }: { title: string; current: string | null; exclude: string | null; onPick: (code: string) => void; onClose: () => void }) {
+  const cur = baseLang(current);
+  const not = baseLang(exclude);
+  const first = [...new Set([...loadRecent().flatMap((r) => (baseLang(r.lang) ? [baseLang(r.lang)!] : [])), ...COMMON])].filter((c) => c !== not);
+  const rest = SORTED.filter((l) => l.code !== not && !first.includes(l.code));
+  const item = (code: string, native: string, name: string) => (
+    <button key={code} className={`ip-lang-item ${code === cur ? "on" : ""}`} onClick={() => onPick(code)}>
+      <b>{native}</b>
+      {native !== name && <small>{name}</small>}
+    </button>
+  );
+  return (
+    <div className="ip-langs" role="dialog" aria-label={title}>
+      <div className="ip-langs-head">
+        <b>{title}</b>
+        <button className="round-btn" onClick={onClose} aria-label="×">
+          ×
+        </button>
+      </div>
+      <div className="ip-langs-list">
+        {first.map((c) => item(c, langInfo(c).native, langInfo(c).name))}
+        <hr />
+        {rest.map((l) => item(l.code, l.native, l.name))}
+      </div>
+    </div>
+  );
+}

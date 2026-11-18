@@ -26,7 +26,7 @@ const llm = createServer((req, res) => {
     const j = JSON.parse(body);
     const content = String(j.messages[0].content);
     const lang = content.match(/<languages>.*? to (\w+)/)?.[1] ?? "?";
-    const phrase = content.match(/<new_phrase final="\w+">([\s\S]*?)<\/new_phrase>/)?.[1] ?? content.match(/<utterance[^>]*>([\s\S]*?)<\/utterance>/)?.[1] ?? "";
+    const phrase = content.match(/<new_phrase final="\w+"[^>]*>([\s\S]*?)<\/new_phrase>/)?.[1] ?? content.match(/<utterance[^>]*>([\s\S]*?)<\/utterance>/)?.[1] ?? "";
     reply(res, j, "m", `[${lang}] ${phrase.trim()}`);
   });
 }).listen(3993);

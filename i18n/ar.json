@@ -338,5 +338,8 @@
   "ipTheySpeak": "يتحدث {lang}",
   "ipFlip": "قلب",
   "ipSize": "حجم النص",
-  "ipEnd": "إنهاء"
+  "ipEnd": "إنهاء",
+  "capNew": "{n} جديدة",
+  "ipYourLang": "لغتك",
+  "ipDetecting": "جارٍ التعرّف…"
 }

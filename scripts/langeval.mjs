@@ -32,7 +32,7 @@ const slang = readFileSync(new URL(`../server/slang/${lang}.ts`, import.meta.url
 const script = `
 import { phraseTranslate, refine } from "./server/refine.ts";
 import { dropRepeat } from "./server/text.ts";
-import { joinsForward } from "./server/pipeline.ts";
+import { phraseCut } from "./server/pipeline.ts";
 const LANG = ${JSON.stringify(lang)};
 const cases = ${JSON.stringify(cases)};
 const ctx = [{ who: "A", lang: "en-AU", text: "how are you going today" }, { who: "B", lang: LANG, text: cases.to_en?.[0] ?? "" }];
@@ -50,7 +50,7 @@ for (const sentence of cases.long ?? []) {
   let shown = "", before = [], i = 0;
   while (i < units.length) {
     let n = Math.min(max, units.length - i);
-    if (i + n < units.length && spaced(sentence)) { let back = 0; while (n > 4 && back < 3 && joinsForward(units[i + n - 1], LANG.split("-")[0])) { n--; back++; } }
+    if (i + n < units.length) n = phraseCut(units.slice(i), n, LANG.split("-")[0], spaced(sentence) ? 4 : 8, spaced(sentence));
     const phrase = units.slice(i, i + n).join(sep);
     const final = i + n >= units.length;
     const ahead = final ? undefined : units.slice(i + n, i + n + 3).join(sep);
@@ -78,6 +78,13 @@ const upload = (path, content) => {
   const data = b64(content);
   for (let i = 0; i < data.length; i += 9000) exec(`printf %s ${data.slice(i, i + 9000)} >> ${path}.b64`);
   exec(`base64 -d ${path}.b64 > ${path} && rm ${path}.b64`);
+  // A piece lost to a rate limit would quietly test the old file: check the size, else stop.
+  const size = exec(`wc -c < ${path}`).trim().split("\n").pop();
+  if (Number(size) !== Buffer.byteLength(content)) {
+    console.error(`upload of ${path} failed (${size} of ${Buffer.byteLength(content)} bytes): run again`);
+    exec(`rm -rf ${d}`);
+    process.exit(1);
+  }
 };
 exec(`mkdir -p ${d} && cp -r /app/server /app/shared ${d}/ && ln -s /app/node_modules ${d}/node_modules`);
 upload(`${d}/server/slang/${lang}.ts`, slang);

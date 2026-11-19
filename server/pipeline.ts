@@ -142,6 +142,10 @@ const BACK_BY_LANG: Record<string, string> = {
   kn: "ಗೆ|ಅಲ್ಲಿ|ಇಂದ|ಅನ್ನು|ಇದೆ|ಇತ್ತು|ಆಯ್ತು|ಹತ್ರ",
   ml: "ആണ്|ആയിരുന്നു|ഉണ്ട്|ഇല്ല|കൂടെ",
   tr: "mi|mı|mu|mü|misin|mısın|musun|müsün|değil|gibi|kadar|için|ile",
+  kk: "қалдым|қалды|қалдық|жатыр|жатырмын|кетті|кеттім|алды|алдым|берді|бердім|еді|едім|екен|болды|тұр",
+  az: "mi|mı|mu|mü|deyil|kimi|qədər|üçün|ilə|idi|imiş",
+  eu: "nintzen|zen|ziren|ginen|nuen|zuen|genuen|zuten|naiz|da|gara|dira|dut|du|dugu|dute|zait|zaio|nion|zion|al",
+  sw: "",
   ja: "",
 };
 const BACK_RE: Record<string, RegExp> = Object.fromEntries(

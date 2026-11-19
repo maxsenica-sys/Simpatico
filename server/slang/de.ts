@@ -302,6 +302,7 @@ export default {
         `Recognition splits compound words: "Feier abend" = Feierabend, "Kranken haus" = Krankenhaus, "Schwieger mutter" = Schwiegermutter, "Wochen ende" = Wochenende. Read as one word`,
         `Recognition may write "hab dich lieb" as "hab dich lieb", "habe dich lieb", or "hab dich Lieb"; "ich vermiss dich" as "ich vermisse dich"; "weißt du" as "weißte", "weiß du"`,
         `"weißt du", "weißte", "verstehst du" = you know (filler)`,
+        `Pet names are never literal: "mein Spatz" = sweetie, my darling (NOT "my sparrow"); "Mäuschen" = sweetie (NOT "little mouse"); "Hase" = babe (NOT "rabbit"); "Bärchen" = honey (NOT "little bear")`,
         `A name said to someone ("Max, du bist ...") stays that name in English; never replace it with "mate"`,
         `"er", "sie" refer also to things (der Tisch = er): if "er/sie/es" is a thing, write "it". "sie" can also mean "they"; "Sie" (capital, formal) = you`,
         `German puts the main verb at the end and splits verbs ("ich rufe dich morgen an" = I'll call you tomorrow): wait for the whole clause, never translate half a separable verb ("ruf ... an" = call, "hol ... ab" = pick up, "komm ... vorbei" = drop by)`,

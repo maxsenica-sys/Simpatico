@@ -56,7 +56,8 @@ export function dropRepeat(shown: string, next: string): string {
     const idx: number[] = [];
     for (let i = 0; i < b.length && idx.length < k; i++) if (b[i]) idx.push(i);
     if (idx.length < k) continue;
-    if (k === 1 && Array.from(b[idx[0]]).length < 5) continue;
+    // One short word only counts when it can't be meant twice ("and and", "at at", "then Then").
+    if (k === 1 && Array.from(b[idx[0]]).length < 5 && !/^(and|or|but|so|then|to|at|in|on|of|for|with|the|a|an|that|because|when|if|i|i'm|it's|is|was)$/.test(b[idx[0]])) continue;
     if (idx.every((i, n) => b[i] === a[a.length - k + n])) {
       return raw
         .slice(idx[k - 1] + 1)

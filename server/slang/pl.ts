@@ -304,6 +304,7 @@ export default {
         'Thanks with warmth: "kochana jesteś", "kochany jesteś", "jesteś złota", "jesteś aniołem" = "you\'re a sweetheart", "you\'re an angel", "you\'re a gem" (soft and warm; not "legend", which is for "jesteś wielki", "mistrz", "sztos")',
         'Money: "stówa", "dycha", "pięć dych", "złotych", "zł" are zloty: "a hundred zloty", "ten zloty" (or just "a hundred"); never "bucks" or "dollars"',
         'Swearing keeps its strength in English: "ja pierdolę" = "fuck me", "fucking hell" (not "oh man"); "kurwa" = "fuck", "fucking"; "kurde", "kurczę" = "damn" (mild)',
+        'A phrase may end on "się" or "tak" with the verb in the next words ("a ona się | obraziła" = and she got offended): the verb still has to be translated when it comes',
         '"się tak", "tak", "taki", "taka", "tyle" before a verb or adjective = so, such: the next words finish the thought ("Kuba się tak nawalił, że" = Kuba got so wasted that)',
         '"no i?" = and?, so?; "no i co?" = so what?',
         '"jak coś, to dzwoń" = call if you need anything',

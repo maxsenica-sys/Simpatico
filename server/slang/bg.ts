@@ -22,7 +22,7 @@ export default {
         `"айде", "хайде" = come on, let's go; OK then; "айде стига" = oh come on, enough`,
         `"де" = particle of impatience or softening at the end: "чакай де" = hang on!, "кажи де" = come on, tell me`,
         `"бе", "ма" = address particles (to a man / to a woman, familiar, can sound rough): "какво бе" = what, man?, "къде си ма" = where are you, girl? Never written as "be" or "ma"`,
-        `"абе", "аман" = oh, look, well (opens a sentence, mild annoyance); "аман от ..." = I've had it with ...`,
+        `"абе", "аман" = oh, look, well (opens a sentence, mild annoyance; never written as "Abe" or "Aman"); "аман от ..." = I've had it with ...`,
         `"нали" = right?, isn't it?; you know (filler)`,
         `"значи" = so, I mean (filler); "ами", "ами да" = well, well yes`,
         `"такова", "онова" = um, thingy, whatsit (filler when looking for a word)`,
@@ -230,7 +230,7 @@ export default {
       label: "Into Bulgarian (from English)",
       lines: [
         `Between partners, friends and family use "ти" and everyday spoken Bulgarian, short sentences. Nothing formal or bookish ("с нетърпение очаквам" is stiff; "нямам търпение" is natural). The speaker's own gender shows in past and adjective forms ("уморен съм" from a man, "уморена съм" from a woman)`,
-        `"can't wait to see you" = "нямам търпение да те видя", "умирам да те видя"`,
+        `"can't wait to see you" = "нямам търпение да те видя", "умирам да те видя"; "I'm knackered, can't wait to see you though" = "скапан съм, ама нямам търпение да те видя" (keep the "but")`,
         `"you're a legend", "legend" = "ти си легенда", "голям си" (to a man), "голяма си" (to a woman)`,
         `"how are you going", "how's it going" = "как си", "как я караш"; "what did you get up to?" = "какво прави?", "к'во прави днес?"`,
         `"no worries" = "няма проблем", "спокойно"; after thanks "няма защо"`,

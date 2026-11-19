@@ -54,7 +54,9 @@ export function namesTag(names: string[] | undefined, heard: string, speaker?: s
   const known = [...people, ...words];
   const heardWords = heard.split(/[^\p{L}'’-]+/u).filter((w) => w.length >= 1);
   // Single words, and two short words heard as one ("me a" for "Mia").
-  const candidates = new Set<string>(heardWords.filter((w) => w.length >= 2));
+  // A word right after "the", "my", "une"… is a thing, not a person ("grab the esky"): no hint.
+  const ARTICLE = /^(the|a|an|my|your|our|their|this|that|some|le|la|les|un|une|el|los|las|una|der|die|das|den|dem|ein|eine|il|lo|gli|uno|o|os|um|uma|de|het|een)$/i;
+  const candidates = new Set<string>(heardWords.filter((w, i) => w.length >= 2 && !(i > 0 && ARTICLE.test(heardWords[i - 1]))));
   for (let i = 0; i + 1 < heardWords.length; i++) if (heardWords[i].length <= 4 && heardWords[i + 1].length <= 4) candidates.add(`${heardWords[i]} ${heardWords[i + 1]}`);
   const hints: string[] = [];
   for (const w of candidates) {
@@ -94,7 +96,7 @@ function profileTag(p: SpeakerProfile | undefined): string {
  * Indonesian, Chinese…) nothing in "I" or "you" depends on it, and saying "the speaker is a
  * woman" only tempts the translator to turn an unknown third person into "she".
  */
-const GENDERED_TARGET = new Set(["ru", "uk", "be", "pl", "cs", "sk", "bg", "sr", "hr", "bs", "sl", "mk", "ar", "he", "hi", "ur", "mr", "pa", "gu", "pt", "es", "fr", "it", "ro", "ca", "gl", "el", "lt", "lv"]);
+const GENDERED_TARGET = new Set(["vi", "th", "ru", "uk", "be", "pl", "cs", "sk", "bg", "sr", "hr", "bs", "sl", "mk", "ar", "he", "hi", "ur", "mr", "pa", "gu", "pt", "es", "fr", "it", "ro", "ca", "gl", "el", "lt", "lv"]);
 const peopleFor = (targetLang: string, p: People | undefined) => (GENDERED_TARGET.has(baseLang(targetLang) ?? "") ? p : undefined);
 
 function peopleTag(p: People | undefined): string {
@@ -142,14 +144,14 @@ export function leftovers(source: string, out: string, sourceLang: string, targe
   if (src && src !== scriptOf(targetLang)) {
     const runs = out.match(new RegExp(`(?:${src.source}[\\p{M}]*)+(?:[\\s'’-]+(?:${src.source}[\\p{M}]*)+)*`, "gu")) ?? [];
     for (const r of runs) if (!allow.some((a) => a.includes(r) || r.includes(a))) found.push(r);
-    return found.slice(0, 5);
+    // Particles can also come through in Latin letters (Serbian is written both ways): check the list too.
   }
   const english = baseLang(targetLang) === "en";
   const has = (text: string, w: string) => new RegExp(`(?<![\\p{L}\\p{N}])${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "iu").test(text);
   for (const w of leftInWords(sourceLang)) {
     // Very short particles are only safe to judge against English (Spanish "ya", Indonesian "ya").
     if (w.length <= 3 && !english) continue;
-    if (has(out, w) && has(source, w) && !allow.some((a) => a.toLowerCase() === w.toLowerCase())) found.push(w);
+    if (has(out, w) && has(source, w) && !allow.some((a) => a.toLowerCase() === w.toLowerCase()) && !found.some((f) => f.toLowerCase().includes(w.toLowerCase()))) found.push(w);
   }
   return found.slice(0, 5);
 }
@@ -192,6 +194,8 @@ const SYSTEM = `You write the subtitles for a live, face-to-face video call betw
 - Some words mean different things by region or context (Australian "footy" is AFL in most states but rugby league in New South Wales and Queensland; "football" differs by country). Decide from the conversation, the speaker's region and topics; if it is still unclear, keep the neutral meaning ("football", "the game") rather than guessing.
 - Gender: <people> gives the speaker's and listener's gender. Use the speaker's only where the speaker refers to themselves (I, me, my: Russian "я устала", Portuguese "obrigada", Hindi "मैं गई"), and the listener's only where they are addressed as one person (you: Arabic "أنتِ", Spanish "¿estás cansada?"). Everyone else follows the conversation: people mentioned get the gender the context gives them, groups stay plural ("Are they coming?" about several people), "we" is the group, and where nothing says otherwise use neutral wording or the grammatical default. Never put the speaker's or listener's gender on anyone else: a woman saying "My friend is tired" in French is "Mon ami est fatigué" (the friend's gender is unknown), not "Mon amie est fatiguée". The source can show gender too (Russian past tenses, Hindi and Urdu verb endings, Thai "ครับ"/"ค่ะ", Arabic and Hebrew verb forms): use those clues. Never add a gender the source doesn't have: Turkish "o", Persian "u", Indonesian "dia", spoken Chinese "tā" become "they" (or the person's name) in English, never "he/she" or a slash. Example: "O da geliyor mu?" is "Are they coming too?", not "Is he coming too?".
 - Render interjections and backchannels ("mm-hmm", "uh-huh", "wow", "oh no") with the target language's own spoken equivalent, never the source-language sound.
+- Money stays in the speaker's currency: "stówa" is "a hundred zloty", "pět set" crowns stay crowns, euros stay euros; never turn them into dollars or "bucks".
+- "We with X" in Slavic languages ("мы с Машей", "my z Kasią", "ми з Олею", "mi s Anom") means "X and I", not "we with X".
 - Your whole reply appears on screen as the subtitle, so reply with the translation only, written in the target language and its usual script: no quotes, notes, alternatives, transliteration, second attempts or explanations. If the utterance has no translatable content, reply with it unchanged.`;
 
 /**
@@ -207,7 +211,7 @@ const SYSTEM = `You write the subtitles for a live, face-to-face video call betw
  * subtitle line and drop anything that reads as a note to itself.
  */
 /** Signs that a reply is the model talking to itself rather than a subtitle. */
-const SELF_TALK = /(["”»]\s*[—–-]+\s*(no|wait|actually|hmm|or)\b|\b(is an exclamation|is a nickname|is slang for|literally means|here means|so the (subtitle|translation)|the translation (is|would be))\b|,\s*so:\s*["“])/i;
+const SELF_TALK = /(["”»]\s*[—–-]+\s*(no|wait|actually|hmm|or)\b|\b(is an exclamation|is a nickname|is slang for|literally means|here means|so the (subtitle|translation)|the translation (is|would be)|here is (a|the) (translation|subtitle)|the (sentence|phrase) (is|means)|i'?ll translate|let me (re)?translate|let me correct|correcting (myself|that)|correction:)\b|,\s*so:\s*["“])/i;
 
 /** The translator describing its own work, or saying there is nothing to add: never shown. */
 const META = /(\[nothing\]|subtitle so far|per the instructions|as instructed|next_words|new_phrase|said_so_far|adds nothing new|no new text|nothing new to add|already on screen|is already (written|covered|translated|there|on screen)|no new words)/i;
@@ -221,12 +225,13 @@ export function subtitleOnly(text: string): string {
     .filter((l) => !/^(wait|note|actually|hmm|let me|i should|i need|translation\s*:|subtitle\s*:)/i.test(l));
   const line = lines.length > 1 ? lines[lines.length - 1] : (lines[0] ?? "");
   // A continuation sometimes opens with "..." — the screen shows it joined to what came before.
-  let out = line.replace(/^(\.\.\.|…)\s*/u, "").trim();
+  let out = line.replace(/^(\.\.\.|…)\s*/u, "").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/^\*([^*]+)\*$/u, "$1").trim();
   // Thinking out loud on one line ('"Oh come on…" — no, "oha" is an exclamation…, so: "No way…"'):
   // keep only the final quoted subtitle; with nothing quoted to keep, show nothing (it's retried).
   if (SELF_TALK.test(out)) {
     const quoted = [...out.matchAll(/["“„«]([^"“”„«»]{2,})["”»]/gu)].map((m) => m[1].trim());
-    out = quoted.length ? quoted[quoted.length - 1] : "";
+    const after = out.match(/(?:let me correct|correction)\s*:\s*(.+)$/iu)?.[1];
+    out = quoted.length ? quoted[quoted.length - 1] : (after?.trim() ?? "");
   }
   // A subtitle wrapped in quotes as a whole: drop the quotes (quotes inside are kept).
   const q = out.match(/^["“„«'‘](.+)["”»'’]$/su);
@@ -241,7 +246,7 @@ export function subtitleOnly(text: string): string {
 export function looksUntranslated(source: string, out: string): boolean {
   // The test mocks echo their input on purpose.
   if (process.env.ECHO_CHECK === "off") return false;
-  const words = (t: string) => t.toLocaleLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
+  const words = (t: string) => t.toLocaleLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
   const a = words(source);
   const b = words(out);
   if (a.length < 3 || b.length < 3) return false; // names, "OK", short loanwords are fine
@@ -262,7 +267,9 @@ function slangReference(sourceLang: string, targetLang: string): string {
  */
 async function fixLeftovers(text: string, source: string, sourceLang: string, targetLang: string, allow: string[], again: (extra: Anthropic.MessageParam[]) => Promise<Anthropic.Message>, said = ""): Promise<string> {
   const left = leftovers(source, text, sourceLang, targetLang, allow);
-  const guessed = left.length ? [] : guessedGender(text, `${said} ${source}`, sourceLang, targetLang);
+  // A name of someone in the call (Mia, Max) tells the translator who it is: not a guess.
+  const named = allow.some((n) => n.length >= 2 && new RegExp(`(?<![\\p{L}])${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "iu").test(source));
+  const guessed = left.length || named ? [] : guessedGender(text, `${said} ${source}`, sourceLang, targetLang);
   if (!left.length && !guessed.length) return text;
   const ask = left.length
     ? `<left_untranslated>${left.join(", ")}</left_untranslated>\nThose words are still in ${langName(sourceLang)}. Write the subtitle again, complete, with their meaning in ${langName(targetLang)} (or without them if they add nothing). Reply with the subtitle only.`
@@ -273,7 +280,7 @@ async function fixLeftovers(text: string, source: string, sourceLang: string, ta
       { role: "user", content: ask },
     ]);
     const fixed = subtitleOnly(res.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join(""));
-    const better = left.length ? !!fixed && leftovers(source, fixed, sourceLang, targetLang, allow).length < left.length : !!fixed && fixed.length < text.length * 1.6 + 12;
+    const better = left.length ? !!fixed && leftovers(source, fixed, sourceLang, targetLang, allow).length < left.length : !!fixed && fixed.length < text.length * 1.6 + 12 && fixed.length > text.length * 0.75;
     log(left.length ? "leftover_fix" : "gender_check", { src: baseLang(sourceLang), tgt: baseLang(targetLang), words: left.length || guessed.length, changed: better && fixed !== text });
     return better ? fixed : text;
   } catch {
@@ -285,13 +292,36 @@ async function fixLeftovers(text: string, source: string, sourceLang: string, ta
 const GENDER_CUE = /(?<![\p{L}])(anne(m|si|n|miz|ler)?|annecim|baba(m|sı|n|mız)?|kızı?|oğlu?|oğlan|erkek|kadın|adam|abla(m|sı|n)?|ağabey\p{L}*|teyze(m|si|n)?|amca(m|sı|n)?|dayı(m|sı)?|yenge(m|si)?|enişte(m|si)?|karı(m|sı)|koca(m|sı)|hanım|hanımefendi|beyefendi|nine(m|si)?|babaanne\p{L}*|anneanne\p{L}*|dede(m|si)?|kız ?kardeş\p{L}*|erkek ?kardeş\p{L}*|mum|mom|mother|dad|father|sister|brother|wife|husband|girlfriend|boyfriend|aunt|auntie|uncle|girl|boy|woman|man|lady|guy|she|he|her|his|him|daughter|son|grandma|grandpa)(?![\p{L}])/iu;
 
 /**
+ * The same for the other languages without he/she: family words and "man"/"woman" (a word's
+ * start is enough, since endings attach: Hungarian "anyám", Finnish "äitini", Malay "mak dia").
+ */
+const FAMILY_WORDS: Record<string, string> = {
+  id: "ibu|ibunya|mama|mamah|mami|bunda|emak|mak|ayah|bapak|bapaknya|papa|papah|abah|kakak perempuan|adik perempuan|istri|isteri|suami|bini|laki|cewek|cowok|perempuan|lelaki|laki-laki|wanita|pria|nenek|kakek|atuk|tok|opa|oma|tante|om|bibi|paman|pakcik|makcik|mbak|mas|abang|akak|kak long|putri|putra|anak perempuan|anak lelaki|anak laki-laki|nanay|tatay|inay|itay|ate|kuya|lola|lolo|tita|tito|babae|lalaki|misis|mister|asawa ko",
+  ms: "ibu|ibunya|mama|mamah|mami|bunda|emak|mak|ayah|bapak|bapaknya|papa|papah|abah|kakak perempuan|adik perempuan|istri|isteri|suami|bini|laki|cewek|cowok|perempuan|lelaki|laki-laki|wanita|pria|nenek|kakek|atuk|tok|opa|oma|tante|om|bibi|paman|pakcik|makcik|mbak|mas|abang|akak|kak long|putri|putra|anak perempuan|anak lelaki|anak laki-laki|nanay|tatay|inay|itay|ate|kuya|lola|lolo|tita|tito|babae|lalaki|misis|mister|asawa ko",
+  tl: "ibu|ibunya|mama|mamah|mami|bunda|emak|mak|ayah|bapak|bapaknya|papa|papah|abah|kakak perempuan|adik perempuan|istri|isteri|suami|bini|laki|cewek|cowok|perempuan|lelaki|laki-laki|wanita|pria|nenek|kakek|atuk|tok|opa|oma|tante|om|bibi|paman|pakcik|makcik|mbak|mas|abang|akak|kak long|putri|putra|anak perempuan|anak lelaki|anak laki-laki|nanay|tatay|inay|itay|ate|kuya|lola|lolo|tita|tito|babae|lalaki|misis|mister|asawa ko",
+  vi: "mẹ|má|bố|ba tôi|cha|chị|anh trai|em gái|em trai|vợ|chồng|bà|ông|cô ấy|chú|dì|con gái|con trai|bạn gái|bạn trai",
+  fa: "مادر|مامان|پدر|بابا|خواهر|برادر|شوهر|دختر|پسر|مادربزرگ|پدربزرگ|خاله|عمه|دایی|عمو|خانم|آقا|زنم|زنش",
+  hu: "anya|anyu|anyám|apa|apu|apám|nővér|húg|báty|öcs|feleség|férj|lány|fiú|barátnő|barát|nagymama|nagyi|nagypapa|nő|férfi|néni|bácsi",
+  fi: "äiti|äitee|isä|iskä|sisko|sisar|veli|vaimo|aviomies|mies|tyttö|poika|tyttöystävä|poikaystävä|mummo|mummi|isoäiti|ukki|vaari|pappa|nainen|tytär",
+  et: "ema|emme|isa|issi|õde|vend|naine|abikaasa|mees|tüdruk|poiss|tüdruksõber|poiss-sõber|vanaema|vanaisa|tütar",
+  eu: "ama|amatxo|aita|ahizpa|arreba|anaia|neba|emazte|senar|neska|mutil|neskalagun|mutil-lagun|amona|aitona|alaba|seme|emakume|gizon",
+  sw: "mama|baba|dada|kaka|mke|mume|msichana|mvulana|bibi|babu|binti|mwanamke|mwanaume|mwanamume|shangazi|mjomba",
+  az: "ana|anam|anası|ata|atam|bacı|qardaş|arvad|ər|qız|oğlan|nənə|baba|dayı|xala|əmi|bibi|kişi|qadın",
+  kk: "ана|анам|апа|әке|әкем|әпке|қарындас|сіңлі|аға|іні|әйел|күйеу|қыз|ұл|әже|ата|жігіт|келін",
+  bn: "মা|আম্মু|বাবা|আব্বু|দিদি|দাদা|আপু|ভাইয়া|বোন|ভাই|বউ|স্ত্রী|স্বামী|মেয়ে|ছেলে|ঠাকুমা|দিদিমা|নানি|দাদি|দাদু|নানা|মাসি|পিসি|কাকা|মামা",
+};
+const FAMILY_CUE: Record<string, RegExp> = Object.fromEntries(Object.entries(FAMILY_WORDS).map(([l, w]) => [l, new RegExp(`(?<![\\p{L}])(${w})`, "iu")]));
+/** Scripts without spaces between words (or with endings attached), matched anywhere. */
+const FAMILY_CUE_JOINED = /(妈|媽|爸|姐|哥|妹|弟|老婆|老公|太太|丈夫|妻子|奶奶|爷爷|爺爺|外婆|外公|阿姨|叔叔|舅舅|儿子|兒子|女儿|女兒|女朋友|男朋友|女生|男生|女的|男的|女人|男人|母|父|姉|兄|娘|息子|嫁|旦那|彼女|彼氏|ママ|パパ|おばあ|おじい|お袋|親父|おふくろ|おやじ|엄마|아빠|어머니|아버지|언니|누나|오빠|형|여동생|남동생|딸|아들|아내|남편|와이프|여자|남자|할머니|할아버지|이모|삼촌|고모|여친|남친|แม่|พ่อ|พี่สาว|พี่ชาย|น้องสาว|น้องชาย|ภรรยา|เมีย|สามี|ผัว|ยาย|ย่า|ปู่|ตา|ลูกสาว|ลูกชาย|ผู้หญิง|ผู้ชาย|แฟน)/u;
+
+/**
  * English "he"/"she" for someone the speaker's language didn't give a gender (Turkish "o",
  * Indonesian "dia"…), with nothing in what was said that tells us: worth one more look.
  */
 export function guessedGender(out: string, said: string, sourceLang: string, targetLang: string): string[] {
   if (process.env.ECHO_CHECK === "off" || baseLang(targetLang) !== "en" || !GENDERLESS.has(baseLang(sourceLang) ?? "")) return [];
   const found = [...new Set((out.match(/(?<![\p{L}'’])(she|he|her|hers|him|his|herself|himself)(?![\p{L}])/giu) ?? []).map((w) => w.toLowerCase()))];
-  if (!found.length || GENDER_CUE.test(said)) return [];
+  if (!found.length || GENDER_CUE.test(said) || !!FAMILY_CUE[baseLang(sourceLang) ?? ""]?.test(said) || FAMILY_CUE_JOINED.test(said)) return [];
   return found;
 }
 
@@ -383,6 +413,7 @@ const PHRASE_SYSTEM = `You write the subtitles for a live video call between peo
 - Gender: <people> gives the speaker's and listener's gender. Apply the speaker's only where they refer to themselves (I, me, my) and the listener's only where they are addressed as one person (you). Everyone else follows the conversation: groups stay plural, people mentioned get the gender the context gives them, otherwise neutral wording. Never put the speaker's gender on a friend, colleague or anyone else they mention. Clues in the source (verb endings, Thai "ครับ"/"ค่ะ") count too. Never add a gender the source doesn't have: Turkish "o", Indonesian "dia" and similar become just "they" (or the person's name) in English, never "he/she".
 - The transcript comes from speech recognition and can contain mistakes, especially names, characters and slang in accents or soft speech ("pin okio" for Pinocchio). Use what was said before and the recent conversation to work out what was meant, but translate only the new phrase.
 - <next_words> are the speaker's next two or three words, shown only so you can see where the sentence is going (in Turkish, Japanese, Korean, Hindi and other verb-last languages the verb is often there). They are not part of this phrase and may still change: use them to choose the right words for THIS phrase, and stop where this phrase stops. The one exception: if this phrase can't be said naturally without its verb and that verb is the very next word (Turkish "…birden aklıma" with next word "geldi": "it suddenly occurred to me"), write that verb and nothing after it.
+- Money stays in the speaker's currency (zloty, crowns, euros, yen, rupees): never "bucks" or dollars. Slavic "we with X" ("мы с Машей", "my z Kasią") is "X and I".
 - Never say twice what is already on screen. When a phrase begins with words whose meaning <subtitle_so_far> already carries (that verb from last time, or the end of an expression), skip them and translate only what is new; if nothing is new, reply with exactly [nothing]. A last phrase of one or two words is usually just the verb you have already written ("…yürüyerek" then "gittim": "walked the rest of the way" is already there): then reply with exactly [nothing].
 - A particle at the start of a phrase that belongs to the words before it (Turkish "ya", "de/da", "mi/mı", "ki", "bile"; Japanese "ね", "よ"; Hindi "ही", "भी", "तो") is not translated as a word of its own. No particle, filler or interjection of the speaker's language is ever left in the subtitle as it is: give its meaning in the target language, or leave it out.
 - A phrase marked preview="true" is a quick look at words still being spoken, shown faintly until the real phrase replaces it: translate only what is already clear, and leave out a word you can't make sense of yet rather than guessing (the context that explains it is usually still coming).
@@ -487,6 +518,18 @@ export async function phraseTranslate(input: PhraseInput): Promise<string | null
     if (text && looksUntranslated(input.phrase, text)) {
       log("phrase_untranslated", { ms: Date.now() - started });
       return null;
+    }
+    // A phrase of several words that comes back empty is usually lost meaning, not a repeat: ask once more.
+    const size = /\s/.test(input.phrase.trim()) ? input.phrase.trim().split(/\s+/).length : Array.from(input.phrase.replace(/\s+/g, "")).length / 2;
+    if (!input.onPartial && !text && size >= 4) {
+      try {
+        const again = await client.messages.create(
+          { ...params, messages: [...params.messages, { role: "assistant" as const, content: raw.trim() || "[nothing]" }, { role: "user" as const, content: `Check <new_phrase> again word by word: anything in it that <subtitle_so_far> doesn't already say must be translated now, or it is lost. Reply with the translation of just those words, as the continuation. Only if every word truly is already on screen, reply [nothing].` }] },
+          { signal: input.signal, maxRetries: 0 },
+        );
+        text = subtitleOnly(again.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join(""));
+        log("phrase_empty_retry", { filled: !!text });
+      } catch {}
     }
     // Settled phrases only: a preview is replaced within a second anyway.
     if (!input.onPartial)

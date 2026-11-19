@@ -6,7 +6,7 @@ export default {
     {
       label: "German",
       lines: [
-        `"na?", "na, alles klar?", "na du?" = hey, how's it going? (greeting, not "well")`,
+        `"na?", "na, alles klar?", "na, alles klar bei dir?", "na du?" = hey, how's it going?, hey, all good? (an opening greeting question; never "not bad", never "well")`,
         `"Moin", "Moin moin" = hi, morning (North Germany, said all day)`,
         `"Servus" = hi; bye (Bavaria, Austria)`,
         `"Grüß Gott", "Grüß dich", "Griaß di" = hello (South Germany, Austria)`,
@@ -286,6 +286,8 @@ export default {
         `"mal", "denn", "eigentlich", "wohl", "eh", "ruhig" = softening particles ("was ist denn los?" = what's wrong?; "eigentlich" = actually; "eh" = anyway): translate the tone, don't write them`,
         `"also" = so, well, I mean (filler, never English "also"); "auch" = also, too`,
         `"na ja", "naja", "tja", "hm", "äh", "ähm", "öh" = well, um (fillers: write "well" or drop)`,
+        `"so ein Scheiß", "so eine Scheiße", "Scheiße!" at the start = shit, bloody hell, for fuck's sake (keep the swear; "ugh" is too weak)`,
+        `"sauer sein" = to be annoyed, cross, upset with someone (not "pissed off"; "stinksauer" = furious)`,
         `"ich so", "er so", "sie so", "und ich so" = I was like, he was like, she was like (quoting speech): keep "I was like", never drop it`,
         `"gell", "gäll", "gelle", "gö" after a statement = OK?, you know?, yeah? (asks for agreement; never "have I?", "did I?")`,
         `"gestern" = yesterday (not "last night" unless "gestern Abend", "gestern Nacht")`,

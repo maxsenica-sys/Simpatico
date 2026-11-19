@@ -8,7 +8,7 @@ export default {
       lines: [
         `"здрасти", "здрасте", "здравей", "здравейте" = hi, hello ("здравейте" also to several people or politely)`,
         `"добро утро", "добър ден", "добър вечер", "лека нощ" = good morning, hello, good evening, good night`,
-        `"какво става", "кво стаа", "к'во става" = what's up?, what's going on? (a question, not the answer "not much"); "к'во правиш", "кво праиш" = what are you up to?, what are you doing?`,
+        `"какво става", "кво стаа", "к'во става" = what's up?, what's going on? (always a question: "абе кво стаа бе" = hey, what's up, man?; never "not much"); "к'во правиш", "кво праиш" = what are you up to?, what are you doing?`,
         `"как си", "как е", "как я караш" = how are you, how's it going; reply "добре съм", "горе-долу" (so-so), "бива" (not bad)`,
         `"чао", "айде чао", "до скоро", "ще се чуем", "ще се видим" = bye, see you, talk soon`,
         `"мерси", "благодаря", "благодаря ти", "много благодаря" = thanks, thank you`,

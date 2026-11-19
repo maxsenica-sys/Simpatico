@@ -160,7 +160,7 @@ export default {
     {
       label: "Welsh, swearing and insults (strength noted)",
       lines: [
-        'Much Welsh swearing is borrowed English ("ffycin", "shit", "blydi"): keep the same strength',
+        'Much Welsh swearing is borrowed English ("ffycin", "shit", "blydi"): keep the same strength, never soften ("ffycin hel" = "fucking hell", not "bloody hell") and never add a swear that was not said',
         '"blydi", "blydi hel" = bloody, bloody hell (mild)',
         '"Duw", "Iesu", "Iesu Grist" = God, Jesus (mild-moderate)',
         '"diawl", "y diawl" = devil, damn, you sod (moderate); "diawch", "diain" = damn (mild)',
@@ -220,6 +220,8 @@ export default {
         'Short past: "es i" = I went; "ges i" = I got, I had; "nes i" = I did ("nes i anghofio" = I forgot); "fues i" = I went, I was; "ddoth o", "daeth hi" = he came, she came',
         'Future: "bydda i", "fydda i" = I\'ll be; "na i", "wna i" = I\'ll (do) ("na i ffonio ti" = I\'ll call you; this "na" is not "no"); "gawn ni" = we\'ll (get to); "wela i di" = I\'ll see you',
         'Yes and no echo the verb: "Wyt ti\'n dod?" "Ydw" = yes; "Gest ti fwyd?" "Do" = yes (Welsh "do" = yes, past tense); "Oes" = yes there is; "Na", "Nac ydw" = no',
+        '"ella" (North), "efallai", "falle" (South) = maybe, perhaps ("ella awn ni" = maybe we\'ll go): at the start of a sentence it is "maybe", not the name Ella',
+        'People words have no gender unless the sentence gives one: "fy nghariad" = my partner, my love ("dwi\'n mynd i weld fy nghariad" = I\'m going to see my partner, never a guessed "girlfriend" or "boyfriend"); "ffrind" = friend',
         'North vs South: "rŵan"/"nawr" = now; "allan"/"mas" = out; "llefrith"/"llaeth" = milk; "ella"/"falle" = maybe; "hogyn"/"crwt" = boy; "nain, taid"/"mam-gu, tad-cu" = grandma, grandpa; "sut"/"shwt" = how; "lle"/"ble" = where',
         'Recognition traps: "ti\'n" may be written "tin" (tin = arse: read "ti\'n" = you are); "mae\'n" as "main" ("main iawn" = "mae\'n iawn" = it\'s fine); "dwi" as "dewi" or "do we"; "ynde" as "yn de"; "be ti\'n neud?" = what are you doing?; English-looking words may be Welsh ("do" = yes, "wedi", "pan" = when, "hen" = old, "dim" = not); read by meaning',
         'Time: "am saith" = at seven; "hanner awr wedi saith" = half past seven; "chwarter wedi", "chwarter i" = quarter past, quarter to; "deg munud" = ten minutes; "heno" = tonight; "fory" = tomorrow; "ddoe" = yesterday; "neithiwr" = last night; "wedyn" = later, afterwards; "penwythnos" = weekend',
@@ -242,6 +244,7 @@ export default {
         '"no worries" = "dim problem", "paid poeni", "croeso" (after thanks)',
         '"grab takeaway", "order in" = "cael têcawê", "archebu bwyd"',
         '"leave on read" = "gadael ar seen", "anwybyddu neges"',
+        '"heaps" as an intensifier ("heaps excited", "heaps good") = "mor" ("dwi mor gyffrous", "mor dda"), never "llwyth o gyffrous"; "at my mate\'s" = "yn nhŷ fy mêt", "draw at fy ffrind"; "your" = "dy" (not literary "\'th")',
         '"talk tomorrow" = "siarad fory", "siaradwn ni fory" (not the order "siarada"); "tomorrow" = "fory" (not bookish "yfory"); "we\'re" = "dan ni\'n" (North), "ni\'n" (South), not textbook "rydyn ni"',
         '"I reckon" = "dwi\'n meddwl", "dwi\'n credu"; "heaps" = "llwyth", "lot"; "arvo" = "prynhawn"; "brekkie" = "brecwast"',
         '"knackered", "stuffed", "wrecked" = "wedi blino\'n lân", "wedi ymlâdd"',

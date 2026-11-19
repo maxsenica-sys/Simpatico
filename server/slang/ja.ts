@@ -81,7 +81,7 @@ export default {
       lines: [
         'Address terms are not literal: "-chan", "-kun", "-san" after a name are dropped in English (just the name). "お母さん" to one\'s own mother = Mum',
         '"〜ちゃん" = cute or close (kids, girls, partners); "〜くん" = boys, younger men; "〜さん" = Mr/Ms, polite (drop all three: "Mia-chan" = Mia)',
-        '"先輩" / "後輩" = someone senior / junior to you at school or work. With no name, never drop it: "先輩が来る" = "my senpai is coming", "an older guy/girl from work is coming" only if the gender is known; otherwise "someone senior from work" or "my senpai"',
+        '"先輩" / "後輩" = someone senior / junior to you at school or work. With no name, never drop it: "先輩が来る" = "my senpai is coming" (whose senpai: the speaker\'s, unless said otherwise), "an older guy/girl from work is coming" only if the gender is known; otherwise "someone senior from work" or "my senpai"',
         '"お母さん", "ママ", "母" = Mum; "お父さん", "パパ", "父" = Dad; "おかん" / "おとん" = Mum / Dad (Kansai, casual)',
         '"お兄ちゃん", "兄貴" = big brother; "お姉ちゃん", "姉" = big sister; "弟" / "妹" = little brother / sister',
         '"おばあちゃん" / "おじいちゃん" = Grandma / Grandpa; "おばさん" / "おじさん" = auntie / uncle, or any middle-aged woman / man',
@@ -287,6 +287,8 @@ export default {
         'Live subtitles arrive in pieces cut by character count, so a piece can end inside a verb ("行っ|た", "思っ|たら" = just when I thought, "最|悪") or before the verb ("荷物" | "置いたら" = once you\'ve dropped your bags). Join them in meaning; translate every clause once, never skip one at a cut and never repeat one already on screen. "したやつ" = the thing (I/we) ordered',
         'Recognition often writes foreign names in katakana ("ミア" = Mia, "マックス" = Max, "エズギ" = Ezgi) and loanwords in katakana: write the English word or the name',
         'Numbers and time: "3時半" = half past three, "午後" = pm, afternoon, "夜" = evening, night, "明日" = tomorrow, "来週" = next week, "週末" = weekend, "〜時ごろ" = around … o\'clock, "万" = ten thousand ("3万円" = 30,000 yen)',
+        'Money stays in yen with the number written out: "3万円" = 30,000 yen, "千円" = 1,000 yen (never "grand" or "bucks", which sound like dollars)',
+        '"〜" or "ー" stretching a word ("お疲れ〜", "えー") is only drawn-out tone: never write "~" in the subtitle',
         'Counters: "2人" = two people, "一個" = one (thing), "一杯" = one drink',
         '"いいです", "大丈夫です", "結構です" in reply to an offer = no thanks',
         '"〜てください" = please …; "〜て" alone = (casual request) "can you…"',

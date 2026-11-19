@@ -9,7 +9,7 @@ export default {
       lines: [
         `"bon dia" = good morning, hi; "bona tarda" = good afternoon; "bona nit" = good night, good evening`,
         `"hola" = hi; "ei" = hey`,
-        `"adéu", "adeu", "apa, adéu", "a reveure" = bye; "fins ara" = see you in a bit; "fins després", "fins després" = see you later; "fins demà" = see you tomorrow; "ens veiem" = see you`,
+        `"adéu", "adeu", "apa, adéu", "a reveure" = bye; "fins ara" = see you in a bit; "fins després" = see you later; "fins demà" = see you tomorrow; "ens veiem" = see you`,
         `"gràcies", "moltes gràcies", "merci" = thanks (merci is very common); "de res" = you're welcome`,
         `"perdona", "perdoni" (formal), "ho sento" = sorry; "disculpa" = excuse me`,
         `"d'acord", "vale" = OK; "molt bé" = great, very good; "perfecte" = perfect`,
@@ -271,7 +271,7 @@ export default {
       ],
     },
   ],
-  leftIn: ["doncs", "vinga", "ostres", "collons", "carinyo", "o sigui", "Déu n'hi do", "tant de bo", "adéu", "tiet", "tieta", "iaia", "iaio", "quina passada", "quin pal", "no fotis", "escolta", "mare meva", "i tant", "fins ara", "merci"],
+  leftIn: ["doncs", "vinga", "ostres", "collons", "carinyo", "o sigui", "Déu n'hi do", "tant de bo", "adéu", "tiet", "tieta", "iaia", "iaio", "quina passada", "quin pal", "no fotis", "mare meva", "i tant", "fins ara"],
   terms: [
     "doncs", "vinga", "d'acord", "vale", "ostres", "carai", "collons", "home", "dona", "noi", "noia", "nen", "nena", "tio", "escolta", "mira", "saps", "o sigui", "a veure", "potser", "vaja", "Déu n'hi do", "tant de bo", "tant se val", "no passa res", "tranqui", "quina passada", "quin pal", "mandra", "fer-la petar", "de bòlit", "flipar", "mola", "guai", "brutal", "crack", "de conya", "rotllo", "rallar-se", "currar", "feina", "finde", "cap de setmana", "deixar en vist", "un àudio", "adéu", "fins ara", "fins després", "fins demà", "gràcies", "merci", "de res", "si us plau", "sisplau", "t'estimo", "et trobo a faltar", "t'enyoro", "petons", "amor", "carinyo", "rei", "reina", "bonica", "maco", "maca", "xicot", "xicota", "mama", "papa", "iaia", "iaio", "avi", "àvia", "tiet", "tieta", "cosí", "cosina", "germà", "germana", "sogra", "cunyat", "canalla", "mainada", "pa amb tomàquet", "botifarra", "fuet", "calçots", "calçotada", "escalivada", "romesco", "allioli", "fideuà", "canelons", "escudella", "crema catalana", "panellets", "coca", "vermut", "canya", "tallat", "cava", "esmorzar", "dinar", "berenar", "sopar", "Barcelona", "Barna", "Girona", "Lleida", "Tarragona", "Sabadell", "Terrassa", "Badalona", "València", "Palma", "Gràcia", "Rodalies", "Sant Jordi", "Sant Joan", "Diada", "Tió", "caganer", "castellers", "Barça", "culer", "Espanyol", "Jordi", "Pau", "Marc", "Arnau", "Pol", "Oriol", "Laia", "Núria", "Montse", "Mireia", "Berta", "Martina", "Júlia", "Mia", "Max", "xiquet", "al·lot",
   ],

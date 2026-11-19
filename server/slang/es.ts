@@ -397,6 +397,7 @@ export default {
       label: "Spanish, how it is really spoken (read these before translating)",
       lines: [
         'Spanish drops the subject: "viene" = he/she/they come(s) or "you (usted) come". "le dije" = I told him/her/them. "su", "sus" = his, her, their or your (formal). If the conversation has not said who it is, write the person\'s name or "they" in English, never a guessed "he" or "she". Only a gendered word in the sentence (novio, novia, mi jefe, la jefa, él, ella, cansado/cansada about that person) decides it',
+        '"a" before a person is only the object marker: "fui a ver a mi madre" = I went to see my mum; a phrase starting "a mi madre..." still means my mum, never "her mother"',
         '"mi ex" has no gender: "mi ex con su nueva novia" = my ex with their new girlfriend',
         'Adjectives agree with the person: "estoy cansada" = (a woman) I\'m tired. This tells you the speaker\'s gender only; do not add it to the English',
         '"se me olvidó", "se me rompió", "se me cayó" = I forgot, I broke it, I dropped it (by accident)',

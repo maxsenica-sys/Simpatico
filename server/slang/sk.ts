@@ -273,7 +273,7 @@ export default {
       ],
     },
   ],
-  leftIn: ["počuj", "počúvaj", "akože", "vlastne", "ďakujem", "vďaka", "prepáč", "neviem", "miláčik", "zlatko", "zlatíčko", "láska moja", "srdiečko", "v pohode", "v poho", "jasnačka", "ty kokso", "ty brdo", "ty kráso", "kamoš", "bratu", "dovidenia", "ahojte", "čauko", "do piče", "kurnik", "veď hej", "no veď"],
+  leftIn: ["počuj", "počúvaj", "akože", "vlastne", "ďakujem", "vďaka", "prepáč", "neviem", "miláčik", "zlatíčko", "láska moja", "srdiečko", "v pohode", "v poho", "jasnačka", "ty kokso", "ty brdo", "ty kráso", "kamoš", "dovidenia", "ahojte", "čauko", "do piče", "veď hej", "no veď"],
   terms: [
     "hej", "jj", "áno", "jasné", "jasnačka", "počuj", "počúvaj", "pozri", "proste", "akože", "vlastne", "fakt", "naozaj", "však", "veď", "veď hej", "v pohode", "v poho", "pohoda", "čau", "čauko", "ahoj", "ahojte", "servus", "zdravím", "dovidenia", "maj sa", "ďakujem", "vďaka", "díky", "prepáč", "nemáš začo", "kamoš", "kamo", "kamarátka", "brácho", "bratu", "ty kokso", "ty brdo", "ty kráso", "ty vole", "pecka", "šupa", "brutál", "riadne", "trapas", "žúrka", "opica", "prachy", "keš", "kecať", "nekecaj", "pokecať", "stopro", "vraj", "furt", "neviem", "kurva", "do piče", "kurník",
     "zlato", "zlatko", "zlatíčko", "miláčik", "láska", "srdiečko", "macko", "ľúbim ťa", "milujem ťa", "chýbaš mi", "pusu", "dobrú noc", "mamka", "mami", "ocko", "oci", "tati", "babka", "dedo", "starká", "starký", "teta", "ujo", "svokra", "švagor", "priateľ", "priateľka", "frajer", "frajerka", "chalani", "baby", "manžel", "manželka",

@@ -241,7 +241,7 @@ export default {
         '"ganda" = great, huge',
         '"está-se bem" = all good, chilling',
         '"ya" = yeah',
-        '"ó pá" = hey man',
+        '"ó pá" = oh man, mate (filler, not "oi")',
         '"chunga" = dodgy, rubbish',
         '"betinho" = preppy kid',
         '"bica" = espresso (Lisbon)',

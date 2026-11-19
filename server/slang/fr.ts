@@ -189,7 +189,7 @@ export default {
     {
       label: "French, verlan and banlieue",
       lines: [
-        '"wesh" = hey, yo',
+        '"wesh" = hey, yo, oi (greeting; never "yeah")',
         '"frérot", "frère", "frate" = bro',
         '"ouf" = crazy (verlan of fou)',
         '"chelou" = weird (verlan of louche)',
@@ -475,6 +475,8 @@ export default {
         '"allez" = come on, OK then, bye ("allez, bisous" = OK, love you, bye)',
         '"comme ça" = like that; also "just because"',
         '"c\'est pas vrai!" = no way!, you\'re kidding!',
+        'Swears keep their strength in English: "câlisse que je suis tanné" = "fuck, I\'m so sick of it" (never "ugh"); "putain" = "fuck" or "shit" by tone; "de merde" = "shit", "shitty"',
+        '"avoir la flemme" = can\'t be bothered ("ou t\'as la flemme?" = or can\'t you be bothered?), not "too tired"',
         'Québec spoken: "chu" = je suis; "toé", "moé" = toi, moi; "icitte" = here; "astheure" = now; "tantôt" = earlier or later today; "y\'a" = there is / he has; "a" = elle ("a vient" = she\'s coming); "-tu" is a question marker, not "you" ("tu veux-tu?" = do you want?, "c\'est-tu loin?" = is it far?); "pis" = and; "ben" = really, a lot ("ben content" = really happy)',
         'Québec meals: "déjeuner" = breakfast, "dîner" = lunch, "souper" = dinner',
         'Dishes and drinks (croissant, raclette, poutine, apéro wine names) keep their French names',
@@ -507,6 +509,8 @@ export default {
         '"catch up", "let\'s catch up" = "on se voit", "on se capte", "on s\'appelle"',
         '"heaps good" = "trop bien", "grave bien"',
         'Gender agreement follows <people>: "I" uses the speaker\'s gender ("je suis crevée" for a woman), "you" uses the listener\'s ("t\'es prête?"). A "friend", "mate", "partner" whose gender is not given: "mon ami" / "un pote" (masculine default), never guessed from the speaker',
+        'English interjections become French ones, never left in English: "ugh" = "pff", "rah"; "argh" = "raah"; "oops" = "oups"; "yay" = "youpi", "trop bien"; "wow" = "waouh", "ouah"; "aww" = "ooh"',
+        '"a bit of a dag" = "un peu ringard(e)", "un peu neuneu" (fond); "top bloke" = "un mec super", "un chic type"; "crook" = "patraque", "malade"; "chuck a sickie" = "se faire porter pâle"; "my shout" = "c\'est moi qui invite", "je t\'invite"',
         'Translate only what was said: do not add feelings, thanks or "bisous" the speaker did not say',
         'Say each thing once, in one natural phrase. Never two ways of saying the same idea in a row: pick one',
       ],

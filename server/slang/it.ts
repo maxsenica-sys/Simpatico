@@ -328,6 +328,7 @@ export default {
         '"mica" = not, hardly (adds emphasis to a negative)',
         '"piuttosto che" in the North often means "or", not "rather than"',
         "Regional: Rome (daje, annamo, aò, \"se famo\" = ci facciamo), Naples (uè, guagliò, \"jamme\" = let's go), Milan (zio, taac, sbatti), Sicily (minchia, picciotto), Tuscany (babbo, bischero, \"la Mia\" with article before names is normal). \"la Mia\", \"il Max\" = Mia, Max (no \"the\")",
+        '"mia", "mio" = my: "mia mamma", "mia nonna", "mia sorella", "la mia ragazza" = my mum, my nan, my sister, my girlfriend. Before a family word or noun "mia" is always "my", never the name Mia',
         '"il/la" before a first name ("la Giulia", "il Marco") is normal in the North: just the name in English',
         '"mamma mia" = oh my God, wow (keep tone, not "my mother")',
         '"Madonna", "oddio", "Dio mio" = oh my God (exclamation)',

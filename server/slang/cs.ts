@@ -263,6 +263,8 @@ export default {
         '"dávat to", "jak to dává" = to cope, manage ("nevím, jak to dává" = I don\'t know how he/she manages)',
         '"že kdy už (konečně)", "že proč" in reported nagging = asking when already, asking why; "a tak", "a tak dál", "a tak podobně" at the end = and all that, and so on',
         '"se tak", "tak", "takovej", "tolik" before a verb or adjective = so, such: the next words finish the thought ("Honza se tak ožral, že" = Honza got so drunk that)',
+        'Text typed or recognised without diacritics ("mam te rada broucku", "dekuju moc", "jak se mas") is still Czech: always translate it into English, never copy it',
+        'Swearing keeps its strength in English: "do prdele" = "shit", "fuck\'s sake" (not "ah, bloody"); "kurva" = "fuck", "fucking"; "sakra" = "damn" (mild)',
         '"přijde", "prej přijde", "přinese" with no name or past tense: he, she or they is unknown: write "they" or the name, never guess "she" or "he"',
         '"no to je teda něco" = well, that\'s something',
         '"dobrý" alone = OK, fine (answer to how are you, or "that\'s fine")',
@@ -274,6 +276,7 @@ export default {
       lines: [
         'Between partners, friends and family use "ty", natural spoken Czech, short sentences. Nothing bookish ("těším se na tebe" is natural; avoid "nemohu se dočkat setkání")',
         'Mind the gender of past tense and adjectives from the speaker and listener: "byl jsem / byla jsem", "unavený / unavená", "udělal jsi / udělala jsi"',
+        '"I miss you" = "chybíš mi", "stýská se mi po tobě" (the one missed is the subject: "chybíš mi" = I miss you; "chybím ti" = you miss me). "I miss you heaps" = "strašně mi chybíš"',
         '"can\'t wait to see you" = "už se na tebe moc těším", "nemůžu se dočkat, až tě uvidím"',
         '"you\'re a legend", "legend" = "jsi borec" (man), "jsi borka" (woman), "jsi nejlepší", "jsi king"',
         '"no worries" = "v pohodě", "žádný problém", "není zač" (after thanks)',
@@ -294,7 +297,7 @@ export default {
       ],
     },
   ],
-  leftIn: ["heleď", "prostě", "ty vole", "vlastně", "jasně", "děkuju", "miláčku", "zlatíčko", "broučku", "beruško", "v pohodě", "fakt jo", "že jo", "jejda", "promiň", "nevím", "nashle", "jakože", "kurňa"],
+  leftIn: ["heleď", "prostě", "ty vole", "vlastně", "jasně", "děkuju", "miláčku", "zlatíčko", "broučku", "beruško", "v pohodě", "fakt jo", "že jo", "jejda", "promiň", "nevím", "nashle", "jakože", "kurňa", "broucku", "dekuju", "mam te rada", "mam te rad"],
   terms: [
     "jo", "jojo", "no jo", "jasně", "hele", "heleď", "prostě", "jako", "teda", "vlastně", "fakt", "že jo", "v pohodě", "pohoda", "čau", "ahoj", "ahojky", "čus", "nazdar", "nashle", "díky", "dík", "děkuju", "promiň", "není zač", "kámo", "kámoš", "kámoška", "vole", "ty vole", "brácho", "ségra", "hustý", "boží", "pecka", "brutál", "trapas", "pařba", "mejdan", "kocovina", "prachy", "kecat", "nekecej", "pokecat", "vyšilovat", "frajer", "stopro", "jasan", "furt", "prej", "dyť", "jakože", "sakra", "kurva",
     "miláčku", "lásko", "zlato", "zlatíčko", "broučku", "beruško", "mám tě rád", "mám tě ráda", "miluju tě", "chybíš mi", "pusu", "dobrou noc", "máma", "mamka", "mami", "táta", "taťka", "tati", "babička", "děda", "teta", "strejda", "tchyně", "švagr", "přítel", "přítelkyně", "manžel", "manželka",

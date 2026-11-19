@@ -86,15 +86,15 @@ const JOIN_BY_LANG: Record<string, string> = {
   bg: "ама|ами|и|а|но|или|че|за|да|когато|ако|като|защото|в|във|на|с|със|от|до|по|при|без|под|над|през|към|у|аз|ти|той|тя|ние|вие|те|моят|моя|моята|твоят|твоята|му|ѝ|им|се|си|ме|те|го|я|ги|не|ни|много|вече|още|ще|бе|е|съм|беше|този|тази|това",
   mk: "ама|и|а|но|или|дека|да|кога|ако|како|затоа|во|на|со|од|до|по|при|без|под|над|преку|кон|кај|за|јас|ти|тој|таа|ние|вие|тие|мој|моја|мое|твој|твоја|му|ѝ|им|се|си|ме|те|го|ја|ги|не|ни|многу|веќе|уште|ќе|е|сум|беше|овој|оваа|ова",
   el: "και|κι|ή|αλλά|γιατί|επειδή|ότι|πως|που|όταν|αν|σαν|ο|η|το|οι|τα|τον|την|του|της|των|τους|τις|ένα|μια|μία|έναν|σε|στο|στη|στην|στον|στα|στους|στις|με|από|για|χωρίς|μέχρι|ως|μου|σου|του|μας|σας|θα|να|δεν|μην|μη|πολύ|πιο|ήδη|ακόμα|είναι|είμαι|ήταν|έχω|έχει",
-  lt: "ir|o|bet|ar|arba|nes|kad|kai|jei|jeigu|kaip|į|iš|su|be|ant|po|prie|už|per|nuo|iki|apie|pas|aš|tu|jis|ji|mes|jūs|jie|jos|mano|tavo|jo|jos|savo|ne|nėra|labai|jau|dar|taip|yra|buvo|bus|tas|ta|tai",
-  lv: "un|vai|bet|jo|ka|kad|ja|kā|lai|ar|no|uz|pie|par|pēc|bez|līdz|pa|caur|aiz|es|tu|viņš|viņa|mēs|jūs|viņi|manu|mans|mana|tavs|tava|viņa|savs|ne|nav|ļoti|jau|vēl|tā|ir|bija|būs|tas|tā",
-  hu: "és|meg|de|vagy|mert|hogy|amikor|ha|mint|ahogy|a|az|egy|nem|is|már|még|nagyon|túl|ez|az|minden|sok|kicsit|olyan|annyira|csak|mindig|soha|el|ki|be|fel|le|meg|össze",
+  lt: "pusę|pusė|pusiau|ir|o|bet|ar|arba|nes|kad|kai|jei|jeigu|kaip|į|iš|su|be|ant|po|prie|už|per|nuo|iki|apie|pas|aš|tu|jis|ji|mes|jūs|jie|jos|mano|tavo|jo|jos|savo|ne|nėra|labai|jau|dar|taip|yra|buvo|bus|tas|ta|tai",
+  lv: "pus|pusē|un|vai|bet|jo|ka|kad|ja|kā|lai|ar|no|uz|pie|par|pēc|bez|līdz|pa|caur|aiz|es|tu|viņš|viņa|mēs|jūs|viņi|manu|mans|mana|tavs|tava|viņa|savs|ne|nav|ļoti|jau|vēl|tā|ir|bija|būs|tas|tā",
+  hu: "elég|amiről|amit|ami|aki|akivel|és|meg|de|vagy|mert|hogy|amikor|ha|mint|ahogy|a|az|egy|nem|is|már|még|nagyon|túl|ez|az|minden|sok|kicsit|olyan|annyira|csak|mindig|soha|el|ki|be|fel|le|meg|össze",
   fi: "ja|tai|mutta|koska|että|kun|jos|kuin|ettei|se|ne|tämä|tuo|minä|mä|sinä|sä|hän|me|te|he|mun|sun|mitä|ei|en|et|oli|on|ole|tosi|niin|jo|vielä|liian|aika|ihan|hyvin",
   et: "ja|ning|või|aga|sest|et|kui|nagu|kuna|see|need|too|mina|ma|sina|sa|tema|ta|meie|me|teie|te|nemad|nad|minu|mu|sinu|su|ei|pole|oli|on|väga|juba|veel|liiga|nii|üsna",
   da: "og|eller|men|fordi|at|når|hvis|som|da|en|et|den|det|de|med|fra|til|i|på|af|for|om|hos|under|over|efter|jeg|du|han|hun|vi|I|min|mit|mine|din|dit|dine|hans|hendes|sin|sit|ikke|har|er|var|vil|kan|skal|så|meget|også|lige",
   no: "og|eller|men|fordi|at|når|hvis|som|da|en|ei|et|den|det|de|med|fra|til|i|på|av|for|om|hos|under|over|etter|jeg|du|han|hun|vi|dere|min|mitt|mine|din|ditt|dine|hans|hennes|sin|sitt|ikke|har|er|var|vil|kan|skal|så|veldig|også|bare",
   sv: "och|eller|men|för|att|när|om|som|då|en|ett|den|det|de|med|från|till|i|på|av|hos|under|över|efter|jag|du|han|hon|vi|ni|min|mitt|mina|din|ditt|dina|hans|hennes|sin|sitt|inte|har|är|var|vill|kan|ska|så|väldigt|också|bara",
-  sq: "dhe|e|ose|apo|por|sepse|se|që|kur|nëse|si|në|me|nga|për|pa|mbi|nën|te|tek|deri|unë|ti|ai|ajo|ne|ju|ata|ato|im|ime|yt|jote|i|tij|saj|nuk|s'|mos|shumë|më|tashmë|ende|është|jam|ishte|kam|ka|do|të",
+  sq: "po|do|atë|këtë|dhe|e|ose|apo|por|sepse|se|që|kur|nëse|si|në|me|nga|për|pa|mbi|nën|te|tek|deri|unë|ti|ai|ajo|ne|ju|ata|ato|im|ime|yt|jote|i|tij|saj|nuk|s'|mos|shumë|më|tashmë|ende|është|jam|ishte|kam|ka|do|të",
   eu: "eta|edo|baina|ze|zer|nire|zure|bere|gure|ez|oso|ere|hau|hori|hura|ni|zu|hura|gu|zuek|haiek",
   id: "dan|atau|tapi|tetapi|karena|kalau|kalo|jika|ketika|waktu|pas|yang|di|ke|dari|untuk|buat|sama|dengan|dalam|pada|oleh|tentang|aku|saya|kamu|lu|lo|dia|kami|kita|mereka|udah|sudah|belum|lagi|mau|akan|bakal|nggak|gak|tidak|enggak|bukan|sangat|banget|terus|jadi|biar|supaya|si|para|ini|itu",
   ms: "macam|camne|dan|atau|tapi|tetapi|sebab|kerana|kalau|jika|bila|ketika|yang|di|ke|dari|daripada|untuk|dengan|dalam|pada|oleh|tentang|aku|saya|kau|awak|engkau|dia|kami|kita|mereka|dah|sudah|belum|lagi|nak|akan|tak|tidak|bukan|sangat|sungguh|terus|jadi|supaya|si|para|ini|itu",
@@ -106,11 +106,11 @@ const JOIN_BY_LANG: Record<string, string> = {
   he: "ו|או|אבל|כי|ש|כש|אם|כמו|ה|ב|ל|מ|את|של|עם|על|אל|מן|בלי|עד|אני|אתה|את|הוא|היא|אנחנו|אתם|הם|הן|לא|אין|מאוד|כבר|עוד|גם|זה|זאת|הזה|הזאת|היה|הייתה|יהיה",
   ar: "و|أو|او|لكن|بس|لأن|لان|عشان|علشان|إن|ان|أن|لما|لو|إذا|اذا|زي|مثل|في|على|من|إلى|الى|عن|مع|ل|ب|ال|انا|أنا|انت|أنت|انتي|هو|هي|احنا|نحن|انتو|هم|ما|مش|مو|لا|لم|لن|كتير|كثير|جدا|خلاص|بعد|لسا|لسه|كمان|هذا|هذه|هاد|هاي|ده|دي|كان|كانت|رح|راح|حـ|ح|بدي|عايز",
   fa: "و|یا|ولی|اما|چون|چونکه|که|وقتی|اگه|اگر|مثل|در|تو|به|از|با|برای|بی|تا|روی|زیر|من|تو|او|اون|ما|شما|اونا|آنها|نه|نمی|خیلی|دیگه|هنوز|هم|این|اون|آن|یه|یک|بود|هست|می",
-  hi: "और|या|लेकिन|पर|पर|क्योंकि|कि|जब|अगर|जैसे|तो|का|की|के|को|में|से|पे|तक|साथ|लिए|बिना|मैं|तुम|तू|आप|वो|वह|हम|वे|मेरा|मेरी|मेरे|तेरा|तेरी|तुम्हारा|उसका|उसकी|नहीं|मत|न|बहुत|बड़ा|भी|ही|अभी|फिर|यह|ये|वो|एक|था|थी|aur|ya|lekin|par|kyunki|ki|jab|agar|jaise|to|ka|ke|ko|mein|se|tak|main|tum|aap|woh|hum|mera|meri|tera|nahi|bahut|bhi|hi|abhi|phir|yeh|ek",
-  ur: "اور|یا|لیکن|مگر|کیونکہ|کہ|جب|اگر|جیسے|تو|کا|کی|کے|کو|میں|سے|پر|تک|ساتھ|لیے|لئے|بغیر|میں|تم|تو|آپ|وہ|ہم|میرا|میری|میرے|تیرا|تمہارا|اس|نہیں|مت|نہ|بہت|بھی|ہی|ابھی|پھر|یہ|ایک|تھا|تھی",
+  hi: "और|या|लेकिन|क्योंकि|कि|जब|अगर|जैसे|तो|मैं|तुम|तू|आप|वो|वह|हम|वे|मेरा|मेरी|मेरे|तेरा|तेरी|तुम्हारा|उसका|उसकी|नहीं|मत|न|बहुत|बड़ा|भी|ही|अभी|फिर|यह|ये|वो|एक|था|थी|aur|ya|lekin|kyunki|ki|jab|agar|jaise|to|main|tum|aap|woh|hum|mera|meri|tera|nahi|bahut|bhi|hi|abhi|phir|yeh|ek",
+  ur: "اور|یا|لیکن|مگر|کیونکہ|کہ|جب|اگر|جیسے|تو|تم|تو|آپ|وہ|ہم|میرا|میری|میرے|تیرا|تمہارا|اس|نہیں|مت|نہ|بہت|بھی|ہی|ابھی|پھر|یہ|ایک|تھا|تھی",
   mr: "आणि|किंवा|पण|परंतु|कारण|की|जेव्हा|जर|तर|सारखे|मी|तू|तुम्ही|आपण|तो|ती|ते|आम्ही|माझा|माझी|माझे|तुझा|तुझी|त्याचा|तिचा|नाही|नको|खूप|फार|पण|ही|च|आता|मग|हा|हे|एक|होता|होती",
-  pa: "ਅਤੇ|ਤੇ|ਜਾਂ|ਪਰ|ਕਿਉਂਕਿ|ਕਿ|ਜਦੋਂ|ਜੇ|ਜੇਕਰ|ਵਾਂਗ|ਦਾ|ਦੀ|ਦੇ|ਨੂੰ|ਵਿੱਚ|ਵਿਚ|ਤੋਂ|ਨਾਲ|ਲਈ|ਤੱਕ|ਮੈਂ|ਤੂੰ|ਤੁਸੀਂ|ਉਹ|ਅਸੀਂ|ਮੇਰਾ|ਮੇਰੀ|ਤੇਰਾ|ਨਹੀਂ|ਨਾ|ਬਹੁਤ|ਵੀ|ਹੀ|ਹੁਣ|ਫਿਰ|ਇਹ|ਇੱਕ|ਸੀ",
-  gu: "અને|કે|અથવા|પણ|પરંતુ|કારણ|જ્યારે|જો|તો|જેમ|નો|ની|નું|ના|ને|માં|થી|પર|સાથે|માટે|સુધી|હું|તું|તમે|તે|અમે|આપણે|મારો|મારી|મારું|તારો|તારી|નથી|ના|બહુ|ખૂબ|પણ|જ|હવે|પછી|આ|એક|હતો|હતી",
+  pa: "ਅਤੇ|ਤੇ|ਜਾਂ|ਪਰ|ਕਿਉਂਕਿ|ਕਿ|ਜਦੋਂ|ਜੇ|ਜੇਕਰ|ਵਾਂਗ|ਮੈਂ|ਤੂੰ|ਤੁਸੀਂ|ਉਹ|ਅਸੀਂ|ਮੇਰਾ|ਮੇਰੀ|ਤੇਰਾ|ਨਹੀਂ|ਨਾ|ਬਹੁਤ|ਵੀ|ਹੀ|ਹੁਣ|ਫਿਰ|ਇਹ|ਇੱਕ|ਸੀ",
+  gu: "અને|કે|અથવા|પણ|પરંતુ|કારણ|જ્યારે|જો|તો|જેમ|હું|તું|તમે|તે|અમે|આપણે|મારો|મારી|મારું|તારો|તારી|નથી|બહુ|ખૂબ|પણ|જ|હવે|પછી|આ|એક|હતો|હતી",
   bn: "আর|এবং|ও|কিংবা|বা|কিন্তু|তবে|কারণ|যে|যখন|যদি|তাহলে|মতো|আমি|তুমি|তুই|আপনি|সে|ও|আমরা|তোমরা|ওরা|তারা|আমার|তোমার|তোর|ওর|তার|না|নেই|খুব|অনেক|ও|ই|এখন|তারপর|এই|এটা|ওই|একটা|এক",
   ta: "மற்றும்|அல்லது|ஆனால்|ஆனா|ஏனென்றால்|ஏன்னா|என்று|என்னு|எப்போது|அப்போ|என்றால்|ஆனா|நான்|நீ|நீங்க|நீங்கள்|அவன்|அவள்|அவர்|அவங்க|நாம|நாங்க|நாங்கள்|என்|என்னோட|உன்|உன்னோட|இல்ல|இல்லை|ரொம்ப|மிக|கூட|தான்|இப்போ|இப்ப|அப்புறம்|இந்த|அந்த|ஒரு",
   te: "మరియు|లేదా|కానీ|కాని|ఎందుకంటే|అని|ఎప్పుడు|అయితే|ఐతే|లాగా|నేను|నువ్వు|మీరు|అతను|ఆమె|వాడు|ఆవిడ|మేము|మనం|వాళ్ళు|నా|నీ|మీ|అతని|ఆమె|కాదు|లేదు|వద్దు|చాలా|బాగా|కూడా|ఇప్పుడు|తర్వాత|ఈ|ఆ|ఒక",
@@ -129,6 +129,45 @@ export function joinsForward(word: string, lang: string): boolean {
   // A number goes with what it counts ("three | hours" loses the three).
   return JOINING.test(w) || !!JOIN_RE[lang]?.test(w) || /^\d+([.,:]\d+)?$/.test(w);
 }
+/** Words that belong with the word BEFORE them: postpositions and helper verbs (Hindi "से", "था"). Never start a phrase. */
+const BACK_BY_LANG: Record<string, string> = {
+  hi: "से|को|का|की|के|में|पर|ने|है|हैं|था|थी|थे|हूँ|हूं|हो|गया|गई|गए|रहा|रही|रहे|सकता|सकती|चुका|चुकी|वाला|वाली|तक|वाले",
+  ur: "سے|کو|کا|کی|کے|میں|پر|نے|ہے|ہیں|تھا|تھی|تھے|ہوں|گیا|گئی|گئے|رہا|رہی|رہے|سکتا|سکتی|چکا|چکی|والا|والی|تک",
+  mr: "आहे|आहेत|होता|होती|होते|होतो|नाही|आहोत",
+  pa: "ਸੀ|ਹੈ|ਹਨ|ਸਨ|ਹਾਂ|ਨੂੰ|ਦਾ|ਦੀ|ਦੇ|ਨੇ|ਤੋਂ|ਵਿੱਚ|ਵਿਚ|ਗਿਆ|ਗਈ|ਗਏ|ਰਿਹਾ|ਰਹੀ|ਤੱਕ",
+  gu: "હતી|હતો|હતું|હતા|છે|છું|છો|ને|નો|ની|નું|ના|માં|થી|ગઈ|ગયો|ગયું|ગયા|સુધી",
+  bn: "ছিল|ছিলাম|আছে|আছি|গেছে|গেছি|থেকে|কে|তে|র",
+  ta: "இருந்தது|இருக்கு|இருக்கேன்|போச்சு|கிட்ட|கு|ல",
+  te: "కి|కు|లో|ఉంది|ఉన్నాను|ఉండేది|అయింది|నుంచి",
+  kn: "ಗೆ|ಅಲ್ಲಿ|ಇಂದ|ಅನ್ನು|ಇದೆ|ಇತ್ತು|ಆಯ್ತು|ಹತ್ರ",
+  ml: "ആണ്|ആയിരുന്നു|ഉണ്ട്|ഇല്ല|കൂടെ",
+  tr: "mi|mı|mu|mü|misin|mısın|musun|müsün|değil|gibi|kadar|için|ile",
+  ja: "",
+};
+const BACK_RE: Record<string, RegExp> = Object.fromEntries(
+  Object.entries(BACK_BY_LANG)
+    .filter(([, w]) => w)
+    .map(([lang, w]) => [lang, new RegExp(`^(${w})$`, "u")]),
+);
+const leansBack = (word: string, lang: string) => !!BACK_RE[lang]?.test(word.replace(/[^\p{L}\p{M}\p{N}]+/gu, ""));
+
+/**
+ * Where to end a phrase of `n` units out of `pending` (cut at the maximum length): never inside
+ * a word, never before a word that belongs to the one before it, never after one that belongs to
+ * the next. Used by the live pipeline and by the language checks (scripts/langeval.mjs).
+ */
+export function phraseCut(units: string[], n: number, lang: string, min: number, spaced: boolean): number {
+  if (!spaced) return cleanCut(units, n, lang, min);
+  const start = n;
+  // Never end on a word that belongs to the next one ("and", "się"), never leave the next phrase
+  // starting with one that belongs to this one (Hindi "से", "था": "…ऑफिस | से" becomes "… | ऑफिस से").
+  const bad = (k: number) => joinsForward(units[k - 1], lang) || (k < units.length && leansBack(units[k], lang));
+  while (n > min && n > start - 3 && bad(n)) n--;
+  // Turkish "bi de" / "bir de" (and another thing) opens what follows: it goes with the next phrase.
+  if (ENCLITIC.has(lang) && n - 2 >= min && /^(bi|bir)$/i.test(units[n - 2]) && /^(de|da)$/i.test(units[n - 1])) n -= 2;
+  return n;
+}
+
 /**
  * Chinese and Japanese have no spaces, so a phrase is cut by characters: move the cut back (a few
  * characters at most) to where a word or clause clearly ends, never inside a word ("朋|友") or a
@@ -616,13 +655,9 @@ export class SpeakerPipeline {
     }
     if (pending.length >= Math.round(STEADY_MAX_WORDS * scale * this.phraseScale)) {
       // Don't end a phrase on a joining word ("when", "and", "the"): it belongs with what follows.
-      let n = pending.length;
       const lang = baseLang(this.speaks) ?? "";
-      if (scale > 1) n = cleanCut(pending, n, lang, STEADY_MIN_WORDS * scale);
-      else while (n > STEADY_MIN_WORDS * scale && n > pending.length - 4 && joinsForward(pending[n - 1], lang)) n--;
-      // Turkish "bi de" / "bir de" (and another thing) opens what follows: it goes with the next phrase.
-      if (ENCLITIC.has(lang) && n - 2 >= STEADY_MIN_WORDS * scale && /^(bi|bir)$/i.test(pending[n - 2]) && /^(de|da)$/i.test(pending[n - 1])) n -= 2;
-      return this.steadyPhrase(u, false, n);
+      // The words still being heard are passed too: only to see what comes next, never cut into.
+      return this.steadyPhrase(u, false, phraseCut(units.slice(u.steadyWords), pending.length, lang, STEADY_MIN_WORDS * scale, scale === 1));
     }
     // A short pause mid-sentence also ends a phrase, so the reader isn't kept waiting.
     if (units.length - u.steadyWords >= STEADY_MIN_WORDS * scale) {

@@ -20,6 +20,7 @@ export default {
         '"ρε" = hey, man, mate (familiar particle, often before a name or a word: "ρε Μαρία", "έλα ρε"; never written as "re")',
         '"μωρέ", "βρε" = oh, come on, hey (softer, warm: "όχι μωρέ" = nah, of course not; "βρε παιδί μου" = oh dear)',
         '"έλα" = come on; hi (answering the phone); "έλα ρε!" = no way!, come off it!; "έλα, πες μου" = go on, tell me',
+        '"έλα από το σπίτι", "έλα από εδώ", "πέρνα από το σπίτι", "πέρνα" = come over (to my place), drop by. Here "έλα" is just "come", not a greeting: add nothing before it',
         '"άντε" = come on, hurry up; "άντε γεια" = bye (or get lost, by tone); "άντε καλά" = yeah right',
         '"λοιπόν" = so, well, right then',
         '"δηλαδή" = I mean, so, that is; "δηλαδή;" = meaning?, so what are you saying?',
@@ -38,6 +39,7 @@ export default {
         `"αλήθεια;", "σοβαρά;", "στ' αλήθεια", "μη μου πεις", "δε μου λες!" = really?, seriously?, no way, you don't say!`,
         '"φυσικά", "βέβαια", "εννοείται", "σίγουρα" = of course, obviously, absolutely',
         '"μάλλον", "ίσως", "μακάρι" = probably, maybe, I hope so',
+        '"καλό παιδί", "καλή κοπέλα" = a good guy, a nice girl / nice person (about adults too; not "kid")',
         '"φίλε", "φιλαράκι", "φίλη", "αδερφέ", "κολλητέ", "κολλητή", "μεγάλε", "μάγκα" = mate, bro, best mate, man',
         '"παιδιά", "κορίτσια" = guys, girls (to a group)',
         '"παιδί μου" = my dear, mate (from older people; or exasperated "oh, for heaven\'s sake"), never "my child" unless it is one',
@@ -197,6 +199,7 @@ export default {
     {
       label: "Greek, everyday culture and sport",
       lines: [
+        '"φρέντο" = freddo (iced espresso), never "frappe"; "φραπέ" = frappé',
         '"φραπέ", "φρέντο εσπρέσο", "φρέντο καπουτσίνο", "ελληνικός καφές" = iced coffees and Greek coffee (keep the names); "σκέτος", "μέτριος", "γλυκός" = no sugar, medium, sweet',
         '"σουβλάκι", "γύρος", "πίτα γύρος", "τζατζίκι", "μουσακάς", "παστίτσιο", "σπανακόπιτα", "τυρόπιτα", "μπουγάτσα", "κουλούρι", "χωριάτικη", "φέτα", "γεμιστά", "κεφτεδάκια", "ντολμαδάκια", "φασολάδα", "λουκουμάδες", "μελομακάρονα", "κουραμπιέδες", "βασιλόπιτα", "τσουρέκι", "μεζέδες", "χαλλούμι" = dishes and foods: keep the Greek name',
         '"ούζο", "τσίπουρο", "ρακί", "ρετσίνα", "κρασί", "μπίρα" = ouzo, tsipouro, raki, retsina, wine, beer',
@@ -218,6 +221,10 @@ export default {
       label: "Greek, how it is really spoken (read these before translating)",
       lines: [
         'The subject is usually dropped and the verb ending gives only the person: "ήρθε" = (he / she) came, "είπε" = said, "με πήρε" = called me. Write "they" or the person\'s name in English and keep it for the whole sentence, unless something shows the gender: the article ("ο Νίκος", "η Μία"), a pronoun ("τον" = him, "την" = her, "του" = his, "της" = her) or an adjective ending ("θυμωμένος" man, "θυμωμένη" woman)',
+        '"δεν ξέρω αν θα έρθει", "το είδε και δεν απάντησε", "με πήρε" with no name or article = I don\'t know if they\'ll come, they saw it and didn\'t reply, they called me: never a guessed "she" or "he"',
+        'Keep names as said: "Ο Μαξ είναι πολύ καλό παιδί" = Max is a really good guy (not "He\'s")',
+        'Greet and address exactly as said: "Καλησπέρα, κυρία Ελένη, τι κάνετε;" = good evening, Mrs Eleni, how are you? Do not add "hey mate" or any greeting the speaker did not say',
+        '"ξεκινάμε" = we start, we begin (or set off, by context)',
         'Adjectives and participles about "I" show the speaker\'s gender: "είμαι κουρασμένος" (man) / "κουρασμένη" (woman) = I\'m tired. In English this disappears',
         'Polite "you" uses plural verbs: "Τι κάνετε;" = how are you? (polite, or how are you all). In a conversation addressed to the listener it is "you"',
         '"παίρνω τηλέφωνο", "σε πήρα", "θα σε πάρω", "πάρε με" = to call: I called you, I\'ll call you, call me (never "take")',

@@ -168,7 +168,8 @@ export default {
         'Recognition may split a word from its ending ("ಬಂದ್ ಬಿಟ್ಟೆ" = ಬಂದ್ಬಿಟ್ಟೆ = I\'m here; "ಊಟ ಆಯ್ ತಾ" = ಊಟ ಆಯ್ತಾ) or write a long word in pieces: read them by sound',
         '"ಬಿಟ್ಟೆ", "-ಬಿಟ್ಟೆ" (bitte) after a verb = done, completely ("marethubitte" = I totally forgot)',
         'Regional: North Karnataka "ಯಾಕ" (yaaka) = why; "ರೀ" used everywhere for respect; Mangaluru speakers may mix Tulu or Konkani words',
-        '"ಸಂಜೆ" (sanje) = evening, tonight (not "arvo"); "ಮಧ್ಯಾಹ್ನ" = afternoon',
+        '"ಸಂಜೆ" (sanje) = this evening, tonight: never "arvo" or "afternoon"; "ಮಧ್ಯಾಹ್ನ" = afternoon',
+        'Write "mate", "bro" only where the speaker used an address word (maga, machcha, guru, kano, lo); never add one to a sentence that has none',
         '"ಇಲ್ಲಾಂದ್ರೆ", "ಇಲ್ದಿದ್ರೆ" (illaandre, ildidre) = otherwise, or else; "-ದ್ರೆ" (-dre) = if ("neenu hodre" = if you go); "ಅಂದ್ರೆ" (andre) = that is, so much that',
         '"ನಿಂತ್ಕೊಂಡೇ ಇರಬೇಕಾಯ್ತು" (ninthkonde irabekaaythu) = had to stay standing; "-ಬೇಕಾಯ್ತು" = had to',
         'A phrase may end on its subject ("ನೀನು", "ನಾನು", "ಅಮ್ಮ") or on a word that leans on the next one ("ತುಂಬಾ", "ಒಂದು", "ಆ", "ಈ", "ಏನ್", "ಅಷ್ಟು", "ಎಷ್ಟು", "ಮಧ್ಯದಲ್ಲೇ"), with the rest in the next phrase. Write the subject as it is and keep it when the verb arrives; read a leaning word with next_words; never guess or invent a place or action',
@@ -179,6 +180,7 @@ export default {
     {
       label: "Into Kannada (from English)",
       lines: [
+        'FIRST CHECK the listener\'s gender (<people>): "ಮಗಾ", "ಮಚ್ಚಾ", "ಗುರು", "ಕಣೋ" are for guys only. To a woman or a partner NEVER "ಮಗಾ": use "ಬಂಗಾರ", "ಚಿನ್ನ", "ಕಣೇ" or nothing. Add an address word only where the English has one',
         'Write spoken Kannada as people talk it (ide, maadtheeni, bartheeni, ninna), not written Kannada ("maaduttene", "baruttene", "hoguttiddene" sound like a news reader). With a partner and friends use "neenu"; with parents "neenu" (some families "neevu"); with in-laws, elders and strangers "neevu" and "-ri"',
         'English words Kannadigas really use stay English, written in Kannada script (phone, office, call, message, video call, plan, sorry, thanks, miss, tension, late): do not invent pure-Kannada words for them',
         '"I miss you" = "ನಿನ್ನ ತುಂಬಾ ಮಿಸ್ ಮಾಡ್ಕೊಳ್ತಿದೀನಿ"',

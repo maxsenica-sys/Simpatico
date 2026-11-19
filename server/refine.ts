@@ -129,6 +129,14 @@ const SCRIPTS: [RegExp, string[]][] = [
   [/\p{Script=Hangul}/u, ["ko"]],
   [/\p{Script=Thai}/u, ["th"]],
   [/\p{Script=Greek}/u, ["el"]],
+  [/\p{Script=Gurmukhi}/u, ["pa"]],
+  [/\p{Script=Gujarati}/u, ["gu"]],
+  [/\p{Script=Tamil}/u, ["ta"]],
+  [/\p{Script=Telugu}/u, ["te"]],
+  [/\p{Script=Kannada}/u, ["kn"]],
+  [/\p{Script=Malayalam}/u, ["ml"]],
+  [/\p{Script=Georgian}/u, ["ka"]],
+  [/\p{Script=Armenian}/u, ["hy"]],
 ];
 const scriptOf = (lang: string) => SCRIPTS.find(([, langs]) => langs.includes(baseLang(lang) ?? ""))?.[0] ?? null;
 
@@ -151,7 +159,9 @@ export function leftovers(source: string, out: string, sourceLang: string, targe
   for (const w of leftInWords(sourceLang)) {
     // Very short particles are only safe to judge against English (Spanish "ya", Indonesian "ya").
     if (w.length <= 3 && !english) continue;
-    if (has(out, w) && has(source, w) && !allow.some((a) => a.toLowerCase() === w.toLowerCase()) && !found.some((f) => f.toLowerCase().includes(w.toLowerCase()))) found.push(w);
+    // A Latin spelling listed for a language in another script ("habibi", "wallah") is caught in the subtitle alone.
+    const spelled = !!src && !src.test(w);
+    if (has(out, w) && (spelled || has(source, w)) && !allow.some((a) => a.toLowerCase() === w.toLowerCase()) && !found.some((f) => f.toLowerCase().includes(w.toLowerCase()))) found.push(w);
   }
   return found.slice(0, 5);
 }
@@ -193,6 +203,7 @@ const SYSTEM = `You write the subtitles for a live, face-to-face video call betw
 - <phrasebook> gives the meaning of set phrases and idioms just said, with what people really say for it in the target language. Use that equivalent when it fits the sentence; never mention the phrasebook.
 - Some words mean different things by region or context (Australian "footy" is AFL in most states but rugby league in New South Wales and Queensland; "football" differs by country). Decide from the conversation, the speaker's region and topics; if it is still unclear, keep the neutral meaning ("football", "the game") rather than guessing.
 - Gender: <people> gives the speaker's and listener's gender. Use the speaker's only where the speaker refers to themselves (I, me, my: Russian "я устала", Portuguese "obrigada", Hindi "मैं गई"), and the listener's only where they are addressed as one person (you: Arabic "أنتِ", Spanish "¿estás cansada?"). Everyone else follows the conversation: people mentioned get the gender the context gives them, groups stay plural ("Are they coming?" about several people), "we" is the group, and where nothing says otherwise use neutral wording or the grammatical default. Never put the speaker's or listener's gender on anyone else: a woman saying "My friend is tired" in French is "Mon ami est fatigué" (the friend's gender is unknown), not "Mon amie est fatiguée". The source can show gender too (Russian past tenses, Hindi and Urdu verb endings, Thai "ครับ"/"ค่ะ", Arabic and Hebrew verb forms): use those clues. Never add a gender the source doesn't have: Turkish "o", Persian "u", Indonesian "dia", spoken Chinese "tā" become "they" (or the person's name) in English, never "he/she" or a slash. Example: "O da geliyor mu?" is "Are they coming too?", not "Is he coming too?".
+- Words of address (mate, bro, dude and their equivalents: டா, மச்சான், రా, బావ, maga, yaar, bhai, ya habibi) follow the listener's gender and your relationship: to a woman use the feminine or a neutral one.
 - Render interjections and backchannels ("mm-hmm", "uh-huh", "wow", "oh no") with the target language's own spoken equivalent, never the source-language sound.
 - Money stays in the speaker's currency: "stówa" is "a hundred zloty", "pět set" crowns stay crowns, euros stay euros; never turn them into dollars or "bucks".
 - "We with X" in Slavic languages ("мы с Машей", "my z Kasią", "ми з Олею", "mi s Anom") means "X and I", not "we with X".
@@ -214,7 +225,7 @@ const SYSTEM = `You write the subtitles for a live, face-to-face video call betw
 const SELF_TALK = /(["”»]\s*[—–-]+\s*(no|wait|actually|hmm|or)\b|\b(is an exclamation|is a nickname|is slang for|literally means|here means|so the (subtitle|translation)|the translation (is|would be)|here is (a|the) (translation|subtitle)|the (sentence|phrase) (is|means)|i'?ll translate|let me (re)?translate|let me correct|correcting (myself|that)|correction:)\b|,\s*so:\s*["“])/i;
 
 /** The translator describing its own work, or saying there is nothing to add: never shown. */
-const META = /(\[nothing\]|subtitle so far|per the instructions|as instructed|next_words|new_phrase|said_so_far|adds nothing new|no new text|nothing new to add|already on screen|is already (written|covered|translated|there|on screen)|no new words)/i;
+const META = /(\[nothing\]|subtitle so far|per the instructions|as instructed|next_words|new_phrase|said_so_far|adds nothing new|no new text|nothing new to add|already on screen|subtitle already|already says|is already (written|covered|translated|there|on screen)|no new words)/i;
 
 export function subtitleOnly(text: string): string {
   if (META.test(text)) return "";
@@ -225,7 +236,7 @@ export function subtitleOnly(text: string): string {
     .filter((l) => !/^(wait|note|actually|hmm|let me|i should|i need|translation\s*:|subtitle\s*:)/i.test(l));
   const line = lines.length > 1 ? lines[lines.length - 1] : (lines[0] ?? "");
   // A continuation sometimes opens with "..." — the screen shows it joined to what came before.
-  let out = line.replace(/^(\.\.\.|…)\s*/u, "").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/^\*([^*]+)\*$/u, "$1").trim();
+  let out = line.replace(/^(?:native\s+)?(?:[\p{L}]+\s+)?(?:english|translation|subtitle)\s*:\s*/iu, "").replace(/^(\.\.\.|…)\s*/u, "").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/^\*([^*]+)\*$/u, "$1").trim();
   // Thinking out loud on one line ('"Oh come on…" — no, "oha" is an exclamation…, so: "No way…"'):
   // keep only the final quoted subtitle; with nothing quoted to keep, show nothing (it's retried).
   if (SELF_TALK.test(out)) {
@@ -300,7 +311,7 @@ const FAMILY_WORDS: Record<string, string> = {
   ms: "ibu|ibunya|mama|mamah|mami|bunda|emak|mak|ayah|bapak|bapaknya|papa|papah|abah|kakak perempuan|adik perempuan|istri|isteri|suami|bini|laki|cewek|cowok|perempuan|lelaki|laki-laki|wanita|pria|nenek|kakek|atuk|tok|opa|oma|tante|om|bibi|paman|pakcik|makcik|mbak|mas|abang|akak|kak long|putri|putra|anak perempuan|anak lelaki|anak laki-laki|nanay|tatay|inay|itay|ate|kuya|lola|lolo|tita|tito|babae|lalaki|misis|mister|asawa ko",
   tl: "ibu|ibunya|mama|mamah|mami|bunda|emak|mak|ayah|bapak|bapaknya|papa|papah|abah|kakak perempuan|adik perempuan|istri|isteri|suami|bini|laki|cewek|cowok|perempuan|lelaki|laki-laki|wanita|pria|nenek|kakek|atuk|tok|opa|oma|tante|om|bibi|paman|pakcik|makcik|mbak|mas|abang|akak|kak long|putri|putra|anak perempuan|anak lelaki|anak laki-laki|nanay|tatay|inay|itay|ate|kuya|lola|lolo|tita|tito|babae|lalaki|misis|mister|asawa ko",
   vi: "mẹ|má|bố|ba tôi|cha|chị|anh trai|em gái|em trai|vợ|chồng|bà|ông|cô ấy|chú|dì|con gái|con trai|bạn gái|bạn trai",
-  fa: "مادر|مامان|پدر|بابا|خواهر|برادر|شوهر|دختر|پسر|مادربزرگ|پدربزرگ|خاله|عمه|دایی|عمو|خانم|آقا|زنم|زنش",
+  fa: "یارو|مادر|مامان|پدر|بابا|خواهر|برادر|شوهر|دختر|پسر|مادربزرگ|پدربزرگ|خاله|عمه|دایی|عمو|خانم|آقا|زنم|زنش",
   hu: "anya|anyu|anyám|apa|apu|apám|nővér|húg|báty|öcs|feleség|férj|lány|fiú|barátnő|barát|nagymama|nagyi|nagypapa|nő|férfi|néni|bácsi",
   fi: "äiti|äitee|isä|iskä|sisko|sisar|veli|vaimo|aviomies|mies|tyttö|poika|tyttöystävä|poikaystävä|mummo|mummi|isoäiti|ukki|vaari|pappa|nainen|tytär",
   et: "ema|emme|isa|issi|õde|vend|naine|abikaasa|mees|tüdruk|poiss|tüdruksõber|poiss-sõber|vanaema|vanaisa|tütar",

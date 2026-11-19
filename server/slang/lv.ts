@@ -231,6 +231,8 @@ export default {
         'Names have endings that change: "Jānis", "Jāni", "Jānim" = Jānis; "Anna", "Annu", "Annai" = Anna; "Maksis", "Maksi" = Max. Foreign names get endings too: "Mia" -> "Miju", "Mijai"; "Max" -> "Maksu", "Maksam". Write the base name in English',
         '"izlasīja un neatbildēja", "piezvanīja", "atnāca" with no subject = (they) read it and didn\'t reply, called, came: write "they" or the name, never a guessed "she" or "he"',
         'Common names: "Jānis", "Andris", "Mārtiņš", "Kristaps", "Edgars", "Roberts", "Artūrs", "Ilze", "Anna", "Līga", "Laura", "Kristīne", "Elīza", "Zane", "Inese", "Dace", "Sanita", "Krišs"',
+        '"pūš pīlītes", "pūst pīlītes" = is telling fibs, making stuff up, pulling your leg (never "blowing ducklings")',
+        'When a phrase ends on "pus" or a time like "pusdivos" is split, the time is half an hour BEFORE the hour named: "pusdivos" = half past one',
         '"nu jā" = well yeah; "nē nu" = well no; "nu labi" = alright then; "nu un?" = so what?; "un tad?" = and then?; "kā tā?" = how come?; "kāpēc?", "kapēc?" = why?',
       ],
     },

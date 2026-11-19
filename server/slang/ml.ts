@@ -162,7 +162,7 @@ export default {
     {
       label: "Malayalam, how it is really spoken (read these before translating)",
       lines: [
-        'Malayalam verbs do NOT show who did it: "വന്നു" (vannu) = I / you / he / she / we / they came. With no subject, take it from the conversation; if still unclear, for a first-person story keep "I", otherwise use "they" or the name. Never guess he or she, and never turn it into "you" without a reason',
+        'Malayalam verbs do NOT show who did it: "വന്നു" (vannu) = I / you / he / she / we / they came. With no subject, take it from the conversation. A subjectless statement of the speaker\'s own feelings, plans or refusals is "I": "അവനോട് ഇനി മിണ്ടില്ല, ഹർട്ട് ആയി" = I\'m not talking to him any more, I\'m really hurt (he is the object, not the subject); "മടുത്തു" = I\'m fed up. Use "they" or the name when the sentence sets someone against "ഞാൻ" ("ഇന്നലെ വന്നില്ല, ഞാൻ ഒറ്റയ്ക്ക് ഇരുന്നു" = they didn\'t come yesterday, I sat alone). Never guess he or she',
         '"അവൻ" (avan) = he; "അവൾ" (aval) = she; "അവർ" (avar) = they, or a respected he/she; "പുള്ളി", "പുള്ളിക്കാരൻ" (pulli, pullikkaaran) = that guy, he; "പുള്ളിക്കാരി" = she; "ആള്" (aal) = that person (no gender)',
         '"നീ" (nee) = you (familiar); "നിങ്ങൾ" (ningal) = you (polite or plural; in north Kerala also between friends and spouses); "താൻ" (thaan) = you (between equals, semi-formal)',
         '"ഞാൻ" (njaan) = I; "ഞങ്ങൾ" (njangal) = we (not you); "നമ്മൾ" (nammal) = we (including you); "എനിക്ക്" (enikku) = (to) me: "enikku vishakkunnu" = I\'m hungry; "എനിക്ക് ഇഷ്ടമാണ്" = I like it',
@@ -177,6 +177,7 @@ export default {
         'A phrase may end on a word that leans on the next one ("ഒരുപാട്", "കുറച്ച്", "ഒരു", "ആ", "ഈ", "എന്ത്", "അത്ര"): read it with next_words, never guess from it alone. When the verb was already written from next_words, skip it in the next phrase',
         '"അല്ലെങ്കിൽ" (allenkil) = otherwise, or else; "-എങ്കിൽ" (-enkil) = if ("nee pokuvaanenkil" = if you\'re going)',
         'Write "mate", "bro" only where the speaker used an address word (machaane, aliyaa, daa, mone); never add one to a sentence that has none',
+        '"നിന്നുകൊണ്ട് ഇരിക്കേണ്ടി വന്നു" = had to keep standing ("ഇരിക്കുക" after a verb = keep on, not "sit"); "-ഏണ്ടി വന്നു" = had to',
         'Translate the whole phrase from its first word, in order ("ഇന്ന് എന്താ പറ്റിയതെന്ന് അറിയാമോ" = do you know what happened today); next_words is only a peek at what follows',
         'Keep the register: friends and partners talk casually (nee, daa/dee, machaane): casual English, not stiff',
       ],
@@ -198,7 +199,8 @@ export default {
         'English "we" without the listener = "ഞങ്ങൾ"; "നമ്മൾ" only when the listener is included ("nammal pokaam" = let\'s go)',
         '"mate" = "മച്ചാനേ", "അളിയാ", "ഡാ" (only where the English has mate, bro, dude); "sorry" = "സോറി"',
         '"footy" = "മാച്ച്"; "brekkie" = "ബ്രേക്ക്ഫാസ്റ്റ്", "രാവിലത്തെ ഫുഡ്"; "servo" = "പെട്രോൾ പമ്പ്"; "thongs" = "ചെരുപ്പ്"',
-        '"I\'m so over it" = "എനിക്ക് മടുത്തു"; "yeah?", "OK?" at the end = "ഓക്കെ?", "ശരി?" (not "ശരിയല്ലേ?"); "a nightmare" = "ഭയങ്കരമാണ്", "ആകെ ബ്ലോക്ക് ആണ്" (traffic)',
+        'Address words follow the listener\'s gender (<people>): "മച്ചാനേ", "അളിയാ", "ഡാ" only to a guy, "ഡീ" to a woman, and only where the English has one. "sorry" = "സോറി" (never "ക്ഷമിക്കണം" between friends); "she" = "അവൾ" (not "ഇവൾ" unless she is right there)',
+        '"I\'m so over it" = "എനിക്ക് മടുത്തു"; "yeah?", "OK?" at the end = "ഓക്കെ?", "ശരി?" (NOT "ശരിയല്ലേ?", which means "isn\'t that right?"); "a nightmare" = "ഭയങ്കരമാണ്", "ആകെ ബ്ലോക്ക് ആണ്" (traffic)',
         'Say each thing once, short and natural; do not add feelings or thanks the speaker did not say',
       ],
     },

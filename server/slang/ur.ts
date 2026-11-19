@@ -54,6 +54,7 @@ export default {
         `"آنٹی", "انکل" = auntie, uncle (any older woman or man)`,
         `"اس کا", "اس کی", "اس کے" = their (his or her: the ending follows the THING, so it never tells the owner's gender: "اس کی تنخواہ" = their salary)`,
       `"ناراض نہ ہو", "ناراض تو نہیں؟" = don't be upset with me, you're not upset, are you? (upset, annoyed; never "cranky")`,
+      `"اچھا بابا", "ٹھیک ہے بابا" = OK, OK, fine (بابا is a softener here, not dad, baby or "oi")`,
       `"بے چارہ", "بیچارہ", "بیچاری" = poor thing`,
         `"پتا نہیں", "کیا پتا" = dunno, who knows`,
         `"بالکل" = absolutely; "ضرور" = sure, of course; "شاید" = maybe`,

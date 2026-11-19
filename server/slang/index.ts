@@ -98,11 +98,21 @@ export function slangFor(sourceLang: string, targetLang: string, extra: Extra = 
   const parts: string[] = [INTRO];
   if (codes.includes("en")) parts.push(ENGLISH_REGIONS);
   const seen = new Set<SlangSet>();
+  // The speaker's language: how it is spoken (not how to write it). The listener's: only how to
+  // write it ("Into Turkish…"). Half the text, so each call reads less.
+  const writing = (label: string) => /^(into |out of )/i.test(label);
+  const src = baseLang(sourceLang) ?? sourceLang;
+  const tgt = baseLang(targetLang) ?? targetLang;
   for (const c of codes) {
     const set = SETS[c];
     if (!set || seen.has(set)) continue;
     seen.add(set);
-    for (const g of set.groups) parts.push(`${g.label}: ${g.lines.join("; ")}.`);
+    for (const g of set.groups) {
+      const into = writing(g.label);
+      if (src !== tgt && c === src && into) continue;
+      if (src !== tgt && c === tgt && !(into && /^into /i.test(g.label))) continue;
+      parts.push(`${g.label}: ${g.lines.join("; ")}.`);
+    }
   }
   const added = codes.flatMap((c) => (extra[c] ?? []).map((l) => `${c}: ${l}`));
   if (added.length) parts.push(`Added from real calls:\n${added.join("\n")}`);

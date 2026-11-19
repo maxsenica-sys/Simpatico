@@ -205,6 +205,7 @@ export default {
         'The subject is usually dropped: who is meant comes from the verb ending. "gəldim" = I came, "gəldin" = you came, "gəldi" = (they) came. Never turn a third-person verb into "you"',
         '"sən" = you to friends, partner, family; "siz" = you to elders, strangers, in-laws (polite) or to several people. Both are just "you" in English',
         'The verb comes last; negation and questions sit at the end ("gəlmirəm" = I\'m not coming; "gəlirsən?" = are you coming?)',
+        '"başım (çox) qarışıqdı" = I\'ve been (really) busy: always "busy", never "my head is all over the place" or "mixed up"',
         'Spoken endings are clipped: "-dır", "-dir" -> "-dı", "-di" ("yoxdu" = yoxdur, "yaxşıdı" = it\'s good); future "-acam", "-əcəm" = "-acağam" ("gələcəm" = I\'ll come, "edəcəm" = I\'ll do); "-aram", "-ərəm" = I will, I\'d ("zəng edərəm" = I\'ll call)',
         '"noldu" = what happened; "neynirsən", "neyləyirsən", "nə edirsən" = what are you doing; "hardasan" = where are you; "niyə" = why; "nətəri" = how',
         '"eləmək" = to do (spoken for "etmək"): "zəng elə" = call; "söhbət elədik" = we chatted',

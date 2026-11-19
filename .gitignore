@@ -8,3 +8,4 @@ test/out
 test/speech.wav
 data/
 screens/
+.langeval-machine

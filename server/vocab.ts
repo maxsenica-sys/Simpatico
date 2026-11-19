@@ -2,6 +2,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { baseLang } from "../shared/lang";
 import { soundsAlike } from "../shared/soundalike";
 import { dataFile } from "./store";
+import { slangTerms } from "./slang";
 
 /**
  * Recognition context for Soniox (sent once when each speech stream opens): the setting, the
@@ -102,7 +103,7 @@ export function sonioxContext(source: string, names: string[]): SonioxContext {
   // A term that sounds like someone in the call loses to their name: "Esky" (a cooler box)
   // would otherwise pull an Australian saying "Ezgi" towards the wrong word.
   const nameWords = people.flatMap((n) => n.split(/\s+/));
-  const listed = [...(BY_LANG[lang] ?? []), ...(vocabExtra().terms?.[lang] ?? [])].filter(
+  const listed = [...new Set([...(BY_LANG[lang] ?? []), ...slangTerms(lang), ...(vocabExtra().terms?.[lang] ?? [])])].filter(
     (t) => !nameWords.some((n) => t.split(/\s+/).some((w) => soundsAlike(w, n) && w.toLowerCase() !== n.toLowerCase())),
   );
   const all = [...people, ...listed];

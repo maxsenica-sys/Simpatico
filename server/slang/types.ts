@@ -22,4 +22,9 @@ export type SlangSet = {
    * not also ordinary words in other languages written with the same letters.
    */
   leftIn?: string[];
+  /**
+   * Words speech recognition should expect in this language (slang, clipped forms, names,
+   * places, food), sent to Soniox as hints when a stream opens. Real, common words only.
+   */
+  terms?: string[];
 };

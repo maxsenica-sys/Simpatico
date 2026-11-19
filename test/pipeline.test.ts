@@ -308,6 +308,8 @@ assert.equal(dropRepeat("it's very very", "very good"), "very good", "one or two
 assert.equal(dropRepeat("so we should look at hotels now", "so we should look at hotels now"), "");
 assert.equal(dropRepeat("otherwise the prices", "prices are going up a lot"), "are going up a lot");
 assert.equal(dropRepeat("no", "no, wait, I meant tomorrow"), "no, wait, I meant tomorrow");
+assert.equal(dropRepeat("and suddenly ran into Mia", "ran into her, so we grabbed a chai"), "so we grabbed a chai");
+assert.equal(dropRepeat("I told my sister", "told her everything"), "told her everything", "a new verb about her is kept");
 console.log("✓ a phrase never repeats the end of the subtitle");
 
 // "her" for a Turkish "o" with nothing saying who it is gets a second look; "annem" explains it.

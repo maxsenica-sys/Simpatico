@@ -66,5 +66,13 @@ export function dropRepeat(shown: string, next: string): string {
         .trim();
     }
   }
+  // The same verb again with a pronoun for what was just named ("…ran into Mia" + "ran into her, so…").
+  for (const k of [3, 2]) {
+    const idx: number[] = [];
+    for (let i = 0; i < b.length && idx.length < k + 1; i++) if (b[i]) idx.push(i);
+    if (idx.length < k + 1 || a.length < k + 1) continue;
+    const same = idx.slice(0, k).every((i, n) => b[i] === a[a.length - k - 1 + n]);
+    if (same && /^(her|him|them|it|she|he|they)$/.test(b[idx[k]])) return raw.slice(idx[k] + 1).join(" ").replace(/^[\s,;:.…-]+/u, "").trim();
+  }
   return next;
 }

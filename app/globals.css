@@ -898,27 +898,28 @@ p { margin: 0; line-height: 1.5; }
 .pgroup-body { display: flex; flex-direction: column; gap: 12px; padding: 0 12px 12px; }
 .pgroup-body .pcard { background: var(--surface-2); }
 
-/* Opening animation (components/Splash.tsx) */
+/* Opening animation (components/StartSplash.tsx): everything at once, a moment to read, gone. */
 .splash { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px;
-  background: radial-gradient(ellipse at 30% 20%, rgba(91, 140, 255, 0.22), transparent 55%), radial-gradient(ellipse at 80% 30%, rgba(95, 224, 189, 0.14), transparent 50%), var(--bg); }
-.splash.fade { opacity: 0; transition: opacity 0.35s ease; pointer-events: none; }
-.splash-card { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 30px 40px 26px; border-radius: 34px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5); opacity: 0; }
-.splash-name { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.03em; opacity: 0; }
-.splash-slogan { margin: 0; text-align: center; font-size: 1.5rem; font-weight: 750; line-height: 1.25; letter-spacing: -0.02em; opacity: 0; }
-.splash-slogan span { display: block; }
+  background: radial-gradient(ellipse at 30% 20%, rgba(91, 140, 255, 0.22), transparent 55%), radial-gradient(ellipse at 80% 30%, rgba(95, 224, 189, 0.14), transparent 50%), var(--bg);
+  animation: splash-out 0.25s 1.7s ease forwards; }
+html.splash-skip .splash { animation: splash-out 0.2s ease forwards; }
+html.splash-seen .splash { display: none; }
+.splash-card { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 30px 40px 26px; border-radius: 34px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  animation: splash-up 0.35s cubic-bezier(0.2, 1.3, 0.4, 1) both; }
+.splash-name { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.03em; }
+.splash-slogan { display: none; margin: 0; text-align: center; font-size: 1.5rem; font-weight: 750; line-height: 1.25; letter-spacing: -0.02em; }
+.splash-slogan span { display: block; animation: splash-pop 0.3s 0.04s cubic-bezier(0.2, 1.3, 0.4, 1) both; }
+.splash-slogan span + span { animation-delay: 0.09s; }
+/* No script yet (or none at all): English. */
+html:not([data-splash]) .splash-slogan[data-l="en"] { display: block; }
 .splash-bubble { transform-box: fill-box; }
-.splash-bubble.left { transform-origin: 30% 80%; }
-.splash-bubble.right { transform-origin: 70% 80%; }
-.splash.play .splash-card, .splash.fade .splash-card { animation: splash-up 0.4s cubic-bezier(0.2, 1.3, 0.4, 1) forwards; }
-.splash.play .splash-bubble.left { animation: splash-bing 0.42s 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
-.splash.play .splash-bubble.right { animation: splash-bing-r 0.42s 0.68s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
-.splash.play .splash-name, .splash.fade .splash-name { animation: splash-in 0.3s 1s ease-out forwards; }
-.splash.play .splash-slogan, .splash.fade .splash-slogan { animation: splash-pop 0.35s 1.25s cubic-bezier(0.2, 1.3, 0.4, 1) forwards; }
-@keyframes splash-up { from { opacity: 0; transform: translateY(70px) scale(0.92); } to { opacity: 1; transform: none; } }
+.splash-bubble.left { transform-origin: 30% 80%; animation: splash-bing 0.4s 0.3s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+.splash-bubble.right { transform-origin: 70% 80%; animation: splash-bing-r 0.4s 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+@keyframes splash-out { to { opacity: 0; visibility: hidden; } }
+@keyframes splash-up { from { opacity: 0; transform: translateY(40px) scale(0.92); } to { opacity: 1; transform: none; } }
 @keyframes splash-bing { 0% { transform: scale(1) rotate(0); } 35% { transform: scale(1.22) rotate(-9deg); } 65% { transform: scale(0.94) rotate(4deg); } 100% { transform: scale(1) rotate(0); } }
 @keyframes splash-bing-r { 0% { transform: scale(1) rotate(0); } 35% { transform: scale(1.22) rotate(9deg); } 65% { transform: scale(0.94) rotate(-4deg); } 100% { transform: scale(1) rotate(0); } }
-@keyframes splash-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-@keyframes splash-pop { from { opacity: 0; transform: translateY(14px) scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes splash-pop { from { opacity: 0; transform: translateY(12px) scale(0.96); } to { opacity: 1; transform: none; } }
 
 /* Home, once you have people in Recent: the slogan is one small line (you've seen it full
    size in the opening animation), so the buttons and your people sit higher. */

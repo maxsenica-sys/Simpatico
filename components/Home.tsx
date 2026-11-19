@@ -15,7 +15,6 @@ import { PersonSheet, RecentRow } from "./Recent";
 import { loadRecent, type RecentPerson } from "@/lib/recent";
 import { usePresence } from "@/lib/waiting";
 import { samePerson } from "@/lib/recent";
-import { Splash } from "./Splash";
 
 type InstallEvent = Event & { prompt: () => Promise<void> };
 
@@ -34,6 +33,8 @@ export function Home() {
 
   useEffect(() => {
     navigator.serviceWorker?.register("/sw.js").catch(() => {});
+    // The opening plays once per app open: coming back to this screen later doesn't replay it.
+    const seen = setTimeout(() => document.documentElement.classList.add("splash-seen"), 2000);
     setName(loadProfile().name);
     setMyLink(`${location.origin}/r/${myCallCode()}`);
     setRecent(loadRecent());
@@ -47,7 +48,10 @@ export function Home() {
       setInstall(e as InstallEvent);
     };
     window.addEventListener("beforeinstallprompt", onPrompt);
-    return () => window.removeEventListener("beforeinstallprompt", onPrompt);
+    return () => {
+      clearTimeout(seen);
+      window.removeEventListener("beforeinstallprompt", onPrompt);
+    };
   }, []);
 
   const { waiting, active } = usePresence(recent, name);
@@ -226,7 +230,6 @@ export function Home() {
           }}
         />
       )}
-      <Splash />
       {showLink && myLink && <LinkSheet url={myLink} onClose={() => setShowLink(false)} onOpen={() => router.push(new URL(myLink).pathname)} />}
     </main>
   );

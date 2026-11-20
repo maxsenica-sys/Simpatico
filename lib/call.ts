@@ -448,6 +448,8 @@ export class CallController {
       xhr.setRequestHeader("Content-Type", mime);
       xhr.setRequestHeader("X-Peer", this.selfId);
       xhr.setRequestHeader("X-Key", this.mediaKey);
+      // Calls run on the main server; a file is too big to be passed on from a nearer one, so go straight there.
+      xhr.setRequestHeader("fly-prefer-region", "fra");
       let shownAt = 0;
       xhr.upload.onprogress = (e) => {
         if (!e.lengthComputable || Date.now() - shownAt < 150) return;

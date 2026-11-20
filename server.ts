@@ -34,12 +34,26 @@ function json(res: import("node:http").ServerResponse, status: number, body: unk
 
 await app.prepare();
 
-startPhrasebookSchedule();
+/**
+ * Calls live in one server's memory, so only the main server (Frankfurt) runs them. Any other
+ * server (Sydney) only hands out the app's pages, so the app opens fast nearby; everything about
+ * calls, accounts and saved data is passed on to the main server by Fly ("fly-replay").
+ */
+const MAIN_REGION = process.env.PRIMARY_REGION ?? "fra";
+const isMain = !process.env.FLY_REGION || process.env.FLY_REGION === MAIN_REGION;
+const toMain = { "fly-replay": `region=${MAIN_REGION}`, "Cache-Control": "no-store" };
+
+if (isMain) startPhrasebookSchedule();
 
 const server = createServer((req, res) => {
   const url = parse(req.url ?? "/", true);
   const path = url.pathname ?? "/";
   if (path === "/healthz") return json(res, 200, { ok: true });
+  if (!isMain && (path.startsWith("/api/") || path === "/admin")) {
+    req.resume();
+    res.writeHead(307, toMain);
+    return void res.end();
+  }
   if (path === "/api/feedback" && req.method === "POST") return void feedback(req, res);
   if (path === "/api/client-error" && req.method === "POST") return void clientError(req, res);
   if (path === "/admin" && req.method === "GET") return dashboard(typeof url.query.token === "string" ? url.query.token : undefined, res);
@@ -124,6 +138,10 @@ setInterval(() => {
 
 server.on("upgrade", (req, socket, head) => {
   const path = parse(req.url ?? "").pathname;
+  if (!isMain && (path === "/ws" || path === "/ws/inperson")) {
+    socket.end(`HTTP/1.1 307 Temporary Redirect\r\nfly-replay: region=${MAIN_REGION}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n`);
+    return;
+  }
   if (path === "/ws") {
     wss.handleUpgrade(req, socket, head, (ws) => wss.emit("connection", ws, req));
   } else if (path === "/ws/inperson") {

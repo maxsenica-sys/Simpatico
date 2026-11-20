@@ -1,5 +1,8 @@
 # One Fly app: Next.js + the WebSocket server in a single process.
-# Rooms live in memory, so run exactly ONE machine:  fly deploy --ha=false
+# Rooms live in memory, so calls run on ONE machine, in primary_region (Frankfurt).
+# A second machine in Sydney serves the app's pages to nearby phones and passes everything about
+# calls on to Frankfurt with fly-replay (server.ts). Deploy with: fly deploy --ha=false
+# Never add a second machine in fra: two call machines would split people in the same call.
 app = "talk-calls"          # change to your app name
 primary_region = "fra"      # Frankfurt: Fly's closest region to Turkey
 

@@ -34,7 +34,7 @@ export function Home() {
   useEffect(() => {
     navigator.serviceWorker?.register("/sw.js").catch(() => {});
     // The opening plays once per app open: coming back to this screen later doesn't replay it.
-    const seen = setTimeout(() => document.documentElement.classList.add("splash-seen"), 2000);
+    const seen = setTimeout(() => document.documentElement.classList.add("splash-seen"), 2100);
     setName(loadProfile().name);
     setMyLink(`${location.origin}/r/${myCallCode()}`);
     setRecent(loadRecent());

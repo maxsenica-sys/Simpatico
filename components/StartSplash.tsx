@@ -13,7 +13,7 @@ import zh from "@/i18n/zh.json";
 import { BRAND } from "@/shared/brand";
 
 /** How long the opening stays on screen, and its fade (keep in step with .splash in globals.css). */
-const SHOW_MS = 1700;
+const SHOW_MS = 1800;
 const FADE_MS = 250;
 
 /** The slogan in every app language, split into its lines ("Different languages." / "Same conversation."). */

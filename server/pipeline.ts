@@ -26,7 +26,8 @@ const tuned = (key: string, fallback: number) => {
   const v = Number(process.env[key]);
   return Number.isFinite(v) && v > 0 ? v : fallback;
 };
-const IDLE_CLOSE_MS = tuned("IDLE_CLOSE_MS", 6_000);
+/** Keep the transcriber connected through ordinary pauses: reconnecting delays the next words. */
+const IDLE_CLOSE_MS = tuned("IDLE_CLOSE_MS", 15_000);
 /**
  * Steady captions (the default reading style): a long utterance is subtitled phrase by phrase from
  * Soniox's finalised words, each phrase translated once and appended, never rewritten. A phrase is
@@ -406,6 +407,17 @@ export class SpeakerPipeline {
     if (Date.now() < this.fatalUntil) return;
     if (!this.stream) this.startStream();
     this.stream!.sendAudio(chunk);
+    if (this.idleTimer) clearTimeout(this.idleTimer);
+    this.idleTimer = setTimeout(() => this.stopStream("idle"), IDLE_CLOSE_MS);
+  }
+
+  /**
+   * Connect the transcriber before the first word (someone is there to read), so the first thing
+   * said is captioned at once instead of waiting for the connection. Closes again if nobody talks.
+   */
+  warm() {
+    if (!this.speaks || !this.reads || this.sharing || this.stream || !sonioxConfigured() || Date.now() < this.fatalUntil) return;
+    this.startStream();
     if (this.idleTimer) clearTimeout(this.idleTimer);
     this.idleTimer = setTimeout(() => this.stopStream("idle"), IDLE_CLOSE_MS);
   }

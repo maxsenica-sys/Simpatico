@@ -58,6 +58,8 @@ export type Peer = {
   profile: SpeakerProfile;
   /** Lets this person (and only them) send photos and videos into this call's messages. */
   mediaKey: string;
+  /** Finished captions that came while their connection was down: sent when they're back. */
+  missed: ServerMsg[];
 };
 
 export type Room = {
@@ -192,7 +194,7 @@ export function seat(
     }
     const used = new Set([...room.peers.values()].map((p) => p.label));
     const label = [...LABELS].find((l) => !used.has(l)) ?? `P${room.peers.size + 1}`;
-    peer = { id: peerId, label, name: "", lang, inRoom: false, ws: null, graceTimer: null, pipelines: new Map(), primaryKey: null, speaking: false, captionStyle: "instant", profile: {}, mediaKey: newMediaKey() };
+    peer = { id: peerId, label, name: "", lang, inRoom: false, ws: null, graceTimer: null, pipelines: new Map(), primaryKey: null, speaking: false, captionStyle: "instant", profile: {}, mediaKey: newMediaKey(), missed: [] };
     room.peers.set(peerId, peer);
     fresh = true;
   }
@@ -314,7 +316,8 @@ export function updatePipelines(room: Room) {
       continue;
     }
     const speaks = baseLang(p.lang.speaks);
-    const listeners = others(room, p).filter((o) => o.ws);
+    // Someone whose connection just dropped still counts: their captions wait for them (deliver).
+    const listeners = others(room, p);
     const counts = new Map<string, number>();
     let sameReaders = 0;
     for (const o of listeners) {
@@ -346,13 +349,34 @@ export function updatePipelines(room: Room) {
     const leader = p.primaryKey ? p.pipelines.get(p.primaryKey) ?? null : null;
     leader?.follow(null);
     for (const [key, pl] of p.pipelines) if (key !== p.primaryKey) pl.follow(leader);
+    // Someone is here to read: be listening before the first word.
+    if (others(room, p).some((o) => o.ws)) leader?.warm();
   }
 }
 
-function readersOf(room: Room, speaker: Peer, key: string): Peer[] {
+/** Most recent finished captions kept for someone whose connection dropped (about two minutes of talk). */
+const MISSED_MAX = 200;
+
+/** To a reader: straight away, or (finished lines only) kept until their connection is back. */
+export function deliver(r: Peer, msg: ServerMsg) {
+  if (r.ws && r.ws.readyState === r.ws.OPEN) return send(r.ws, msg);
+  if (msg.t !== "caption" || msg.stage === "live") return; // a passing preview is not worth keeping
+  // A later version of the same line replaces the earlier one.
+  const at = r.missed.findIndex((m) => m.t === "caption" && m.id === msg.id && m.from === msg.from);
+  if (at >= 0) r.missed.splice(at, 1);
+  r.missed.push(msg);
+  if (r.missed.length > MISSED_MAX) r.missed.splice(0, r.missed.length - MISSED_MAX);
+}
+
+/** After they reconnect: what they missed, in order. */
+export function catchUp(p: Peer) {
+  for (const m of p.missed.splice(0)) send(p.ws, m);
+}
+
+function readersOf(room: Room, speaker: Peer, key: string, away = false): Peer[] {
   const speaks = baseLang(speaker.lang.speaks);
   return others(room, speaker).filter((o) => {
-    if (!o.ws) return false;
+    if (!o.ws && !away) return false;
     const r = baseLang(o.lang.reads);
     return key === "same" ? r === speaks : r === key;
   });
@@ -364,14 +388,14 @@ function makePipeline(room: Room, p: Peer, key: string): SpeakerPipeline {
     ref: `${room.code}-${p.label}-${key}`,
     label: p.label,
     toReader: (msg) => {
-      for (const r of readersOf(room, p, key)) if (forReader(msg, r)) send(r.ws, toClient(msg, p.id));
+      for (const r of readersOf(room, p, key, true)) if (forReader(msg, r)) deliver(r, toClient(msg, p.id));
     },
     toSpeaker: (msg) => {
       if (isPrimary()) send(p.ws, msg);
     },
     toOriginal: (msg) => {
       if (!isPrimary() || key === "same") return;
-      for (const r of readersOf(room, p, "same")) send(r.ws, toClient(msg, p.id));
+      for (const r of readersOf(room, p, "same", true)) deliver(r, toClient(msg, p.id));
     },
     context: () => room.history.slice(-CONTEXT_LINES),
     record: (line) => {

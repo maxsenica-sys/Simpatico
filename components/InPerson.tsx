@@ -17,6 +17,7 @@ import type { CaptionState, InPersonServerMsg } from "@/shared/protocol";
 import { CaptionBox } from "./CaptionBox";
 import { LanguageLine } from "./LanguageLine";
 import { Logo } from "./Logo";
+import { AudioOutbox } from "@/lib/outbox";
 
 /** Languages people most often need face to face; the rest are under "More". */
 const COMMON = ["tr", "es", "zh", "ar", "hi", "fr", "pt", "ru", "ja", "ko", "de", "it", "id", "vi", "th", "en"];
@@ -147,6 +148,9 @@ export function InPerson() {
 /** The running conversation: the connection, the microphone and what's on each half. */
 class Session {
   ws: WebSocket | null = null;
+  /** Mic audio waiting for a slow or dropped connection (lib/outbox.ts), and the socket that is ready. */
+  private outbox = new AudioOutbox();
+  private readyWs: WebSocket | null = null;
   mic: MicCapture | null = null;
   track: MediaStreamTrack | null = null;
   awake = new ScreenAwake();
@@ -180,7 +184,7 @@ class Session {
       this.track,
       (pcm, db) => this.sendAudio(pcm, db),
       (on) => {
-        if (!on) this.send({ t: "speech", on: false });
+        if (!on) this.outbox.mark(this.ws, JSON.stringify({ t: "speech", on: false }), !!this.ws && this.ws === this.readyWs);
       },
     );
     // Both people count: the one across the table is further from the mic (voice focus, on in
@@ -211,6 +215,8 @@ class Session {
         return;
       }
       if (m.t === "ready") {
+        this.readyWs = ws;
+        this.outbox.flush(ws);
         this.retries = 0;
         first?.(null);
         first = undefined;
@@ -249,12 +255,11 @@ class Session {
   }
 
   private sendAudio(pcm: ArrayBuffer, db: number) {
-    const ws = this.ws;
-    if (!ws || ws.readyState !== WebSocket.OPEN || ws.bufferedAmount > 64_000) return;
     const frame = new Uint8Array(pcm.byteLength + 1);
     frame[0] = Math.max(0, Math.min(255, Math.round(db + 120)));
     frame.set(new Uint8Array(pcm), 1);
-    ws.send(frame);
+    // A slow or dropped connection holds the audio on the phone instead of losing it.
+    this.outbox.audio(this.ws, frame, db, !!this.ws && this.ws === this.readyWs);
   }
 
   setTheirs(lang: string) {
@@ -314,7 +319,8 @@ function Live({ session: s, onEnd }: { session: Session; onEnd: () => void }) {
     <main className={`ip-live ${flipped ? "flipped" : ""}`} style={{ ["--cap-size" as string]: SIZES[size] }}>
       <section className="ip-half them" lang={s.theirs ?? undefined} dir={s.theirs && isRtl(s.theirs) ? "rtl" : "ltr"}>
         <div className="ip-head">
-          <button className="ip-lang" onClick={() => setPicking("them")}>
+          {/* New key when their language is known: the label pops in, so it's noticed. */}
+          <button key={s.theirs ?? "detecting"} className={`ip-lang ${s.theirs ? "ip-lang-set" : "ip-lang-detecting"}`} onClick={() => setPicking("them")}>
             {s.theirs ? langInfo(s.theirs).native : tt("ipDetecting")} ▾
           </button>
           {iTalk ? <span className="ip-talking">{tt("ipTalking")}</span> : null}

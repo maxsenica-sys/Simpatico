@@ -9,7 +9,7 @@ import { append } from "./store";
 import { sonioxContext } from "./vocab";
 
 /** Close the stream after this long without speech (Soniox bills while it's open). */
-const IDLE_CLOSE_MS = 6_000;
+const IDLE_CLOSE_MS = 15_000;
 /** "Let them talk first": their language is settled once they've said this many words in it. */
 const DETECT_WORDS = 3;
 const END_TOKENS = new Set(["<end>", "<fin>"]);
@@ -80,6 +80,11 @@ export class InPersonSession {
       this.setTheirs(typeof msg.theirs === "string" && baseLang(msg.theirs) && baseLang(msg.theirs) !== baseLang(mine) ? msg.theirs : null, false);
       log("inperson_start", { mine: baseLang(mine), theirs: baseLang(this.theirs), device: this.device });
       this.send({ t: "ready" });
+      // Be listening before the first word: connecting only when someone talks delays it.
+      if (!this.stream) {
+        this.open();
+        this.idle = setTimeout(() => this.stop("idle"), IDLE_CLOSE_MS);
+      }
     } else if (msg.t === "theirs") {
       const t = typeof msg.lang === "string" && baseLang(msg.lang) && baseLang(msg.lang) !== baseLang(this.mine) ? msg.lang : null;
       if (t) {
@@ -154,6 +159,7 @@ export class InPersonSession {
     const mine = baseLang(this.mine);
     const forMe: SonioxToken[] = [];
     const forThem: SonioxToken[] = [];
+    const unsure: SonioxToken[] = [];
     for (const tok of tokens) {
       if (tok.translation_status === "translation") continue;
       if (END_TOKENS.has(tok.text)) {
@@ -164,28 +170,38 @@ export class InPersonSession {
       const lang = baseLang(tok.language ?? "") ?? mine;
       if (lang === mine) forMe.push(tok);
       else if (this.theirs) forThem.push(tok);
-      else if (tok.is_final) this.detect(tok, lang!);
+      else unsure.push(tok);
     }
+    if (!this.theirs && unsure.length) forThem.unshift(...this.detect(unsure));
     // Both every time: each response re-sends the words still being recognised, so a side with
     // none this time must drop the ones it showed last time.
     this.me.feed(forMe);
     this.them.feed(forThem);
   }
 
-  /** "Let them talk first": settle their language from their first few words, then catch up. */
-  private detect(tok: SonioxToken, lang: string) {
-    this.pending.push(tok);
+  /**
+   * "Let them talk first": settle their language from their first few words, counting words as
+   * they are heard (not only once confirmed), so it shows up while they're still talking. Returns
+   * their words so far, to be captioned straight away.
+   */
+  private detect(unsure: SonioxToken[]): SonioxToken[] {
+    for (const t of unsure) if (t.is_final) this.pending.push(t);
     if (this.pending.length > 80) this.pending.splice(0, this.pending.length - 80);
-    const inLang = this.pending.filter((t) => baseLang(t.language ?? "") === lang);
-    const words = inLang.map((t) => t.text).join("").trim().split(/\s+/).filter(Boolean).length;
-    const cjk = /[぀-ヿ㐀-鿿가-힯]/.test(inLang.map((t) => t.text).join(""));
-    if (words < DETECT_WORDS && !(cjk && inLang.length >= DETECT_WORDS)) return;
-    const full = langInfo(lang).code;
-    log("inperson_detected", { lang: full });
-    this.setTheirs(full, true);
-    const replay = inLang;
-    this.pending = [];
-    this.them.feed(replay);
+    const live = unsure.filter((t) => !t.is_final);
+    const langs = new Set([...this.pending, ...live].map((t) => baseLang(t.language ?? "")).filter((l): l is NonNullable<typeof l> => !!l));
+    for (const lang of langs) {
+      const heard = [...this.pending, ...live].filter((t) => baseLang(t.language ?? "") === lang);
+      const text = heard.map((t) => t.text).join("");
+      const words = text.trim().split(/\s+/).filter(Boolean).length;
+      const cjk = /[぀-ヿ㐀-鿿가-힯]/.test(text);
+      if (words < DETECT_WORDS && !(cjk && heard.length >= DETECT_WORDS)) continue;
+      const full = langInfo(lang).code;
+      log("inperson_detected", { lang: full });
+      this.setTheirs(full, true);
+      this.pending = [];
+      return heard;
+    }
+    return [];
   }
 
   private stop(why: string) {

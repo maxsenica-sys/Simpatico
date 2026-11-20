@@ -19,7 +19,7 @@ import { append, device } from "./server/store";
 const CONN_EVENTS = new Set(["ice_connected", "ice_failed", "connect_timeout", "heal", "signal_failed", "offer_failed", "weak_network", "socket_back", "away", "back", "reconnected", "gave_up"]);
 import { log } from "./server/log";
 import { refineConfigured } from "./server/refine";
-import { broadcast, createRoom, disconnect, ensureRoom, info, others, removePeer, seat, send, reportLine, setCaptionStyle, typedText, setInRoom, speakerAudio, stopSpeaking, type Peer, type Room } from "./server/rooms";
+import { broadcast, catchUp, createRoom, disconnect, ensureRoom, info, others, removePeer, seat, send, reportLine, setCaptionStyle, typedText, setInRoom, speakerAudio, stopSpeaking, type Peer, type Room } from "./server/rooms";
 import { sonioxConfigured } from "./server/soniox";
 
 const dev = process.env.NODE_ENV !== "production";
@@ -208,6 +208,7 @@ wss.on("connection", (ws, req) => {
         iceServers: await getIceServers(),
         mediaKey: peer.mediaKey,
       });
+      catchUp(peer);
       if (!sonioxConfigured()) {
         send(ws, { t: "captions", state: "unavailable", side: "theirs" });
         send(ws, { t: "captions", state: "unavailable", side: "mine" });

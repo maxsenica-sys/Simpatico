@@ -754,46 +754,9 @@ function initials(name: string) {
   return ((parts[0]?.[0] ?? "?") + (parts.length > 1 ? parts.at(-1)![0] : "")).toUpperCase();
 }
 
-/** After hanging up: rate the call (development feedback), save the transcript, rejoin. */
+/** After hanging up: call again, a new call, save the transcript. */
 function EndScreen({ call, s, onSave, onRejoin }: { call: CallController; s: CallState; onSave: () => void; onRejoin: () => void }) {
   const t = useT();
-  const [rating, setRating] = useState<"great" | "ok" | "bad" | null>(null);
-  const [comment, setComment] = useState("");
-  const [sent, setSent] = useState(false);
-  const [more, setMore] = useState(false);
-  const pending = useRef<string | null>(null);
-
-  const body = (r: string, c: string) =>
-    JSON.stringify({
-      rating: r,
-      comment: c.trim() || undefined,
-      room: call.info.room,
-      kind: s.kind,
-      people: s.peak + 1,
-      minutes: s.startedAt && s.endedAt ? Math.round(((s.endedAt - s.startedAt) / 60000) * 10) / 10 : undefined,
-      speaks: call.info.lang.speaks,
-      reads: call.info.lang.reads,
-      audioOnly: s.audioOnly || undefined,
-    });
-  const post = (b: string) => {
-    try {
-      if (!navigator.sendBeacon?.("/api/feedback", new Blob([b], { type: "application/json" })))
-        fetch("/api/feedback", { method: "POST", body: b, headers: { "Content-Type": "application/json" }, keepalive: true }).catch(() => {});
-    } catch {}
-  };
-  // A rating chosen but never sent (they closed the page) still counts.
-  useEffect(() => {
-    pending.current = rating && !sent ? body(rating, comment) : null;
-  });
-  useEffect(() => {
-    const flush = () => pending.current && post(pending.current);
-    window.addEventListener("pagehide", flush);
-    return () => {
-      window.removeEventListener("pagehide", flush);
-      flush();
-    };
-  }, []);
-
   const hadCall = s.startedAt !== null;
   const minutes = s.startedAt && s.endedAt ? Math.round((s.endedAt - s.startedAt) / 60000) : 0;
   const duration = minutes < 1 ? t("underMinute") : t("minutesShort", { n: String(minutes) });
@@ -810,12 +773,6 @@ function EndScreen({ call, s, onSave, onRejoin }: { call: CallController; s: Cal
     } catch {
       setStarting(false);
     }
-  };
-  // One tap sends the rating; the comment is optional and never required.
-  const rate = (r: "great" | "ok" | "bad") => {
-    setRating(r);
-    post(body(r, ""));
-    setSent(true);
   };
   return (
     <main className="screen center end-screen">
@@ -859,47 +816,6 @@ function EndScreen({ call, s, onSave, onRejoin }: { call: CallController; s: Cal
         {hadCall && <NotifyCard room={call.info.room} />}
         {hadCall && <AddToHome />}
 
-        {hadCall && (
-          <section className="quick-rate" aria-label={t("quickRate")}>
-            {!sent ? (
-              <>
-                <span className="muted small">{t("quickRate")}</span>
-                <div className="faces" role="group" aria-label={t("quickRate")}>
-                  {(["great", "ok", "bad"] as const).map((r) => (
-                    <button key={r} className={`face face-${r}`} onClick={() => rate(r)}>
-                      {r === "great" ? t("rateGreat") : r === "ok" ? t("rateOk") : t("rateBad")}
-                    </button>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="thanks-row">
-                <span className="small">{t("thanks")}</span>
-                {!more && rating && (
-                  <button className="link small" onClick={() => setMore(true)}>
-                    {t("tellUsMore")}
-                  </button>
-                )}
-                {more && rating && (
-                  <div className="more">
-                    <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder={t("commentPlaceholder")} maxLength={1000} rows={3} />
-                    <button
-                      className="btn small primary"
-                      onClick={() => {
-                        post(body(rating, comment));
-                        setMore(false);
-                        setComment("");
-                      }}
-                      disabled={!comment.trim()}
-                    >
-                      {t("sendFeedback")}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </section>
-        )}
       </div>
     </main>
   );

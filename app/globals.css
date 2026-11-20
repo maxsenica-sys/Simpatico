@@ -983,3 +983,10 @@ html:not([data-splash]) .splash-slogan[data-l="en"] { display: block; }
 /* Caption box: earlier stretches of the call, one box-height above the current one */
 .cap-break { flex: none; border-top: 1px solid rgba(255, 255, 255, 0.14); margin-top: 0.5em; }
 .cap.old { opacity: 0.8; }
+
+/* In person: their language label listens while detecting, then pops in once it's known. */
+.ip-lang-detecting { animation: ip-listen 1.4s ease-in-out infinite; }
+.ip-lang-set { animation: ip-lang-pop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+@keyframes ip-listen { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+@keyframes ip-lang-pop { 0% { transform: scale(0.7); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .ip-lang-detecting, .ip-lang-set { animation: none; } }

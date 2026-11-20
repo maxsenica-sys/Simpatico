@@ -1,4 +1,5 @@
 "use client";
+import { AudioOutbox } from "./outbox";
 import type { ParticipantLang } from "@/shared/lang";
 import { validPhoto } from "./photo";
 import { validKey } from "./pair";
@@ -174,6 +175,9 @@ export class CallController {
   state: CallState;
   private listeners = new Set<() => void>();
   private ws: WebSocket | null = null;
+  /** Mic audio waiting for a slow or dropped connection (lib/outbox.ts), and the socket that has joined. */
+  private outbox = new AudioOutbox();
+  private joinedWs: WebSocket | null = null;
   private wsRetry = 0;
   private wsTimer: ReturnType<typeof setTimeout> | null = null;
   private stopped = false;
@@ -607,7 +611,7 @@ export class CallController {
       track,
       (pcm, db) => this.sendAudio(pcm, db),
       (on) => {
-        this.send({ t: "speech", on });
+        this.outbox.mark(this.ws, JSON.stringify({ t: "speech", on } satisfies ClientMsg), !!this.ws && this.ws === this.joinedWs);
         this.set({ meSpeaking: on });
       },
     );
@@ -829,11 +833,12 @@ export class CallController {
 
   /** Mic audio for captions, only while someone is there to read them. Byte 0 = level (dBFS + 120). */
   private sendAudio(pcm: ArrayBuffer, db: number) {
-    if (!this.state.participants.length || this.ws?.readyState !== WebSocket.OPEN || this.ws.bufferedAmount > 64_000) return;
+    if (!this.state.participants.length) return;
     const frame = new Uint8Array(pcm.byteLength + 1);
     frame[0] = Math.max(0, Math.min(255, Math.round(db + 120)));
     frame.set(new Uint8Array(pcm), 1);
-    this.ws.send(frame);
+    // A slow or dropped connection holds the audio on the phone instead of losing it.
+    this.outbox.audio(this.ws, frame, db, !!this.ws && this.ws === this.joinedWs);
   }
 
   private log(event: string, detail: Record<string, unknown> = {}) {
@@ -906,6 +911,8 @@ export class CallController {
         this.pongTimer = null;
         break;
       case "joined": {
+        this.joinedWs = this.ws;
+        this.outbox.flush(this.ws);
         this.selfId = msg.selfId;
         this.iceServers = msg.iceServers;
         this.mediaKey = msg.mediaKey ?? "";

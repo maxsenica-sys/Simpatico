@@ -34,8 +34,12 @@ export function ProfileScreen() {
   const { lang, setLang } = useLang();
   // "Your data" (move, clear) stays closed unless you came for it (the home screen's "Bring your data").
   const [dataOpen, setDataOpen] = useState(false);
+  const [arriving, setArriving] = useState(false);
   useEffect(() => {
-    if (location.hash === "#move") setDataOpen(true);
+    if (location.hash === "#move") {
+      setDataOpen(true);
+      setArriving(true);
+    }
   }, []);
   const [p, setP] = useState<Profile | null>(null);
   const [prefs, setPrefs] = useState<CaptionPrefs | null>(null);
@@ -83,6 +87,67 @@ export function ProfileScreen() {
     setWord("");
   };
 
+  // Moving to a new phone: "Your data" comes first, open; otherwise it's the last fold.
+  const dataGroup = (
+      <details className="pgroup" open={dataOpen}>
+        <summary>
+          <span>
+            {t("meGroupData")}
+            <small>{t("meGroupDataSub")}</small>
+          </span>
+        </summary>
+        <div className="pgroup-body">
+      <MoveSection arriving={arriving} />
+
+      {!arriving && (
+      <section className="pcard quiet">
+          <p className="small">{t("profilePrivacy")}</p>
+          {!clearing ? (
+            <button className="btn small" onClick={() => setClearing(true)}>
+              {t("clearProfile")}
+            </button>
+          ) : (
+            <div className="clear-box" role="alertdialog" aria-label={t("clearTitle")}>
+              <h3>{t("clearTitle")}</h3>
+              <p className="small muted">{t("clearWhat")}</p>
+              <label className="clear-opt">
+                <input type="checkbox" checked={newLink} onChange={(e) => setNewLink(e.target.checked)} />
+                <span>{t("clearNewLink")}</span>
+              </label>
+              {newLink && <p className="small clear-warn">{t("clearNewLinkWarn")}</p>}
+              <div className="clear-actions">
+                <button
+                  className="btn small danger"
+                  onClick={() => {
+                    clearProfile(newLink);
+                    void forgetPush();
+                    setP(loadProfile());
+                    setPrefs(loadCaptionPrefs());
+                    setPhoto(null);
+                    setClearing(false);
+                    setNewLink(false);
+                  }}
+                >
+                  {t("clearDo")}
+                </button>
+                <button
+                  className="btn small"
+                  autoFocus
+                  onClick={() => {
+                    setClearing(false);
+                    setNewLink(false);
+                  }}
+                >
+                  {t("cancel")}
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+        </div>
+      </details>
+  );
   return (
     <main className="screen profile">
       <header className="profile-head">
@@ -130,15 +195,15 @@ export function ProfileScreen() {
         </section>
       )}
 
-      <div className="profile-hero">
-        <div className="photo-wrap">
-          <button type="button" className="photo-pick" onClick={() => fileRef.current?.click()} aria-label={photo ? t("changePhoto") : t("addPhoto")}>
-            <Avatar className="avatar xl" photo={photo} fallback={initials(p.name) || <PersonGlyph />} />
-            <span className="photo-badge" aria-hidden="true">
-              <CameraGlyph />
-            </span>
-          </button>
-        </div>
+      {dataOpen && dataGroup}
+      {/* Who you are, in one compact card: photo (tap it), name, the language you speak. */}
+      <section className="pcard me-id">
+        <button type="button" className="photo-pick" onClick={() => fileRef.current?.click()} aria-label={photo ? t("changePhoto") : t("addPhoto")}>
+          <Avatar className="avatar lg" photo={photo} fallback={initials(p.name) || <PersonGlyph />} />
+          <span className="photo-badge" aria-hidden="true">
+            <CameraGlyph />
+          </span>
+        </button>
         <input
           ref={fileRef}
           className="visually-hidden"
@@ -158,14 +223,25 @@ export function ProfileScreen() {
             } catch {}
           }}
         />
-        <div className="photo-actions">
-          <button type="button" className="btn small" onClick={() => fileRef.current?.click()}>
-            {photo ? t("changePhoto") : t("addPhoto")}
-          </button>
+        <div className="me-id-fields">
+          <label className="field">
+            <span>{t("yourName")}</span>
+            <input value={p.name} onChange={(e) => update({ ...p, name: e.target.value })} maxLength={40} autoComplete="given-name" />
+          </label>
+          <label className="field">
+            <span>{t("iSpeak")}</span>
+            <select className="gender-select" value={baseLang(lang.speaks) ?? "en"} onChange={(e) => setLang(langFromChoice(e.target.value))}>
+              {SORTED.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.native}
+                </option>
+              ))}
+            </select>
+          </label>
           {photo && (
             <button
               type="button"
-              className="btn small"
+              className="link small me-photo-remove"
               onClick={() => {
                 savePhoto(null);
                 setPhoto(null);
@@ -176,18 +252,18 @@ export function ProfileScreen() {
             </button>
           )}
         </div>
-        <p className="muted small">{t("photoHint")}</p>
-        <p className="muted small">{t("profileIntro")}</p>
-      </div>
-
-      <section className="pcard">
-        <h2>{t("profileAbout")}</h2>
-        <div className="who-row">
-          <label className="field name-field">
-            <span>{t("yourName")}</span>
-            <input value={p.name} onChange={(e) => update({ ...p, name: e.target.value })} maxLength={40} autoComplete="given-name" />
-          </label>
-          <label className="field gender-field">
+      </section>
+      {/* Everything else is optional and folded away, so a first visit is just the card above. */}
+      <details className="pgroup">
+        <summary>
+          <span>
+            {t("profileAbout")}
+            <small>{t("meGroupAboutSub")}</small>
+          </span>
+        </summary>
+        <div className="pgroup-body">
+          <section className="pcard">
+          <label className="field">
             <span>{t("gender")}</span>
             <select className="gender-select" value={p.gender ?? ""} onChange={(e) => update({ ...p, gender: (e.target.value || null) as Profile["gender"] })}>
               <option value="" disabled>
@@ -198,21 +274,6 @@ export function ProfileScreen() {
               <option value="x">{t("genderNone")}</option>
             </select>
           </label>
-        </div>
-      </section>
-
-      <section className="pcard">
-        <h2>{t("profileLanguage")}</h2>
-        <label className="field">
-          <span>{t("iSpeak")}</span>
-          <select className="gender-select" value={baseLang(lang.speaks) ?? "en"} onChange={(e) => setLang(langFromChoice(e.target.value))}>
-            {SORTED.map((l) => (
-              <option key={l.code} value={l.code}>
-                {l.native}
-              </option>
-            ))}
-          </select>
-        </label>
         <label className="field">
           <span>{t("fromLabel")}</span>
           <select className="gender-select" value={p.from ?? ""} onChange={(e) => update({ ...p, from: e.target.value || null })}>
@@ -225,8 +286,9 @@ export function ProfileScreen() {
           </select>
         </label>
         <p className="muted small">{t("fromHint")}</p>
-      </section>
-
+          </section>
+        </div>
+      </details>
       <details className="pgroup">
         <summary>
           <span>
@@ -353,62 +415,14 @@ export function ProfileScreen() {
 
       <BlockedList />
 
-      <details className="pgroup" open={dataOpen} onToggle={(e) => setDataOpen((e.target as HTMLDetailsElement).open)}>
-        <summary>
-          <span>
-            {t("meGroupData")}
-            <small>{t("meGroupDataSub")}</small>
-          </span>
-        </summary>
-        <div className="pgroup-body">
-      <MoveSection />
-
-      <section className="pcard quiet">
-        <p className="small">{t("profilePrivacy")}</p>
-        {!clearing ? (
-          <button className="btn small" onClick={() => setClearing(true)}>
-            {t("clearProfile")}
-          </button>
-        ) : (
-          <div className="clear-box" role="alertdialog" aria-label={t("clearTitle")}>
-            <h3>{t("clearTitle")}</h3>
-            <p className="small muted">{t("clearWhat")}</p>
-            <label className="clear-opt">
-              <input type="checkbox" checked={newLink} onChange={(e) => setNewLink(e.target.checked)} />
-              <span>{t("clearNewLink")}</span>
-            </label>
-            {newLink && <p className="small clear-warn">{t("clearNewLinkWarn")}</p>}
-            <div className="clear-actions">
-              <button
-                className="btn small danger"
-                onClick={() => {
-                  clearProfile(newLink);
-                  void forgetPush();
-                  setP(loadProfile());
-                  setPrefs(loadCaptionPrefs());
-                  setPhoto(null);
-                  setClearing(false);
-                  setNewLink(false);
-                }}
-              >
-                {t("clearDo")}
-              </button>
-              <button
-                className="btn small"
-                autoFocus
-                onClick={() => {
-                  setClearing(false);
-                  setNewLink(false);
-                }}
-              >
-                {t("cancel")}
-              </button>
-            </div>
-          </div>
-        )}
-      </section>
-        </div>
-      </details>
+      {!dataOpen && dataGroup}
+      <nav className="me-legal small">
+        <Link href="/privacy">{t("privacy")}</Link>
+        <span aria-hidden="true">·</span>
+        <Link href="/terms">{t("terms")}</Link>
+        <span aria-hidden="true">·</span>
+        <Link href="/support">{t("support")}</Link>
+      </nav>
     </main>
   );
 }

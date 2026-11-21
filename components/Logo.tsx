@@ -14,7 +14,7 @@ export function Logo({ small = false }: { small?: boolean }) {
   return (
     <div className={`logo ${small ? "small" : ""}`} aria-label={BRAND.appName}>
       <LogoMark />
-      <span className="wordmark">{BRAND.appName.toLowerCase()}</span>
+      <span className="wordmark">{BRAND.appName}</span>
     </div>
   );
 }

@@ -8,7 +8,8 @@ import { canShareLink } from "@/lib/native";
  * Me page: move everything to a new Home Screen icon (same phone) or another phone.
  * Old one: "Copy everything". New one: "Paste my data", and everything is in.
  */
-export function MoveSection() {
+/** `arriving`: opened from the home screen's "Bring your data" on a new phone, so pasting comes first. */
+export function MoveSection({ arriving = false }: { arriving?: boolean }) {
   const t = useT();
   const [copied, setCopied] = useState(false);
   const [bad, setBad] = useState(false);
@@ -52,13 +53,12 @@ export function MoveSection() {
     }
   };
 
-  return (
-    <section className="pcard move" ref={ref} id="move">
+  const send_ = (
+    <>
       <h2>{t("moveTitle")}</h2>
       <p className="muted small">{t("moveHint")}</p>
-
       <div className="move-row">
-        <button className="btn small primary" onClick={() => void copy()}>
+        <button className={`btn small ${arriving ? "" : "primary"}`} onClick={() => void copy()}>
           {t("moveCopy")}
         </button>
         {canShareLink() && (
@@ -68,16 +68,17 @@ export function MoveSection() {
         )}
       </div>
       {copied && <p className="small move-ok">{t("moveCopied")}</p>}
-
-      <h3 className="move-sub">{t("movePasteTitle")}</h3>
+    </>
+  );
+  const receive = (
+    <>
+      {arriving ? <h2>{t("movePasteTitle")}</h2> : <h3 className="move-sub">{t("movePasteTitle")}</h3>}
       <p className="muted small">{t("movePasteHint")}</p>
-      {(
-        <div className="move-row">
-          <button className="btn small" onClick={() => void paste()}>
-            {t("movePaste")}
-          </button>
-        </div>
-      )}
+      <div className="move-row">
+        <button className={`btn small ${arriving ? "primary" : ""}`} onClick={() => void paste()}>
+          {t("movePaste")}
+        </button>
+      </div>
       {manual && (
         <div className="move-manual">
           <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder={t("movePasteBox")} rows={3} spellCheck={false} />
@@ -87,6 +88,13 @@ export function MoveSection() {
         </div>
       )}
       {bad && <p className="small move-bad">{t("moveBad")}</p>}
+    </>
+  );
+  // On the new phone, only pasting is shown; copying is for the old phone.
+  return (
+    <section className="pcard move" ref={ref} id="move">
+      {arriving ? receive : send_}
+      {!arriving && receive}
     </section>
   );
 }

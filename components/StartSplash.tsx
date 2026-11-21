@@ -53,7 +53,7 @@ setTimeout(done,${SHOW_MS + FADE_MS});})();`;
               <path d="M28 15h3c7.2 0 13 5.4 13 12a12 12 0 0 1-7 10.9v5.6L30.5 39H28c-7.2 0-13-5.4-13-12s5.8-12 13-12z" fill={BRAND.mint} fillOpacity="0.88" />
             </g>
           </svg>
-          <span className="splash-name">{BRAND.appName.toLowerCase()}</span>
+          <span className="splash-name">{BRAND.appName}</span>
         </div>
         {codes.map((c) => (
           <p key={c} className="splash-slogan" data-l={c} lang={c} dir={/^(ar|ur|he|fa)$/.test(c) ? "rtl" : undefined}>

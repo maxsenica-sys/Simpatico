@@ -362,5 +362,8 @@
   "how2": "Send them the link",
   "how2Sub": "They tap it. No app or account needed.",
   "how3": "Speak your own language",
-  "how3Sub": "Each of you reads the other, translated live."
+  "how3Sub": "Each of you reads the other, translated live.",
+  "meGroupAboutSub": "Gender and where you're from",
+  "terms": "Terms",
+  "support": "Support"
 }

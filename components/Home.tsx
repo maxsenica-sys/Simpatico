@@ -79,9 +79,6 @@ export function Home() {
         </Link>
       </header>
 
-      <section className="home-hero">
-        <h1 className="slogan">{t("slogan")}</h1>
-      </section>
 
       {first && (
         <button className="waiting-banner" onClick={() => router.push(`/r/${first.room}`)}>
@@ -212,9 +209,6 @@ export function Home() {
             {t("moveNew")}
           </Link>
         )}
-        <Link className="small" href="/privacy">
-          {t("privacy")}
-        </Link>
       </footer>
 
       {person && myLink && (

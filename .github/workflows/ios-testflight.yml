@@ -52,7 +52,26 @@ jobs:
         run: |
           test -n "$KEY_ID" && test -n "$KEY_P8" || { echo "Add the APPSTORE_* secrets first (see the top of this file)"; exit 1; }
           mkdir -p "$RUNNER_TEMP/keys"
-          printf '%s\n' "$KEY_P8" > "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8"
+          # However the key text was pasted (one line, Windows line ends, without the BEGIN/END
+          # lines), write it back in the exact shape Apple's tools read. Only its length is printed.
+          OUT="$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8" python3 - <<'PY'
+          import base64, os, re, sys
+          raw = os.environ["KEY_P8"].replace("\r", "")
+          body = re.sub(r"-+\s*(BEGIN|END)[A-Z ]*-+", "", raw)
+          body = re.sub(r"[^A-Za-z0-9+/=]", "", body)
+          try:
+              der = base64.b64decode(body, validate=True)
+          except Exception:
+              der = b""
+          if len(der) < 100 or der[:1] != b"\x30":
+              print(f"APPSTORE_KEY_P8 doesn't look like an App Store Connect key ({len(body)} characters). Paste the whole text of the AuthKey_....p8 file.")
+              sys.exit(1)
+          lines = [body[i:i + 64] for i in range(0, len(body), 64)]
+          open(os.environ["OUT"], "w").write("-----BEGIN PRIVATE KEY-----\n" + "\n".join(lines) + "\n-----END PRIVATE KEY-----\n")
+          print(f"Key text looks right ({len(body)} characters).")
+          PY
+          KEY_ID_CLEAN=$(printf '%s' "$KEY_ID" | tr -d '[:space:]')
+          [ "$KEY_ID_CLEAN" = "$KEY_ID" ] || echo "Note: APPSTORE_KEY_ID had spaces or line breaks around it; use it without them."
 
       - name: Archive
         env:
@@ -60,6 +79,7 @@ jobs:
           ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
         working-directory: mobile/ios/App
         run: |
+          set -o pipefail
           # Every upload needs a higher build number than the last one.
           BUILD=$(( ${{ github.run_number }} + 1 ))
           xcodebuild -project App.xcodeproj -scheme App -configuration Release \

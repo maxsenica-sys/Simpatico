@@ -54,18 +54,18 @@ Build › Generate Signed App Bundle › upload the `.aab` to Play Console (inte
 
 ## Point the apps at the final domain
 
-`capacitor.config.ts` loads `https://talk-calls.fly.dev`. When `simpaticocall.app` (or the
+`capacitor.config.ts` loads `https://talk-calls.fly.dev`. When `simpatico.app` (or the
 domain you choose) is registered and pointed at the Fly app:
 
 ```bash
-SIMPATICO_URL=https://simpaticocall.app npx cap sync
+SIMPATICO_URL=https://simpatico.app npx cap sync
 ```
 
 ### Links that open in the app (universal links / app links)
 
 1. iPhone: Xcode › Signing & Capabilities › **+ Associated Domains** › add
-   `applinks:simpaticocall.app`. The website must then serve
-   `/.well-known/apple-app-site-association` naming your Team ID and `app.simpaticocall`.
+   `applinks:simpatico.app`. The website must then serve
+   `/.well-known/apple-app-site-association` naming your Team ID and `app.simpatico`.
 2. Android: the intent filter is already in `AndroidManifest.xml`. The website must serve
    `/.well-known/assetlinks.json` with the SHA-256 fingerprint of the Play app-signing key
    (Play Console › Setup › App signing).

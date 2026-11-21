@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "app.simpaticocall"
+    namespace = "app.simpatico"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "app.simpaticocall"
+        applicationId "app.simpatico"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

@@ -1,4 +1,4 @@
-/** Product and operator details used on public pages. Fill in before charging money. */
+/** Product and operator details used on public pages (privacy, terms, support). */
 export const BRAND = {
   appName: "Simpatico",
   /** The slogan (English); the app shows each user the version in their own language. */
@@ -7,7 +7,9 @@ export const BRAND = {
   blue: "#5b8cff",
   mint: "#5fe0bd",
   /** The legal entity that runs the service (the "controller" under GDPR / KVKK). */
-  operator: "[Business name to be added]",
-  contactEmail: "[contact email to be added]",
-  policyUpdated: "17 November 2026",
+  operator: "Max Senica",
+  contactEmail: "simpaticosupport@gmail.com",
+  policyUpdated: "21 November 2026",
+  /** Where disputes are decided (terms of use). */
+  governingLaw: "Queensland, Australia",
 };

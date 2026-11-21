@@ -1,10 +1,12 @@
 # Launch steps and decisions
 
-Kept in the repository so they survive beyond any one chat. Last updated 16 November 2026.
+Kept in the repository so they survive beyond any one chat. Last updated 21 November 2026.
 
 ## Decisions
 - Apple Developer account: **individual** (no company yet).
-- Terms of use: **Queensland** law. Still needed from Max: **support email** and **full legal name**.
+- Operator: **Max Senica** (individual). Support email: **simpaticosupport@gmail.com**.
+- Terms of use (/terms) under **Queensland** law; support page (/support); privacy (/privacy).
+- App name **Simpatico**, bundle ID **app.simpatico** (no "call").
 - Long-speech captions: **"Make room"** is the default (smaller text, video moves up); "Scroll" stays as an option.
 - Pricing (per person: each person pays for the captions they read):
   - Free: **20 minutes** of captions a month.
@@ -15,13 +17,13 @@ Kept in the repository so they survive beyond any one chat. Last updated 16 Nove
 - Running costs (16 Nov 2026, after the cost cuts): about **US$0.20 per person per caption-hour**.
   - Soniox only transcribes; Claude writes every subtitle.
   - Soniox's own translation switches back on automatically for 5 minutes if Claude fails 4 times in a row.
-  - Soniox streams close after 6 s without speech.
+  - Soniox streams open when a call or In person starts and close after 15 s without speech.
   - Live previews are requested every couple of words.
 - Phrasebook daily job: drafts with Claude Sonnet 5.5, checks with Claude Opus 5.5.
 
 ## TestFlight: Max's steps
-1. Enrol in the Apple Developer Program as an individual (US$99/year). Approval usually 1–2 days.
-2. App Store Connect › My Apps › + › New App: name **Simpatico**, English (Australia), bundle ID **app.simpaticocall** (add it under Certificates, Identifiers & Profiles › Identifiers if missing), SKU **simpatico**.
+1. Enrol in the Apple Developer Program as an individual (US$99/year). **Done 21 Nov 2026.**
+2. App Store Connect › My Apps › + › New App: name **Simpatico**, English (Australia), bundle ID **app.simpatico** (add it under Certificates, Identifiers & Profiles › Identifiers if missing), SKU **simpatico**.
 3. Users and Access › Integrations › App Store Connect API › +, role **App Manager**; download the key file (once only).
 4. GitHub › Simpatico › Settings › Secrets and variables › Actions: add the key ID, issuer ID and key file text (names given by Claude). Never in chat.
 5. Claude starts the first build; it appears under TestFlight about 30 minutes later. Encryption question: standard encryption only.

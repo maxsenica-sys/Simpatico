@@ -5,7 +5,7 @@ import { BRAND } from "@/shared/brand";
 export const metadata: Metadata = { title: `Privacy · ${BRAND.appName}` };
 
 const providers = [
-  { name: "Fly.io", role: "Runs our server (Frankfurt, Germany). Handles the connection between your browser and us.", url: "https://fly.io/legal/privacy-policy/" },
+  { name: "Fly.io", role: "Runs our servers (Frankfurt, Germany, where calls are handled, and Sydney, Australia, which only serves the app's pages). Handles the connection between your device and us.", url: "https://fly.io/legal/privacy-policy/" },
   {
     name: "Soniox",
     role: "Turns your speech into text and translates it, live. Its policy says real-time requests are processed transiently, not stored, and never used to train its models.",

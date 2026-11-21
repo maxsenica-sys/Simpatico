@@ -7,13 +7,13 @@ import type { CapacitorConfig } from "@capacitor/cli";
  * picker (Voice Isolation), the native share sheet, links that open straight in the app,
  * and the App Store / Play Store listing.
  *
- * SERVER_URL: where the app lives. Change to the final domain (e.g. https://simpaticocall.app)
+ * SERVER_URL: where the app lives. Change to the final domain (e.g. https://simpatico.app)
  * once it is registered and pointed at the Fly app.
  */
 const SERVER_URL = process.env.SIMPATICO_URL ?? "https://talk-calls.fly.dev";
 
 const config: CapacitorConfig = {
-  appId: "app.simpaticocall",
+  appId: "app.simpatico",
   appName: "Simpatico",
   webDir: "www",
   // The web app sees this and knows it is inside our app, not an in-app browser.

@@ -1,4 +1,4 @@
-package app.simpaticocall;
+package app.simpatico;
 
 import android.content.Context;
 import android.media.AudioDeviceInfo;

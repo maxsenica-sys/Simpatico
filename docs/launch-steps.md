@@ -26,7 +26,7 @@ Kept in the repository so they survive beyond any one chat. Last updated 21 Nove
 2. **Done 21 Nov 2026** (Team ID P5C9YZ5CFB). App Store Connect › My Apps › + › New App: name **Simpatico**, English (Australia), bundle ID **app.simpatico** (add it under Certificates, Identifiers & Profiles › Identifiers if missing), SKU **simpatico**.
 3. Users and Access › Integrations › App Store Connect API › Team Keys › +, role **Admin** (needed so the build can create the signing certificate); download the key file (once only).
 4. GitHub › Simpatico › Settings › Secrets and variables › Actions › New repository secret: **APPSTORE_KEY_ID**, **APPSTORE_ISSUER_ID**, **APPSTORE_KEY_P8** (the whole .p8 file text). Never in chat.
-5. GitHub › Actions › "iPhone build to TestFlight" › Run workflow (Claude can start it too); it appears under TestFlight about 30 minutes later. Encryption question: standard encryption only.
+5. **First build uploaded 21 Nov 2026 (version 1.0, build 4).** GitHub › Actions › "iPhone build to TestFlight" › Run workflow (Claude can start it too); it appears under TestFlight about 30 minutes later. Encryption question: standard encryption only.
 6. Install the TestFlight app on the iPhone; tap Install on Simpatico.
 7. TestFlight › External Testing › + group: add Ezgi and friends by email or public link. Apple reviews the first external build (about a day).
 

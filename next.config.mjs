@@ -13,6 +13,8 @@ const nextConfig = {
         ],
       },
       { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache" }] },
+      // Font files never change under the same name: keep them for a year.
+      { source: "/fonts/:file*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
     ];
   },
 };

@@ -38,6 +38,12 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* The app font's common weights, fetched with the page so text never jumps from one font to another. */}
+        {[400, 700, 800].map((w) => (
+          <link key={w} rel="preload" href={`/fonts/nunito-latin-${w}-normal.woff2`} as="font" type="font/woff2" crossOrigin="anonymous" />
+        ))}
+      </head>
       <body>{children}</body>
     </html>
   );

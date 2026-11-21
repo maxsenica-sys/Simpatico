@@ -6,7 +6,8 @@
 #   APPSTORE_KEY_ID     the key's ID (10 characters)
 #   APPSTORE_ISSUER_ID  the Issuer ID shown above the list of keys
 #   APPSTORE_KEY_P8     the whole text of the downloaded AuthKey_XXXXXXXXXX.p8 file
-# Signing is automatic: Xcode creates the certificate and profile with that key.
+# Signing is automatic: when uploading, Xcode creates the distribution certificate and App Store
+# profile with that key.
 name: iPhone build to TestFlight
 
 on:
@@ -74,20 +75,16 @@ jobs:
           [ "$KEY_ID_CLEAN" = "$KEY_ID" ] || echo "Note: APPSTORE_KEY_ID had spaces or line breaks around it; use it without them."
 
       - name: Archive
-        env:
-          KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
-          ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
         working-directory: mobile/ios/App
         run: |
           set -o pipefail
           # Every upload needs a higher build number than the last one.
           BUILD=$(( ${{ github.run_number }} + 1 ))
+          # Built unsigned: signing for the App Store happens in the upload step (a signed archive
+          # would need a development profile, which Apple only makes once a test iPhone is registered).
           xcodebuild -project App.xcodeproj -scheme App -configuration Release \
             -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$KEY_ID.p8" \
-            -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER_ID" \
-            DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
             MARKETING_VERSION="${{ inputs.version }}" CURRENT_PROJECT_VERSION="$BUILD" \
             archive | tail -n 40

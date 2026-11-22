@@ -20,7 +20,7 @@ page.on("pageerror", (e) => {
 });
 
 try {
-  step("Home: Start a call, then Group call and In person side by side; the call card is a slim row");
+  step("Home: Group call and In person side by side, the call card button at the top, the round Call button in the bar");
   await page.goto(BASE);
   await page.evaluate(() => {
     localStorage.setItem("talk.name", "Max");
@@ -28,7 +28,8 @@ try {
   });
   await page.reload();
   await page.getByRole("button", { name: /In person/ }).waitFor();
-  await page.locator(".card-row").waitFor();
+  await page.locator(".card-chip").waitFor();
+  await page.locator(".tabbar .tab-call").waitFor();
   await page.screenshot({ path: out("inperson-0-home.png") });
 
   step("In person: 'Let them talk first' is the default; Start");

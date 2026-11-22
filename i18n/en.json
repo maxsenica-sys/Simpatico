@@ -365,5 +365,8 @@
   "how3Sub": "Each of you reads the other, translated live.",
   "meGroupAboutSub": "Gender and where you're from",
   "terms": "Terms",
-  "support": "Support"
+  "support": "Support",
+  "tabsLabel": "Main",
+  "tabHome": "Home",
+  "tabCall": "Call"
 }

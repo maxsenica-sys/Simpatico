@@ -1178,3 +1178,33 @@ html:not([data-splash]) .splash-slogan[data-l="en"] { display: block; }
 
 /* Buttons, fields and menus use the app font too (browsers give them the system font by default). */
 button, input, select, textarea { font-family: inherit; }
+
+/* Bottom bar: Home, the raised round Call button, Me (components/TabBar.tsx). */
+.with-tabs { padding-bottom: calc(108px + var(--safe-b)) !important; }
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: 1fr auto 1fr; align-items: end;
+  padding: 8px 28px calc(10px + var(--safe-b)); background: rgba(16, 18, 22, 0.88); backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4); border-top: 1px solid var(--line); }
+.tab { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 0; color: rgba(244, 245, 247, 0.55);
+  font-size: 0.72rem; font-weight: 700; text-decoration: none; }
+.tab.on { color: var(--accent); }
+.tab .tab-avatar { width: 28px; height: 28px; font-size: 0.72rem; background: linear-gradient(135deg, #5b8cff, #5fe0bd); color: #0b0d10; }
+.tab.on .tab-avatar { outline: 2px solid var(--accent); outline-offset: 1px; }
+.tab-call { display: flex; flex-direction: column; align-items: center; gap: 5px; margin-top: -34px; padding: 0; border: 0; background: none;
+  color: var(--text); font: inherit; font-size: 0.72rem; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.tab-call-circle { width: 66px; height: 66px; border-radius: 50%; display: grid; place-items: center; color: #fff;
+  background: linear-gradient(135deg, #6a97ff 0%, #4a74f0 60%, #4466e0 100%); border: 5px solid #101216; box-sizing: content-box;
+  box-shadow: 0 12px 30px -6px rgba(76, 116, 240, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.25); transition: transform 0.12s ease; }
+.tab-call:active .tab-call-circle { transform: scale(0.94); }
+.tab-call:disabled { opacity: 0.7; }
+
+/* Home with the bar: call card as a small button at the top, Group call / In person as two tall tiles. */
+.card-chip { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px 0 10px; border-radius: 999px; border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.06); color: var(--text); font: inherit; font-weight: 700; font-size: 0.9rem; white-space: nowrap; cursor: pointer;
+  backdrop-filter: blur(12px); }
+.card-chip svg { width: 20px; height: 20px; color: var(--mint, #5fe0bd); }
+.with-tabs .htile-row .htile, .with-tabs.has-recent .htile-row .htile { flex-direction: column; align-items: flex-start; gap: 14px; padding: 16px; border-radius: 24px; }
+.with-tabs .htile-row .htile-icon, .with-tabs.has-recent .htile-row .htile-icon { width: 46px; height: 46px; border-radius: 14px; }
+.with-tabs .htile-row .htile-text b { font-size: 1.06rem; }
+.with-tabs .htile-row .htile-text small, .with-tabs.has-recent .htile-row .htile-text small { display: block; font-size: 0.84rem; text-wrap: balance; }
+.with-tabs .recent-list .rp { padding-top: 12px; padding-bottom: 12px; }
+.with-tabs .recent-list .rp-av { width: 46px; height: 46px; }

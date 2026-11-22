@@ -365,5 +365,8 @@
   "how3Sub": "双方都能实时看到对方话语的翻译。",
   "meGroupAboutSub": "性别和你来自哪里，让翻译更准确",
   "terms": "条款",
-  "support": "帮助"
+  "support": "帮助",
+  "tabsLabel": "主菜单",
+  "tabHome": "首页",
+  "tabCall": "通话"
 }

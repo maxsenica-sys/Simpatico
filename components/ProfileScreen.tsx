@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Avatar } from "./Avatar";
+import { TabBar } from "./TabBar";
 import { MoveSection } from "./MoveSection";
 import { BlockedList } from "./BlockedList";
 import { loadPhoto, photoFromFile, savePhoto } from "@/lib/photo";
@@ -149,11 +150,10 @@ export function ProfileScreen() {
       </details>
   );
   return (
-    <main className="screen profile">
+    <main className="screen profile with-tabs">
       <header className="profile-head">
-        <Link href="/" className="round-btn" aria-label={t("backHome")}>
-          ←
-        </Link>
+        {/* Home is in the bar at the bottom. */}
+        <span aria-hidden="true" />
         <h1>{t("profileTitle")}</h1>
         <span className={`saved ${saved ? "on" : ""}`} role="status">
           {saved ? `✓ ${t("saved")}` : ""}
@@ -423,6 +423,7 @@ export function ProfileScreen() {
         <span aria-hidden="true">·</span>
         <Link href="/support">{t("support")}</Link>
       </nav>
+      <TabBar active="me" />
     </main>
   );
 }

@@ -365,5 +365,8 @@
   "how3Sub": "Chacun lit l'autre, traduit en direct.",
   "meGroupAboutSub": "Genre et d'où vous venez, pour mieux traduire",
   "terms": "Conditions",
-  "support": "Assistance"
+  "support": "Assistance",
+  "tabsLabel": "Principal",
+  "tabHome": "Accueil",
+  "tabCall": "Appeler"
 }

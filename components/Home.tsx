@@ -6,6 +6,7 @@ import { detectEnv } from "@/lib/env";
 import { useT } from "@/lib/i18n";
 import { loadProfile, myCallCode } from "@/lib/profile";
 import { Logo } from "./Logo";
+import { TabBar } from "./TabBar";
 import { initials } from "./ProfileScreen";
 import { LinkSheet } from "./LinkSheet";
 import { Avatar } from "./Avatar";
@@ -70,13 +71,14 @@ export function Home() {
   };
 
   return (
-    <main className={`screen home2 ${recent.length ? "has-recent" : ""} ${first ? "has-waiting" : ""}`}>
+    <main className={`screen home2 with-tabs ${recent.length ? "has-recent" : ""} ${first ? "has-waiting" : ""}`}>
       <header className="home-top">
         <Logo small />
-        <Link href="/profile" className="me-btn" aria-label={t("openProfile")}>
-          <Avatar photo={photo} fallback={initials(name) || <PersonIcon />} />
-          <span className="me-label">{t("profileTitle")}</span>
-        </Link>
+        {/* Your call card: shared once in a while, so a small button up here (Me is in the bar below). */}
+        <button className="card-chip" onClick={() => setShowLink(true)} disabled={!myLink}>
+          <CardIcon />
+          <span>{t("cardRowTitle")}</span>
+        </button>
       </header>
 
 
@@ -95,18 +97,6 @@ export function Home() {
       )}
 
       <nav className="home-actions">
-        <button className="htile primary" onClick={() => start("pair")} disabled={busy}>
-          <span className="htile-icon" aria-hidden="true">
-            <VideoIcon />
-          </span>
-          <span className="htile-text">
-            <b>{busy ? t("starting") : t("startCall")}</b>
-            <small>{t("tileCallSub")}</small>
-          </span>
-          <span className="htile-chev" aria-hidden="true">
-            ›
-          </span>
-        </button>
         <div className="htile-row">
           <button className="htile" onClick={() => start("group")} disabled={busy}>
             <span className="htile-icon" aria-hidden="true">
@@ -179,17 +169,6 @@ export function Home() {
         </section>
       )}
 
-      {/* The call card: shared once, so it's a slim row rather than a big button. */}
-      <button className="card-row" onClick={() => setShowLink(true)} disabled={!myLink}>
-        <span className="card-row-icon" aria-hidden="true">
-          <CardIcon />
-        </span>
-        <span className="card-row-text">
-          <b>{t("cardRowTitle")}</b> · {t("cardRowSub")}
-        </span>
-        <span className="card-row-share">{t("cardRowShare")}</span>
-      </button>
-
       <footer className="home-foot">
         {install ? (
           <button
@@ -224,6 +203,7 @@ export function Home() {
           }}
         />
       )}
+      <TabBar active="home" />
       {showLink && myLink && <LinkSheet url={myLink} onClose={() => setShowLink(false)} onOpen={() => router.push(new URL(myLink).pathname)} />}
     </main>
   );
@@ -289,11 +269,3 @@ function CaptionIcon() {
   );
 }
 
-function PersonIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" />
-    </svg>
-  );
-}

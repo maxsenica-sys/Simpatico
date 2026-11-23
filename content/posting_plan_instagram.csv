@@ -1,0 +1,121 @@
+day,week,slot,format,post_id,feature_id,audience,hook
+1,Week 1: talk to anyone,morning,carousel,S001,video-call-captions,couples,Your mother-in-law nods. She hasn't understood a word.
+1,Week 1: talk to anyone,midday,still,S004,one-tap-call,everyone,Every extra step is a call that doesn't happen.
+1,Week 1: talk to anyone,evening,reel,S002,guest-no-app,families,Nene has never once opened the App Store.
+1,Week 1: talk to anyone,trial reel (filmed),filmed,F001,in-person,everyone,She answered in Mandarin. I understood everything.
+2,Week 1: talk to anyone,morning,carousel,S003,call-card,couples,"Her mum wants to call you, not just her."
+2,Week 1: talk to anyone,midday,still,S006,guest-no-app,couples,"Meeting her parents for the first time, in Hindi."
+2,Week 1: talk to anyone,evening,reel,S005,video-call-captions,families,Grandma speaks Turkish. You speak Aussie.
+2,Week 1: talk to anyone,trial reel (filmed),filmed,F005,in-person,everyone,"Her mum, no English. Me, no Turkish."
+3,Week 1: talk to anyone,morning,carousel,S122,slang-idioms,families,'She'll be right' sounds like gossip about a woman.
+3,Week 1: talk to anyone,midday,still,S010,caption-style,families,Dad holds the phone at arm's length to read.
+3,Week 1: talk to anyone,evening,reel,S008,someone-waiting,couples,She's been waiting on the call for ten minutes.
+3,Week 1: talk to anyone,trial reel (filmed),filmed,F002,in-person,everyone,Ask a Vietnamese mum what she misses
+4,Week 1: talk to anyone,morning,carousel,S007,recent-contacts,families,Every Sunday you call the same four people.
+4,Week 1: talk to anyone,midday,still,S011,video-call-captions,newcomers,The kids are inseparable. The mums have never spoken.
+4,Week 1: talk to anyone,evening,reel,S009,own-words,newcomers,Half of talking is wondering if they heard right.
+4,Week 1: talk to anyone,trial reel (filmed),filmed,F006,in-person,everyone,Can it handle full Aussie slang
+5,Week 1: talk to anyone,morning,carousel,S012,guest-no-app,families,Your dad has six forgotten passwords and one phone.
+5,Week 1: talk to anyone,midday,still,S013,call-card,families,Nene in Izmir wakes at five. You don't.
+5,Week 1: talk to anyone,evening,reel,S014,one-tap-call,travellers,Lost at Fiumicino. Your host only speaks Italian.
+5,Week 1: talk to anyone,trial reel (filmed),filmed,F003,in-person,everyone,"His yiayia's advice, in Greek, translated live"
+6,Week 1: talk to anyone,morning,carousel,S015,video-call-captions,friends,You shared a flat in Seoul. Now it's likes.
+6,Week 1: talk to anyone,midday,still,S018,someone-waiting,families,Dad never says he's calling. He just turns up.
+6,Week 1: talk to anyone,evening,reel,S016,guest-no-app,newcomers,The coach won't install an app for one parent.
+6,Week 1: talk to anyone,trial reel (filmed),filmed,F013,in-person,everyone,Her grandma speaks Vietnamese. She mostly doesn't.
+7,Week 1: talk to anyone,morning,carousel,S019,own-words,couples,"In a second language, you never know what landed."
+7,Week 1: talk to anyone,midday,still,S025,video-call-captions,everyone,Everyone has nodded at something they didn't understand.
+7,Week 1: talk to anyone,evening,reel,S017,recent-contacts,friends,Friendships across languages fade faster than anyone admits.
+7,Week 1: talk to anyone,trial reel (filmed),filmed,F007,in-person,everyone,It guesses your language in three words
+8,Week 2: face to face,morning,carousel,S042,in-person,couples,The taxi driver always wants to talk football.
+8,Week 2: face to face,midday,still,S053,auto-detect,couples,Turkish dads start talking before you've said hello.
+8,Week 2: face to face,evening,reel,S057,sixty-languages,friends,"One street in Footscray, six languages before lunch."
+8,Week 2: face to face,trial reel (filmed),filmed,F004,in-person,everyone,A Japanese word English doesn't have
+9,Week 2: face to face,morning,carousel,S044,in-person,everyone,Every tradie quote has one sentence nobody understood.
+9,Week 2: face to face,midday,still,S056,sixty-languages,everyone,Your sparky's English is good. His Punjabi is better.
+9,Week 2: face to face,evening,reel,S052,auto-detect,everyone,"In Sunnybank, guessing someone's language is a gamble."
+9,Week 2: face to face,trial reel (filmed),filmed,F012,in-person,everyone,Turkish slang test: me versus the phone
+10,Week 2: face to face,morning,carousel,S047,in-person,travellers,Miming a blocked nose is harder than it sounds.
+10,Week 2: face to face,midday,still,S123,slang-idioms,friends,Aussies 'chuck a sickie' and nobody gets thrown anywhere.
+10,Week 2: face to face,evening,reel,S054,auto-detect,travellers,Not everyone in Istanbul speaks Turkish.
+10,Week 2: face to face,trial reel (filmed),filmed,F008,in-person,everyone,A Brisbane stranger did this for him
+11,Week 2: face to face,morning,carousel,S050,in-person,families,"With a translate app, you talk to the phone."
+11,Week 2: face to face,midday,still,S059,transcript-save,couples,"Every family recipe is said, never written down."
+11,Week 2: face to face,evening,reel,S063,not-right,families,Every family has one phrase that never translates.
+11,Week 2: face to face,trial reel (filmed),filmed,F014,in-person,everyone,Fastest talker I know versus the phone
+12,Week 2: face to face,morning,carousel,S051,auto-detect,travellers,Nobody waits patiently while you scroll a list.
+12,Week 2: face to face,midday,still,S043,in-person,everyone,You can wave at a neighbour for three years.
+12,Week 2: face to face,evening,reel,S060,transcript-save,everyone,Nobody remembers what the tradie said on the phone.
+12,Week 2: face to face,trial reel (filmed),filmed,F009,in-person,everyone,Teach me to flirt in Spanish
+13,Week 2: face to face,morning,carousel,S055,sixty-languages,families,Kids end up translating for grown ups everywhere.
+13,Week 2: face to face,midday,still,S046,in-person,couples,"Meeting the in-laws is hard. Without a language, harder."
+13,Week 2: face to face,evening,reel,S066,not-right,couples,One bad translation can sound like an insult.
+13,Week 2: face to face,trial reel (filmed),filmed,F027,in-person,everyone,Calling his yiayia without his mum translating
+14,Week 2: face to face,morning,carousel,S058,sixty-languages,families,Your partner's nan might not speak her country's language.
+14,Week 2: face to face,midday,still,S049,in-person,families,The butcher knows the cut. You know the dish.
+14,Week 2: face to face,evening,reel,S068,scroll-back,families,Your name gets called mid-sentence. Always.
+14,Week 2: face to face,trial reel (filmed),filmed,F020,in-person,everyone,You found a bug. I fixed it.
+15,Week 3: family and love across languages,morning,carousel,S081,group-call,families,"At Bayram, someone always nods along and understands nothing."
+15,Week 3: family and love across languages,midday,still,S082,names-words,couples,"My partner's name is Ezgi, not Easy."
+15,Week 3: family and love across languages,evening,reel,S083,in-room,families,Three phones in one lounge room: instant cathedral.
+15,Week 3: family and love across languages,trial reel (filmed),filmed,F010,in-person,everyone,What shocked him about moving to Brisbane
+16,Week 3: family and love across languages,morning,carousel,S084,photos-in-call,families,New grandparents want photos every eleven minutes.
+16,Week 3: family and love across languages,midday,still,S085,gender-grammar,couples,Hindi translation apps decided I was a man.
+16,Week 3: family and love across languages,evening,reel,S086,audio-only,families,"Nene's village gets one bar, near the chicken coop."
+16,Week 3: family and love across languages,trial reel (filmed),filmed,F019,in-person,everyone,Cooking with her family. No shared language.
+17,Week 3: family and love across languages,morning,carousel,S087,group-call,couples,Announcing an engagement in two languages: a hostage negotiation.
+17,Week 3: family and love across languages,midday,still,S088,names-words,families,Our dog is Biscuit. Nene thinks we're always hungry.
+17,Week 3: family and love across languages,evening,reel,S121,slang-idioms,couples,Australians say 'yeah nah' and expect you to understand.
+17,Week 3: family and love across languages,trial reel (filmed),filmed,F011,in-person,everyone,Rating my Turkish thank you
+18,Week 3: family and love across languages,morning,carousel,S090,group-call,friends,"My flatmates have met my mum, kind of."
+18,Week 3: family and love across languages,midday,still,S091,in-room,couples,Huddling over one phone on a family call hurts.
+18,Week 3: family and love across languages,evening,reel,S089,move-phone,families,A new phone for Dad means weekend tech support.
+18,Week 3: family and love across languages,trial reel (filmed),filmed,F021,in-person,everyone,Can it hear a whisper
+19,Week 3: family and love across languages,morning,carousel,S093,photos-in-call,newcomers,Host mums and real mums want the same photos.
+19,Week 3: family and love across languages,midday,still,S094,audio-only,families,"Every beach shack gets one bar, by the letterbox."
+19,Week 3: family and love across languages,evening,reel,S092,names-words,families,My daughter Aylin became 'a line' in the captions.
+19,Week 3: family and love across languages,trial reel (filmed),filmed,F015,in-person,everyone,What Italy does better. He didn't hesitate.
+20,Week 3: family and love across languages,morning,carousel,S096,gender-grammar,families,"In Russian, even 'I was tired' knows your gender."
+20,Week 3: family and love across languages,midday,still,S097,names-words,couples,Australian place names were not designed for translation.
+20,Week 3: family and love across languages,evening,reel,S095,group-call,families,"Two grandmas, one baby, zero shared words."
+20,Week 3: family and love across languages,trial reel (filmed),filmed,F040,in-person,everyone,He usually just nods along with Nani
+21,Week 3: family and love across languages,morning,carousel,S099,in-room,families,"At Nene's house, every cousin wants their own phone."
+21,Week 3: family and love across languages,midday,still,S100,group-call,everyone,Our family speaks four languages and agrees on none.
+21,Week 3: family and love across languages,evening,reel,S098,move-phone,couples,A new phone shouldn't mean losing your mother-in-law.
+21,Week 3: family and love across languages,trial reel (filmed),filmed,F034,in-person,everyone,"Real numbers from my app, no spin"
+22,Week 4: it gets how people really talk,morning,carousel,S136,slow-connection,travellers,Mountain bus signal comes and goes. Mostly goes.
+22,Week 4: it gets how people really talk,midday,still,S125,slang-idioms,couples,Turks greet anyone working with 'may it come easy'.
+22,Week 4: it gets how people really talk,evening,reel,S140,no-recording,friends,Everyone needs one call where they can say anything.
+22,Week 4: it gets how people really talk,trial reel (filmed),filmed,F016,in-person,everyone,What he misses most about Punjab
+23,Week 4: it gets how people really talk,morning,carousel,S138,slow-connection,couples,"Out past Dubbo, signal lives near the shed."
+23,Week 4: it gets how people really talk,midday,still,S139,no-recording,families,Big family news never feels right with strangers listening.
+23,Week 4: it gets how people really talk,evening,reel,S126,slang-idioms,families,Compliment a Turkish nene and she blesses your mouth.
+23,Week 4: it gets how people really talk,trial reel (filmed),filmed,F026,in-person,everyone,We argued about directions. The phone translated.
+24,Week 4: it gets how people really talk,morning,carousel,S124,slang-idioms,newcomers,Aussies shorten everything. 'Arvo' is just afternoon.
+24,Week 4: it gets how people really talk,midday,still,S137,slow-connection,newcomers,Prepaid data always slows down right when it matters.
+24,Week 4: it gets how people really talk,evening,reel,S145,block-report,newcomers,Being new somewhere means saying yes to strangers.
+24,Week 4: it gets how people really talk,trial reel (filmed),filmed,F017,in-person,everyone,"Samoan grandmother's advice, translated live"
+25,Week 4: it gets how people really talk,morning,carousel,S141,no-recording,newcomers,Visa worries aren't something you share with just anyone.
+25,Week 4: it gets how people really talk,midday,still,S128,slang-idioms,travellers,"In Madrid, everyone calls you uncle. Nobody's related."
+25,Week 4: it gets how people really talk,evening,reel,S135,slow-connection,families,Nene's village internet drops every time it rains.
+25,Week 4: it gets how people really talk,trial reel (filmed),filmed,F028,in-person,everyone,Loud pub. Can it still translate
+26,Week 4: it gets how people really talk,morning,carousel,S144,block-report,everyone,Share your number widely and one caller gets rude.
+26,Week 4: it gets how people really talk,midday,still,S142,no-recording,everyone,Every nene lowers her voice before the good gossip.
+26,Week 4: it gets how people really talk,evening,reel,S129,slang-idioms,friends,Spaniards swear by the communion wafer. Constantly.
+26,Week 4: it gets how people really talk,trial reel (filmed),filmed,F018,in-person,everyone,Persian has a word English doesn't
+27,Week 4: it gets how people really talk,morning,carousel,S127,slang-idioms,couples,Turkish couples call each other 'my soul' over breakfast.
+27,Week 4: it gets how people really talk,midday,still,S143,block-report,travellers,Most strangers are lovely. Some are not.
+27,Week 4: it gets how people really talk,evening,reel,S147,sixty-languages,travellers,The family who hosted you never fully leaves you.
+27,Week 4: it gets how people really talk,trial reel (filmed),filmed,F052,in-person,everyone,"Calling her grandpa in China, no interpreter"
+28,Week 4: it gets how people really talk,morning,carousel,S146,sixty-languages,families,Every language list has French. Lola only speaks Tagalog.
+28,Week 4: it gets how people really talk,midday,still,S131,slang-idioms,families,"In Hindi, annoying people are eating your brain."
+28,Week 4: it gets how people really talk,evening,reel,S021,video-call-captions,travellers,A nonna in Sicily fed you for a month.
+28,Week 4: it gets how people really talk,trial reel (filmed),filmed,F047,in-person,everyone,Getting she and he right in Arabic
+29,Week 4: it gets how people really talk,morning,carousel,S020,caption-style,couples,Ezgi doesn't tell stories. She tells sagas.
+29,Week 4: it gets how people really talk,midday,still,S148,sixty-languages,everyone,One street in Auburn can speak eight languages.
+29,Week 4: it gets how people really talk,evening,reel,S132,slang-idioms,everyone,Vietnamese grandmas don't say hello. They ask about rice.
+29,Week 4: it gets how people really talk,trial reel (filmed),filmed,F022,in-person,everyone,What a Brisbane stranger did for him
+30,Week 4: it gets how people really talk,morning,carousel,S130,slang-idioms,families,Lebanese grandmothers say 'bury me' when they mean love.
+30,Week 4: it gets how people really talk,midday,still,S026,guest-no-app,friends,Your mate refuses to download one more app.
+30,Week 4: it gets how people really talk,evening,reel,S023,call-card,newcomers,The property manager rings. You let it ring out.
+30,Week 4: it gets how people really talk,trial reel (filmed),filmed,F033,in-person,everyone,What my Turkish partner actually calls me

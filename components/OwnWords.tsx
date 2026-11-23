@@ -4,7 +4,7 @@ import type { TranscriptLine } from "@/lib/call";
 import { useT } from "@/lib/i18n";
 
 /** Stays on screen while you talk and this long after your last words. */
-const SHOW_MS = 10_000;
+const SHOW_MS = 4_000;
 
 /**
  * "You": what speech recognition heard you say, so you can check it at a glance. Your recent
@@ -49,7 +49,6 @@ export function OwnWords({ lines, lastAt, speaking, hint }: { lines: TranscriptL
     <div className="own-words" dir="auto">
       <div className="own-head">
         <span className="who">{t("you")}</span>
-        {bar && <span className="own-scroll-hint">{t("ownScroll")}</span>}
       </div>
       <div className={`own-box ${bar && box.current && box.current.scrollTop > 2 ? "faded" : ""}`} ref={box} onScroll={measure}>
         {lines.map((l, i) => (

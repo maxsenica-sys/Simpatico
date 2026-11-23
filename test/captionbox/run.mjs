@@ -23,7 +23,7 @@ async function scenario(name) {
     window.push(m);
   };
   const touch = { on: false, until: 0 };
-  const problems = { missing: 0, hiddenWhileTalking: 0, newestOutOfView: 0, jumpsDown: 0, movedByPreview: 0, readBackMoved: 0, readBackLost: 0 };
+  const problems = { missing: 0, hiddenWhileTalking: 0, newestOutOfView: 0, jumpsDown: 0, movedByPreview: 0, readBackMoved: 0, readBackLost: 0, scrolledThroughOld: 0 };
   const examples = {};
   const note = (k, s) => {
     problems[k]++;
@@ -85,6 +85,12 @@ async function scenario(name) {
           if (Date.now() - outSince > 700) note("newestOutOfView", `${Math.round(nb - el.clientHeight)}px below for ${Date.now() - outSince} ms`);
         } else outSince = 0;
       } else outSince = 0;
+      // 3b. Following: earlier stretches never pass through the view (the box used to restart at
+      // the top after a pause and scroll down through everything said before to the new words).
+      if (following) {
+        const seen = ps.filter((p) => p.classList.contains("old") && p.offsetTop + p.offsetHeight > el.scrollTop + 2 && p.offsetTop < el.scrollTop + el.clientHeight - 2);
+        if (seen.length) note("scrolledThroughOld", `${seen.length} earlier lines in view while following (scrollTop ${Math.round(el.scrollTop)})`);
+      }
       // 4. Following: no line moves down; and nothing moves at all when only the preview changed.
       const settledSig = ps.map((p) => p.textContent).join("|");
       const settledSame = settledSig === lastSettled;
@@ -217,6 +223,14 @@ async function scenario(name) {
     await say("a", 8);
     await sleep(23000);
     await say("a", 10);
+    await sleep(1500);
+  } else if (name === "resume-after-long") {
+    // A long stretch of talking, a pause long enough for the box to clear, then more talking:
+    // the new words appear in place, without scrolling down through everything said before.
+    window.setNames(null);
+    await say("a", 60);
+    await sleep(23000);
+    await say("a", 12);
     await sleep(1500);
   } else if (name === "long-readback") {
     // Group, reading back for 30 s while three people keep talking and lines finish.
@@ -383,7 +397,7 @@ async function scenario(name) {
   return { problems, examples };
 }
 
-const names = ["monologue", "group", "readback", "readback-group", "long-readback", "scroll-down-resume", "tap-while-talking", "rewording", "upside-down", "latest-after-quiet", "deep-readback", "pause", "long-quiet-other"].filter((n) => !only || n === only);
+const names = ["monologue", "group", "readback", "readback-group", "long-readback", "scroll-down-resume", "tap-while-talking", "rewording", "upside-down", "latest-after-quiet", "deep-readback", "pause", "resume-after-long", "long-quiet-other"].filter((n) => !only || n === only);
 let total = 0;
 for (const name of names) {
   const page = await (await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })).newPage();

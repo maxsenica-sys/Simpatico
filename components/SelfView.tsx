@@ -3,13 +3,16 @@ import { useEffect, useRef, useState, type PointerEvent } from "react";
 
 /** small: corner preview · big: larger preview · split: the screen shared 50/50 with the other person. */
 export type SelfMode = "small" | "big" | "split";
-type Corner = "br" | "bl" | "tr" | "tl";
+/** Which side it sits on, and how far down (0 = as high as it goes, 1 = just above the captions). */
+type Place = { side: "l" | "r"; y: number };
 
 const NEXT: Record<SelfMode, SelfMode> = { small: "big", big: "split", split: "small" };
-const CORNER_KEY = "talk.selfCorner";
+const PLACE_KEY = "talk.selfPlace";
+const OLD_CORNER_KEY = "talk.selfCorner";
 
 /**
- * Your own camera. Drag it to any corner; tap it to make it bigger, tap again to split the screen
+ * Your own camera. Drag it anywhere along either side (it tucks against the nearer edge, at the
+ * height you leave it, between the top bar and the captions); tap it to make it bigger, tap again to split the screen
  * with the other person, and once more to go back to the small preview.
  */
 export function SelfView({
@@ -35,14 +38,26 @@ export function SelfView({
   const video = useRef<HTMLVideoElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; y: number; id: number; moved: boolean } | null>(null);
-  const [corner, setCorner] = useState<Corner>("br");
+  const [place, setPlace] = useState<Place>({ side: "r", y: 1 });
   const [offset, setOffset] = useState<{ x: number; y: number } | null>(null);
+  const [height, setHeight] = useState(0);
 
   useEffect(() => {
     try {
-      const c = localStorage.getItem(CORNER_KEY) as Corner | null;
-      if (c && ["br", "bl", "tr", "tl"].includes(c)) setCorner(c);
+      const saved = JSON.parse(localStorage.getItem(PLACE_KEY) ?? "null") as Place | null;
+      if (saved && (saved.side === "l" || saved.side === "r") && typeof saved.y === "number") return setPlace({ side: saved.side, y: Math.min(1, Math.max(0, saved.y)) });
+      // From before: one of four corners.
+      const c = localStorage.getItem(OLD_CORNER_KEY);
+      if (c && /^[tb][lr]$/.test(c)) setPlace({ side: c[1] as "l" | "r", y: c[0] === "t" ? 0 : 1 });
     } catch {}
+  }, []);
+  // Its own height, for placing it between the top and the captions (it changes with the size).
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setHeight(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
   useEffect(() => {
@@ -72,24 +87,25 @@ export function SelfView({
     drag.current = null;
     if (!d || d.id !== e.pointerId) return;
     if (!d.moved) return onMode(NEXT[mode]); // a tap: next size
-    // Dropped: snap to the nearest corner.
-    const r = box.current?.getBoundingClientRect();
+    // Dropped: against the nearer side, at the height it was left (within the free band).
+    const el = box.current;
+    const r = el?.getBoundingClientRect();
     setOffset(null);
-    if (!r) return;
-    const cx = r.left + r.width / 2;
-    const cy = r.top + r.height / 2;
-    const c = `${cy < window.innerHeight / 2 ? "t" : "b"}${cx < window.innerWidth / 2 ? "l" : "r"}` as Corner;
-    setCorner(c);
+    if (!el || !r) return;
+    const band = freeBand(el, low);
+    const room = band.bottom - band.top - r.height;
+    const next: Place = { side: r.left + r.width / 2 < window.innerWidth / 2 ? "l" : "r", y: room > 0 ? Math.min(1, Math.max(0, (r.top - band.top) / room)) : 1 };
+    setPlace(next);
     try {
-      localStorage.setItem(CORNER_KEY, c);
+      localStorage.setItem(PLACE_KEY, JSON.stringify(next));
     } catch {}
   };
 
   return (
     <div
       ref={box}
-      className={`self ${mode} c-${corner} ${low ? "low" : ""} ${offset ? "dragging" : ""}`}
-      style={offset ? { transform: `translate(${offset.x}px, ${offset.y}px)` } : undefined}
+      className={`self ${mode} s-${place.side} ${low ? "low" : ""} ${offset ? "dragging" : ""}`}
+      style={{ ["--y" as string]: place.y, ["--h" as string]: `${height}px`, ...(offset ? { transform: `translate(${offset.x}px, ${offset.y}px)` } : {}) }}
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={up}
@@ -114,4 +130,14 @@ export function SelfView({
       </button>
     </div>
   );
+}
+
+/** Where it may sit, on screen: below the top bar, above the captions (as the stylesheet works it out). */
+function freeBand(el: HTMLElement, low: boolean): { top: number; bottom: number } {
+  const probe = document.createElement("div");
+  probe.className = `self self-probe ${low ? "low" : ""}`;
+  el.parentElement?.appendChild(probe);
+  const r = probe.getBoundingClientRect();
+  probe.remove();
+  return { top: r.top, bottom: r.bottom };
 }

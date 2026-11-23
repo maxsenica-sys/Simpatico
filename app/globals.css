@@ -336,7 +336,7 @@ p { margin: 0; line-height: 1.5; }
 
 .tap-sound { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); padding: 12px 20px; border-radius: 999px; border: 0; background: rgba(0, 0, 0, 0.6); font-weight: 600; cursor: pointer; }
 
-/* Self view: a corner preview (drag to any corner; bottom corners sit above the caption band),
+/* Self view: a small preview (drag it anywhere along either side, between the top bar and the captions),
    tap for bigger, tap again for a 50/50 split with the other person. */
 .self {
   /* Above the caption box (its preview strip adds about two thirds of a line), never over it. */
@@ -348,10 +348,11 @@ p { margin: 0; line-height: 1.5; }
   transition: width 0.2s ease;
 }
 .self.dragging { transition: none; cursor: grabbing; z-index: 6; }
-.self.c-br { right: 12px; bottom: var(--self-bottom); }
-.self.c-bl { left: 12px; bottom: var(--self-bottom); }
-.self.c-tr { right: 12px; top: var(--self-top); }
-.self.c-tl { left: 12px; top: var(--self-top); }
+.self.s-l { left: 12px; }
+.self.s-r { right: 12px; }
+/* Anywhere between the top bar and the captions: --y from 0 (top) to 1 (just above the captions). */
+.self.s-l, .self.s-r { top: calc(var(--self-top) + var(--y, 1) * (100% - var(--self-top) - var(--self-bottom) - var(--h, 0px))); }
+.self-probe { top: var(--self-top) !important; bottom: var(--self-bottom); width: 0 !important; aspect-ratio: auto !important; visibility: hidden; pointer-events: none; border: 0; box-shadow: none; }
 /* while waiting there are no captions, so drop it to the corner and keep the invite card clear */
 .self.low { --self-bottom: calc(var(--safe-b) + 16px); }
 .self.big { width: clamp(150px, 46vw, 340px); }
@@ -1208,3 +1209,9 @@ button, input, select, textarea { font-family: inherit; }
 .with-tabs .htile-row .htile-text small, .with-tabs.has-recent .htile-row .htile-text small { display: block; font-size: 0.84rem; text-wrap: balance; }
 .with-tabs .recent-list .rp { padding-top: 12px; padding-bottom: 12px; }
 .with-tabs .recent-list .rp-av { width: 46px; height: 46px; }
+
+/* Calls: nothing floats over the other person longer than it has to. */
+.stage-label, .cc-pill { transition: opacity 0.5s ease; }
+.stage-label.quiet, .cc-pill.quiet { opacity: 0; pointer-events: none; }
+.own-words { background: rgba(0, 0, 0, 0.45); padding: 5px 14px 6px 12px; }
+.own-box { max-height: calc(0.95rem * 1.35 * 2.2); }

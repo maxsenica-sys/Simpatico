@@ -62,6 +62,8 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const [now, setNow] = useState(() => Date.now());
   const [connectedAt, setConnectedAt] = useState<number | null>(null);
   const [reportFor, setReportFor] = useState<{ name: string; seat: string } | null>(null);
+  // Their name over the video shows for a few seconds when they appear, then gets out of the way.
+  const [labelSince, setLabelSince] = useState(() => Date.now());
 
   // "Recent" on the home screen: remember who we actually talked to, and for how long.
   const met = useRef(new Map<string, string>());
@@ -165,6 +167,11 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
     return () => window.removeEventListener("keydown", onKey);
   }, [call]);
   const stage: Participant | undefined = s.participants.find((p) => p.id === s.activeId) ?? s.participants[0];
+  // The name label and "Captions on" start their few seconds again whenever the call (re)connects
+  // or someone else is on the main screen.
+  useEffect(() => {
+    if (s.phase === "connected") setLabelSince(Date.now());
+  }, [s.phase, stage?.id]);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -465,7 +472,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
         </div>
       )}
       {connected && stage?.name && placeholder === null && (
-        <button className="stage-label" onClick={() => setReportFor({ name: stage.name, seat: stage.id })} aria-label={t("reportBlockTitle", { name: stage.name })}>
+        <button className={`stage-label ${now - labelSince > 5000 ? "quiet" : ""}`} onClick={() => setReportFor({ name: stage.name, seat: stage.id })} aria-label={t("reportBlockTitle", { name: stage.name })}>
           {stage.name} <span aria-hidden="true">⋯</span>
         </button>
       )}
@@ -521,7 +528,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
       <div className="top-stack">
         <div className="topbar" onClick={(e) => e.stopPropagation()}>
           <div className="pills">
-            <button className={`cc-pill ${ccState}`} onClick={() => setTranscript(true)} aria-label={t("showTranscript")}>
+            <button className={`cc-pill ${ccState} ${ccState === "ok" && now - labelSince > 6000 ? "quiet" : ""}`} onClick={() => setTranscript(true)} aria-label={t("showTranscript")}>
               <span className="dot" />
               {ccState === "ok" ? t("captionsOn") : ccState === "paused" ? t("captionsPaused") : t("captionsUnavailable")}
             </button>
@@ -598,6 +605,18 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
                   {s.inRoom ? "✓" : ""}
                 </i>
               </button>
+              {!group && stage?.name && (
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    setReportFor({ name: stage.name, seat: stage.id });
+                    setMore(false);
+                  }}
+                >
+                  <FlagIcon />
+                  <span>{t("reportBlockTitle", { name: stage.name })}</span>
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -1097,5 +1116,13 @@ function LearnCard({ s }: { s: CallState }) {
       )}
       <p className="small muted learn-privacy">{t("learnPrivacy")}</p>
     </section>
+  );
+}
+
+function FlagIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 21V4M5 4h11l-2 4 2 4H5" />
+    </svg>
   );
 }

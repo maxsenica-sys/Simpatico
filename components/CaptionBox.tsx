@@ -207,7 +207,9 @@ export function CaptionBox({
         measure();
         return;
       }
-      el.scrollTop += d < 2 ? d : Math.min(Math.max(1, d * 0.2), Math.max(line / 9, d / 14));
+      // More than a box away, there's nothing worth watching go by: go straight there.
+      if (d > el.clientHeight) el.scrollTop = to;
+      else el.scrollTop += d < 2 ? d : Math.min(Math.max(1, d * 0.2), Math.max(line / 9, d / 14));
       saveAnchor(el);
       glide.current = requestAnimationFrame(step);
     };
@@ -259,18 +261,32 @@ export function CaptionBox({
       const slipped = a ? a.offsetTop - el.scrollTop - anchor.current.top : 0;
       if (slipped > 0.5) el.scrollTop += slipped;
     }
+    // Following but far from the newest words (talking resumed after a pause cleared the box, and
+    // everything said before came back above): be at the newest words before anything is drawn.
+    // Gliding there would scroll the whole earlier conversation past the reader.
+    const brk = el.querySelector<HTMLElement>(".cap-break");
+    const aboveStretch = !!brk && el.scrollTop < brk.offsetTop + brk.offsetHeight - 1;
+    if (atBottom && !hands() && (aboveStretch || el.scrollHeight - el.clientHeight - el.scrollTop > el.clientHeight)) {
+      el.scrollTop = el.scrollHeight;
+      saveAnchor(el);
+    }
     // New words: follow them, unless you've scrolled back to read.
     if (atBottom && !hands()) glideTo(el);
     measure();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sig]);
 
+  // "Scroll for earlier": said for a few seconds when there first is something to scroll back to.
+  const hadBar = useRef(false);
+  const hintAt = useRef(0);
+  if (bar && !hadBar.current) hintAt.current = Date.now();
+  hadBar.current = !!bar;
   const scrolledUp = !!bar && !!box.current && box.current.scrollTop > 2;
   const waiting = speaking && !shown.some((c) => c.doneAt === null && (c.stage === "live" || c.tail));
   return (
     <div className="captions-zone boxed">
       {/* Under the box, where "Latest" appears once you scroll back. */}
-      {bar && !gone && atBottom && <span className="cap-scroll-hint">{t("ownScroll")}</span>}
+      {bar && !gone && atBottom && now - hintAt.current < 5000 && <span className="cap-scroll-hint">{t("ownScroll")}</span>}
       <div className={`cap-frame ${bar ? "scrollable" : ""} ${usesPreview.current ? "with-preview" : ""}`}>
         <div
           className={`captions cap-box-scroll ${scrolledUp ? "faded" : ""} ${fading ? "fading" : ""}`}

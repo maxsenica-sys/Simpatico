@@ -1215,3 +1215,9 @@ button, input, select, textarea { font-family: inherit; }
 .stage-label.quiet, .cc-pill.quiet { opacity: 0; pointer-events: none; }
 .own-words { background: rgba(0, 0, 0, 0.45); padding: 5px 14px 6px 12px; }
 .own-box { max-height: calc(0.95rem * 1.35 * 2.2); }
+
+/* After the first call: where did you find Simpatico (once). */
+.source-card { width: 100%; border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; background: rgba(255, 255, 255, 0.04); text-align: start; }
+.source-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.source-opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.source-thanks { margin: 0; }

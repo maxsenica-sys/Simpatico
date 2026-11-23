@@ -368,5 +368,9 @@
   "support": "सहायता",
   "tabsLabel": "मुख्य",
   "tabHome": "होम",
-  "tabCall": "कॉल"
+  "tabCall": "कॉल",
+  "sourceTitle": "आपको Simpatico कहाँ मिला?",
+  "sourceFriend": "किसी दोस्त से",
+  "sourceOther": "कहीं और",
+  "sourceThanks": "धन्यवाद, इससे मदद मिलती है।"
 }

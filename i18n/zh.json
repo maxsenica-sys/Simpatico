@@ -368,5 +368,9 @@
   "support": "帮助",
   "tabsLabel": "主菜单",
   "tabHome": "首页",
-  "tabCall": "通话"
+  "tabCall": "通话",
+  "sourceTitle": "你是在哪里发现 Simpatico 的？",
+  "sourceFriend": "朋友",
+  "sourceOther": "其他地方",
+  "sourceThanks": "谢谢，这对我们很有帮助。"
 }

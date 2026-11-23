@@ -368,5 +368,9 @@
   "support": "Поддержка",
   "tabsLabel": "Главное меню",
   "tabHome": "Главная",
-  "tabCall": "Звонок"
+  "tabCall": "Звонок",
+  "sourceTitle": "Где вы узнали о Simpatico?",
+  "sourceFriend": "От друга",
+  "sourceOther": "В другом месте",
+  "sourceThanks": "Спасибо, это помогает."
 }

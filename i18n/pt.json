@@ -368,5 +368,9 @@
   "support": "Suporte",
   "tabsLabel": "Principal",
   "tabHome": "Início",
-  "tabCall": "Ligar"
+  "tabCall": "Ligar",
+  "sourceTitle": "Onde você conheceu o Simpatico?",
+  "sourceFriend": "Um amigo",
+  "sourceOther": "Outro lugar",
+  "sourceThanks": "Obrigado, isso ajuda."
 }

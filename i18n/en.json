@@ -368,5 +368,9 @@
   "support": "Support",
   "tabsLabel": "Main",
   "tabHome": "Home",
-  "tabCall": "Call"
+  "tabCall": "Call",
+  "sourceTitle": "Where did you find Simpatico?",
+  "sourceFriend": "A friend",
+  "sourceOther": "Somewhere else",
+  "sourceThanks": "Thanks, that helps."
 }

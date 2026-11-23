@@ -4,7 +4,7 @@ import next from "next";
 import { WebSocketServer, type WebSocket } from "ws";
 import { sanitizeLang } from "./shared/lang";
 import type { ClientMsg } from "./shared/protocol";
-import { clientError, dashboard, feedback } from "./server/admin";
+import { clientError, dashboard, feedback, source } from "./server/admin";
 import { getIceServers } from "./server/ice";
 import { startPhrasebookSchedule } from "./server/phrasebook";
 import { blockRoute, isBlocked, reportRoute } from "./server/blocks";
@@ -56,6 +56,7 @@ const server = createServer((req, res) => {
   }
   if (path === "/api/feedback" && req.method === "POST") return void feedback(req, res);
   if (path === "/api/client-error" && req.method === "POST") return void clientError(req, res);
+  if (path === "/api/source" && req.method === "POST") return void source(req, res);
   if (path === "/admin" && req.method === "GET") return dashboard(typeof url.query.token === "string" ? url.query.token : undefined, res);
   if (path === "/api/push/key" && req.method === "GET") return pushKey(res);
   if (path === "/api/leave" && req.method === "POST") return void leaveBeacon(req, res);

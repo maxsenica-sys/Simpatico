@@ -49,6 +49,17 @@ export async function feedback(req: IncomingMessage, res: ServerResponse) {
   send(res, 201, { ok: true });
 }
 
+/** Where people found the app: the link they first opened with (?src=tiktok) and/or their answer. */
+const SOURCES = ["tiktok", "instagram", "friend", "other"];
+export async function source(req: IncomingMessage, res: ServerResponse) {
+  const b = await readJson(req);
+  const answer = str(b?.answer, 12);
+  const link = str(b?.link, 24)?.toLowerCase().replace(/[^a-z0-9_-]/g, "");
+  if (!b || (answer && !SOURCES.includes(answer)) || (!answer && !link)) return send(res, 400, { error: "bad-request" });
+  append("sources", { answer: answer || undefined, link: link || undefined, device: device(req.headers["user-agent"]) });
+  send(res, 201, { ok: true });
+}
+
 /** POST /api/client-error — uncaught errors from testers' browsers. */
 export async function clientError(req: IncomingMessage, res: ServerResponse) {
   const b = await readJson(req);
@@ -85,6 +96,12 @@ export function dashboard(token: string | undefined, res: ServerResponse) {
   const fb = recent("feedback", 300);
   const errs = recent("errors", 200);
   const reports = recent("reports", 300);
+  const sources = recent("sources", 5000);
+  const bySource = new Map<string, number>();
+  for (const s of sources) {
+    const k = String(s.link ? `link: ${s.link}` : `answer: ${s.answer}`);
+    bySource.set(k, (bySource.get(k) ?? 0) + 1);
+  }
   const minutes = calls.reduce((s, c) => s + (Number(c.minutes) || 0), 0);
   const cost = calls.reduce((s, c) => s + (Number(c.estCostUsd) || 0), 0);
   const counts = { great: 0, ok: 0, bad: 0 } as Record<string, number>;
@@ -113,6 +130,10 @@ th{color:#9aa0a8;font-weight:600}.wrap{overflow-x:auto}.great{color:#3ddc84}.bad
 <div class="kpi"><span class="muted">Feedback</span><b><span class="great">${counts.great}</span> · <span class="ok">${counts.ok}</span> · <span class="bad">${counts.bad}</span></b><span class="muted">great · ok · bad</span></div>
 <div class="kpi"><span class="muted">Client errors</span><b>${errs.length}</b><span class="muted">latest 200</span></div>
 </div>
+<h2>Where people found Simpatico</h2><p class="muted">"link" = they first opened a tagged link (bio links: ?src=tiktok, ?src=instagram). "answer" = what they tapped after their first call.</p><div class="wrap">${table(
+    ["Source", "People"],
+    [...bySource.entries()].sort((a, b) => b[1] - a[1]).map(([k, n]) => [esc(k), String(n)]),
+  )}</div>
 <h2>Feedback</h2><div class="wrap">${table(
     ["When (UTC)", "Rating", "Comment", "Call", "Languages", "Device"],
     fb.map((f) => [

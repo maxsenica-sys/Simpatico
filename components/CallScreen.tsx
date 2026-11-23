@@ -23,6 +23,7 @@ import { myKey, pairCode } from "@/lib/pair";
 import { Avatar } from "./Avatar";
 import { ReportSheet } from "./ReportSheet";
 import { OwnWords } from "./OwnWords";
+import { answerSource, sourceAsked } from "@/lib/source";
 
 const OWN_LINE_MS = 5000;
 const NO_VIDEO_GRACE_MS = 4000;
@@ -831,6 +832,7 @@ function EndScreen({ call, s, onSave, onRejoin }: { call: CallController; s: Cal
           )}
         </nav>
 
+        {hadCall && <SourceCard />}
         {hadCall && <LearnCard s={s} />}
         {hadCall && <NotifyCard room={call.info.room} />}
         {hadCall && <AddToHome />}
@@ -1124,5 +1126,34 @@ function FlagIcon() {
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M5 21V4M5 4h11l-2 4 2 4H5" />
     </svg>
+  );
+}
+
+/** Once, after the first call: where they found Simpatico (one tap, or close it). */
+function SourceCard() {
+  const t = useT();
+  const [state, setState] = useState<"ask" | "thanks" | "gone">("gone");
+  useEffect(() => setState(sourceAsked() ? "gone" : "ask"), []);
+  if (state === "gone") return null;
+  if (state === "thanks") return <p className="small muted source-thanks">{t("sourceThanks")}</p>;
+  const pick = (a: "tiktok" | "instagram" | "friend" | "other" | null) => {
+    answerSource(a);
+    setState(a ? "thanks" : "gone");
+  };
+  return (
+    <section className="source-card" aria-label={t("sourceTitle")}>
+      <div className="source-head">
+        <b>{t("sourceTitle")}</b>
+        <button className="link small" onClick={() => pick(null)} aria-label={t("close")}>
+          ×
+        </button>
+      </div>
+      <div className="source-opts">
+        <button className="btn small" onClick={() => pick("tiktok")}>TikTok</button>
+        <button className="btn small" onClick={() => pick("instagram")}>Instagram</button>
+        <button className="btn small" onClick={() => pick("friend")}>{t("sourceFriend")}</button>
+        <button className="btn small" onClick={() => pick("other")}>{t("sourceOther")}</button>
+      </div>
+    </section>
   );
 }

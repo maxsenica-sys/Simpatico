@@ -531,11 +531,20 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
       <div className="top-stack">
         <div className="topbar" onClick={(e) => e.stopPropagation()}>
           <div className="pills">
+            <div className="pills-l">
             <button className={`cc-pill ${ccState} ${ccState === "ok" && now - labelSince > 6000 ? "quiet" : ""}`} onClick={() => setTranscript(true)} aria-label={t("showTranscript")}>
               <span className="dot" />
               {ccState === "ok" ? t("captionsOn") : ccState === "paused" ? t("captionsPaused") : t("captionsUnavailable")}
             </button>
             {group && <span className="cc-pill count">{t("peopleCount", { n: String(s.participants.length + 1) })}</span>}
+            </div>
+            {/* How long the call has run: small, faint and still, centred under the buttons. */}
+            {s.startedAt !== null && (
+              <span className="call-time" role="timer" aria-label={t("callLength")}>
+                {clock(now - s.startedAt)}
+              </span>
+            )}
+            <div className="pills-r">
             {/* Your own words again, to scroll back through: plain text, not another box. */}
             {connected && ownLines.length > 0 && (
               <button className={`you-tab ${ownPinned ? "on" : ""}`} aria-pressed={ownPinned} onClick={() => setOwnPinned((v) => !v)}>
@@ -545,12 +554,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
                 </svg>
               </button>
             )}
-            {/* How long the call has run: small, still, and out of the way. */}
-            {s.startedAt !== null && (
-              <span className="call-time" role="timer" aria-label={t("callLength")}>
-                {clock(now - s.startedAt)}
-              </span>
-            )}
+            </div>
           </div>
           <div className="controls">
             <Ctrl label={t("lblMic")} title={s.muted ? t("unmute") : t("mute")} danger={s.muted} active={s.meSpeaking && !s.muted} onClick={() => call.setMuted(!s.muted)}>

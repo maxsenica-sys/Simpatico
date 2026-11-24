@@ -426,15 +426,15 @@ p { margin: 0; line-height: 1.5; }
 .consent a, .home-foot a { color: var(--accent); }
 
 /* ---------------------------------------------------------------- group calls */
-.pills { display: flex; gap: 6px; flex-wrap: wrap; align-self: stretch; align-items: center; }
-/* The call's running time and the way back to your own words: plain text on the picture, no box,
-   small and still, so they are there when wanted and never in the way. */
-.call-time { margin-inline-start: auto; padding: 5px 6px; font-size: 0.8rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; color: #fff; opacity: 0.8; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.5); pointer-events: none; }
-.you-tab { display: inline-flex; align-items: center; gap: 4px; padding: 5px 6px; border: 0; background: none; color: #fff; font: inherit; font-size: 0.8rem; font-weight: 700; opacity: 0.8; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.5); cursor: pointer; }
+/* One quiet row under the buttons: captions state on the left, the call's running time in the
+   middle, the way back to your own words on the right. The time and "You" are plain faint text
+   on the picture, no box, so they are there when wanted and never in the way. */
+.pills { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; column-gap: 6px; align-self: stretch; }
+.pills-l { grid-column: 1; display: flex; gap: 6px; flex-wrap: wrap; min-width: 0; }
+.pills-r { grid-column: 3; display: flex; justify-content: flex-end; min-width: 0; }
+.call-time { grid-column: 2; padding: 5px 6px; font-size: 0.8rem; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; color: #fff; opacity: 0.55; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.5); pointer-events: none; }
+.you-tab { display: inline-flex; align-items: center; gap: 4px; padding: 5px 6px; border: 0; background: none; color: #fff; font: inherit; font-size: 0.8rem; font-weight: 600; opacity: 0.55; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.5); cursor: pointer; }
 .you-tab.on { opacity: 1; }
-/* Both sit together at the right end of the row. */
-.you-tab { margin-inline-start: auto; }
-.you-tab + .call-time { margin-inline-start: 0; }
 .cc-pill.count { cursor: default; }
 .controls { max-height: 196px; row-gap: 8px; column-gap: 4px; }
 .people { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 4px; scrollbar-width: none; justify-content: center; }

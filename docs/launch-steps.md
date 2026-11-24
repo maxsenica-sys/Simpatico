@@ -4,7 +4,9 @@ Kept in the repository so they survive beyond any one chat. Last updated 21 Nove
 
 ## Decisions
 - Apple Developer account: **individual** (no company yet).
-- Operator: **Max Senica** (individual). Support email: **simpaticosupport@gmail.com**.
+- Legal owner: **Max Senica** (individual; kept here only, never on public pages, which say "Simpatico"). Support email: **simpaticosupport@gmail.com**.
+- Public pages name providers by role only (cloud hosting, speech recognition, AI translation, connection helpers). The real list, for a regulator on request: Fly.io (hosting: fra calls; syd, iad, lax, gru, jnb, sin, nrt pages), Soniox (speech), Anthropic (translation), Cloudflare and Google (STUN).
+- Servers (24 Nov 2026): calls in Frankfurt; page servers on every continent (about US$3 to 5 a month each).
 - Terms of use (/terms) under **Queensland** law; support page (/support); privacy (/privacy).
 - App name **Simpatico**, bundle ID **app.simpatico** (no "call").
 - Long-speech captions: **"Make room"** is the default (smaller text, video moves up); "Scroll" stays as an option.

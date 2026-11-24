@@ -1,32 +1,32 @@
 post_id,format,feature_id,audience,hook
-S022,carousel,guest-no-app,travellers,The guesthouse owner in Hoi An only speaks Vietnamese.
-S024,carousel,one-tap-call,families,"First steps happen once, and never near a laptop."
-S027,still,recent-contacts,newcomers,A new country comes with a dozen new people.
-S028,carousel,someone-waiting,newcomers,The employer calls back while you're on the train.
-S029,still,own-words,travellers,Every hostel common room sounds like a stadium.
-S030,reel,caption-style,everyone,Half of what people mean is on their face.
-S031,carousel,call-card,friends,"Five backpackers, four languages, one mango farm in Bowen."
-S032,still,one-tap-call,couples,"Long distance runs on tiny calls, not big ones."
-S041,reel,in-person,travellers,Haggling is mostly hand signals and hoping.
-S045,reel,in-person,newcomers,"School pickup is where friendships start, or don't."
-S048,reel,in-person,friends,Every waiting room has someone who wants to talk.
-S061,carousel,transcript-save,travellers,Directions in another language evaporate by the next corner.
-S062,still,transcript-save,newcomers,Party invitations come with five details and one chance.
-S064,carousel,not-right,friends,Australian slang breaks brains in any language.
-S065,still,not-right,everyone,Tagalog speakers notice every clumsy translation.
-S067,still,scroll-back,travellers,You always miss the number that mattered.
-S069,carousel,scroll-back,couples,"At Turkish dinners, the stories start when you're chewing."
-S070,still,scroll-back,newcomers,Tradies explain the important bit walking to the ute.
-S101,reel,names-words,couples,I call her Possum. Translations call her a rodent.
-S102,carousel,photos-in-call,couples,Her parents needed proof I can actually cook.
-S103,still,audio-only,couples,Calling her lola means standing by the window.
-S104,reel,gender-grammar,couples,"In Arabic, even 'happy' knows if you're a woman."
-S105,carousel,in-room,families,Grandkids never share a screen without a fight.
-S106,still,group-call,newcomers,"First Christmas away, at someone else's family table."
-S107,reel,names-words,families,Naming your son Banjo has consequences in Italian.
-S108,carousel,move-phone,families,Nan's new phone arrived. So did her panic.
-S133,carousel,slang-idioms,friends,Filipinos have one word for that giddy crush feeling.
-S134,reel,slang-idioms,everyone,Korean mums thank you by saying you suffered.
+S022,carousel,guest-no-app,travellers,The guesthouse owner in Vietnam speaks only Vietnamese.
+S024,carousel,one-tap-call,families,A baby's first steps happen only once.
+S027,still,recent-contacts,newcomers,"In a new country, you must call many people."
+S028,carousel,someone-waiting,newcomers,An employer calls while you are on a train.
+S029,still,own-words,travellers,You make a call from a very noisy room.
+S030,reel,caption-style,everyone,A person's face shows half of the meaning.
+S031,carousel,call-card,friends,You picked fruit with friends from four countries.
+S032,still,one-tap-call,couples,Your partner lives in Manila. You live far away.
+S041,reel,in-person,travellers,The market seller speaks Thai. You speak English.
+S045,reel,in-person,newcomers,You meet other parents at the school gate.
+S048,reel,in-person,friends,The man beside you speaks Greek. You speak English.
+S061,carousel,transcript-save,travellers,Your host in Istanbul explains the directions.
+S062,still,transcript-save,newcomers,Another parent invites your daughter to a party.
+S064,carousel,not-right,friends,Your Australian friend uses a lot of slang.
+S065,still,not-right,everyone,Your aunt in Manila talks fast in Tagalog.
+S067,still,scroll-back,travellers,The Thai seller says the price. You miss it.
+S069,carousel,scroll-back,couples,Your partner's father tells stories in Turkish at dinner.
+S070,still,scroll-back,newcomers,The gardener explains the important part as he leaves.
+S101,reel,names-words,couples,Captions translate your partner's nickname as an animal.
+S102,carousel,photos-in-call,couples,Your girlfriend's parents doubt that you can cook.
+S103,still,audio-only,couples,Your girlfriend's grandmother has weak internet.
+S104,reel,gender-grammar,couples,"In Arabic, women and men use different word forms."
+S105,carousel,in-room,families,Two children do not want to share one screen.
+S106,still,group-call,newcomers,It is your first Christmas away from home.
+S107,reel,names-words,families,Your son's name is also a normal English word.
+S108,carousel,move-phone,families,Your mother gets a new phone and she worries.
+S133,carousel,slang-idioms,friends,"In Tagalog, 'kilig' is the excitement of new love."
+S134,reel,slang-idioms,everyone,Koreans say 'sugohaesseoyo' to thank you for work.
 F023,filmed,I don't speak your language,everyone,Brazilian flirting lessons at Eat Street
 F024,filmed,I don't speak your language,everyone,What surprised her most about Australia
 F025,filmed,I don't speak your language,everyone,Rate my shukran out of ten

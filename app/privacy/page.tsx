@@ -4,19 +4,13 @@ import { BRAND } from "@/shared/brand";
 
 export const metadata: Metadata = { title: `Privacy · ${BRAND.appName}` };
 
+// Providers are named by what they do, not who they are (that list is kept privately and given to a
+// data protection authority on request).
 const providers = [
-  { name: "Fly.io", role: "Runs our servers (Frankfurt, Germany, where calls are handled, and Sydney, Australia, which only serves the app's pages). Handles the connection between your device and us.", url: "https://fly.io/legal/privacy-policy/" },
-  {
-    name: "Soniox",
-    role: "Turns your speech into text and translates it, live. Its policy says real-time requests are processed transiently, not stored, and never used to train its models.",
-    url: "https://soniox.com/policies/privacy-policy",
-  },
-  {
-    name: "Anthropic (Claude)",
-    role: "Rewrites each finished sentence into natural wording in the other person's language. Its commercial terms say it may not train models on this content.",
-    url: "https://www.anthropic.com/legal/commercial-terms",
-  },
-  { name: "Cloudflare and Google", role: "Public servers that help the two devices find each other (STUN). They see your IP address, not your call.", url: "https://www.cloudflare.com/privacypolicy/" },
+  { name: "Cloud hosting", role: "Runs our servers and carries the connection between your device and us." },
+  { name: "Speech recognition", role: "Turns your speech into text, live. Requests are processed as they happen, not stored, and not used to train its models." },
+  { name: "AI translation", role: "Rewrites each finished sentence into natural wording in the other person's language. It may not train its models on this content." },
+  { name: "Connection helpers", role: "Public servers that help the two devices find each other. They see your IP address, not your call." },
 ];
 
 export default function Privacy() {
@@ -41,7 +35,7 @@ export default function Privacy() {
 
         <h2>Who we are</h2>
         <p>
-          {BRAND.appName} is run by {BRAND.operator}, who is responsible for your data (the &ldquo;controller&rdquo; under the EU GDPR and Türkiye&rsquo;s KVKK). Contact: {BRAND.contactEmail}.
+          {BRAND.appName} (&ldquo;we&rdquo;, &ldquo;us&rdquo;) is responsible for your data (the &ldquo;controller&rdquo; under the EU GDPR and Türkiye&rsquo;s KVKK). Contact: {BRAND.contactEmail}.
         </p>
 
         <h2>What happens to your data during a call</h2>
@@ -53,9 +47,9 @@ export default function Privacy() {
         </p>
         <h3>Your speech, for captions</h3>
         <p>
-          While you are speaking and the other person is on the call, your browser also sends your microphone audio to our server, which streams it to Soniox to be
-          transcribed and translated. Silence and audio picked up while you are muted are not sent. Each finished sentence (as text), with the last few sentences of the
-          conversation for context, is sent to Anthropic&rsquo;s Claude to produce a natural translation. The result is shown to the other person as captions.
+          While you are speaking and the other person is on the call, your browser also sends your microphone audio to our server, which streams it to our speech recognition provider to be
+          transcribed. Silence and audio picked up while you are muted are not sent. Each finished sentence (as text), with the last few sentences of the
+          conversation for context, is sent to our AI translation provider to produce a natural translation. The result is shown to the other person as captions.
         </p>
         <h3>Captions and transcript</h3>
         <p>
@@ -73,8 +67,8 @@ export default function Privacy() {
           Your name, gender, where you&rsquo;re from, the names and words you add, your usual topics and caption settings are saved only in your own browser or app on
           this device. We have no account for you. When you join a call, your name is shown to the other people, and the rest is sent to our server and held in memory
           only while you are in the call: gender is used for grammar in languages such as Russian or Arabic, and where you&rsquo;re from, your words and topics help
-          speech recognition spell your words and the translation understand your slang. Your words and topics are also given to Soniox (as recognition hints) and
-          Anthropic (with the sentence being translated). Nothing of your profile is stored by us after the call. &ldquo;Clear my profile&rdquo; removes it from your
+          speech recognition spell your words and the translation understand your slang. Your words and topics are also given to our speech recognition provider (as recognition hints) and
+          our AI translation provider (with the sentence being translated). Nothing of your profile is stored by us after the call. &ldquo;Clear my profile&rdquo; removes it from your
           device.
         </p>
         <h3>Profile photo and Recent</h3>
@@ -128,14 +122,11 @@ export default function Privacy() {
         </p>
 
         <h2>Providers we use</h2>
-        <p>These companies process data on our behalf only to run the service. Some of them process data outside the EU and Türkiye, including in the United States.</p>
+        <p>These providers process data on our behalf only to run the service, under agreements that protect it. Data may be processed in other countries, including the United States, the European Union and Australia.</p>
         <ul>
           {providers.map((p) => (
             <li key={p.name}>
-              <a href={p.url} target="_blank" rel="noreferrer">
-                {p.name}
-              </a>
-              : {p.role}
+              <b>{p.name}</b>: {p.role}
             </li>
           ))}
         </ul>

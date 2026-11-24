@@ -16,7 +16,7 @@ export default function Terms() {
 
         <h2>Who we are</h2>
         <p>
-          {BRAND.appName} is run by {BRAND.operator} (&ldquo;we&rdquo;, &ldquo;us&rdquo;). By using {BRAND.appName}, on the web or in the app, you agree to these terms. If you
+          {BRAND.appName} (&ldquo;we&rdquo;, &ldquo;us&rdquo;) provides this service. By using {BRAND.appName}, on the web or in the app, you agree to these terms. If you
           don&rsquo;t agree, please don&rsquo;t use it. Contact: {BRAND.contactEmail}.
         </p>
 

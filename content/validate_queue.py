@@ -11,6 +11,7 @@ POSES = set(re.findall(r"[a-z]+(?:-[a-z]+)+", open(__file__.replace("validate_qu
 POSES -= {"partner-a", "partner-b"}
 US = r"\b(color|colors|favorite|mom|moms|organize|realize|realized|traveling|traveler|center|program|neighbor|apologize|behavior)\b"
 HYPE = r"\b(best|amazing|incredible|game-changer|game changer|revolutionary|unbelievable|insane)\b"
+PLAIN = r"\b(tradie|tradies|sparky|sparkies|ute|arvo|mate|mates|footy|netball|heaps|reckon|nan|aunty|nene|dede|yiayia|lola|teta|baba|nonna|tita|saga|sagas|sorted|kettle|sunnybank|footscray|fitzroy|dandenong|bowen|kad[ıi]k[öo]y|collingwood|inala|fiumicino|simit|sarma|bayram)\b"
 import os
 feat = {r["feature_id"]: r["status"] for r in csv.DictReader(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "features.csv")))}
 words = lambda s: len(s.split())
@@ -52,6 +53,13 @@ def check(path):
         if re.search("[–—]", allt): e("has an en or em dash")
         if re.search(US, allt, re.I): e(f"US spelling: {re.search(US, allt, re.I).group(0)}")
         if re.search("[\U0001F300-\U0001FAFF☀-➿]", allt): e("has an emoji")
+        # Plain words: regional slang, borrowed family words and local place names, outside quoted slang examples.
+        plain = re.sub(r"'[^']*'", "", " ".join(r[c] for c in ["hook", "old_way", "cost", "mechanic", "change", "caption", "voiceover_script", "tiktok_hook", "tiktok_caption"]).replace("\u2019", "'"))
+        plain = re.sub(r"#\w+", "", plain)
+        m = re.search(PLAIN, plain, re.I)
+        if m: e(f"not plain English: {m.group(0)}")
+        for k in ["hook", "old_way", "cost", "mechanic", "change"]:
+            if not re.search(r"[.!?]['\"]?$", r[k].strip()): e(f"{k} is not a full sentence (no end stop)")
     return rows, bad
 if __name__ == "__main__":
     total = 0

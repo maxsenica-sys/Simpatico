@@ -9,7 +9,7 @@ import { frame, page } from "./slides.mjs";
 import { open, done, readQueue } from "./shot.mjs";
 import { folder, writeText } from "./render.mjs";
 const here = path.dirname(fileURLToPath(import.meta.url));
-const FPS = 30, ASK = 3.0;
+const FPS = 30, ASK = 5.0;
 const count = (s) => s.trim().split(/\s+/).length;
 
 /** How long each scene stays up: enough to read its line, and never shorter overall than the voiceover takes to say. */
@@ -39,7 +39,8 @@ document.querySelectorAll('.scene').forEach((sc,i)=>{const s=S[i];
   sc.querySelectorAll('[data-pulse]').forEach((e)=>add(e,[{transform:'scale(1)'},{transform:'scale(1.09)'},{transform:'scale(1)'}],{delay:s+1500,duration:900,iterations:Infinity,easing:'ease-in-out',fill:'none'}));
   sc.querySelectorAll('[data-a=card]').forEach((e)=>add(e,[{transform:'scale(.6)',opacity:0},{transform:'scale(1)',opacity:1}],{delay:s+250,duration:420,easing:POP}));
   sc.querySelectorAll('.mark.big .bl,.mark.big .br').forEach((e,j)=>{e.style.transformBox='fill-box';e.style.transformOrigin=j?'80% 100%':'20% 100%';add(e,[{transform:'scale(0)'},{transform:'scale(1)'}],{delay:s+600+j*300,duration:420,easing:POP})});
-  sc.querySelectorAll('[data-a=slogan]').forEach((e)=>add(e,[{opacity:0},{opacity:1}],{delay:s+1500,duration:400}));
+  sc.querySelectorAll('[data-a=step]').forEach((e,j)=>add(e,[{opacity:0,transform:'translateX(-40px)'},{opacity:1,transform:'none'}],{delay:s+1300+j*650,duration:380}));
+  sc.querySelectorAll('[data-a=slogan]').forEach((e)=>add(e,[{opacity:0},{opacity:1}],{delay:s+3500,duration:400}));
 });
 window.setTime=(ms)=>{for(const a of A)a.currentTime=ms};setTime(0);
 </script>`;

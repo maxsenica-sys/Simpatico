@@ -32,7 +32,11 @@ export const CSS = `${LOCKUP_CSS}${SCREEN_CSS}
 .band small{display:block;font-size:20px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:${C.mint};margin-bottom:5px}
 .askcard{display:flex;flex-direction:column;align-items:center;gap:6px;padding:44px 60px 38px;border-radius:64px;background:rgba(255,255,255,.06);box-shadow:0 0 0 2px rgba(255,255,255,.12) inset}
 .askcard span{font-size:84px;font-weight:800;letter-spacing:-.03em;color:${C.ink}}
-.slogan{font-size:34px;font-weight:700;color:rgba(244,245,247,.6);text-align:center;line-height:1.25}
+.askcard.small{flex-direction:row;gap:22px;padding:26px 48px 26px 36px;border-radius:48px}.askcard.small span{font-size:72px}
+.steps{display:flex;flex-direction:column;gap:22px}
+.step{display:flex;align-items:center;gap:26px;font-size:42px;font-weight:700;color:${C.ink};line-height:1.15;letter-spacing:-.01em}
+.step b{flex:none;width:76px;height:76px;border-radius:50%;background:${C.mint};color:${C.dark};display:grid;place-items:center;font-size:40px;font-weight:800}
+.slogan{font-size:32px;font-weight:700;color:rgba(244,245,247,.6);text-align:center;line-height:1.25}
 `;
 const FIT = `<script>for(const el of document.querySelectorAll('[data-fit]')){let[max,min]=el.dataset.fit.split(',').map(Number),s=max;el.style.fontSize=s+'px';while(s>min&&(el.scrollHeight>el.clientHeight+1||el.scrollWidth>el.clientWidth+1)){s-=2;el.style.fontSize=s+'px'}}</script>`;
 
@@ -89,12 +93,17 @@ export function frame(post, beat, opts = {}) {
     inner += `<div class="band" data-a="band" style="left:${pad}px;${tt ? `top:644px;width:${tw}px` : `right:${pad}px;bottom:56px`}">${mark(86)}<div class="tx"><small>Simpatico</small>${esc(post.mechanic)}</div></div>`;
     if (tt) inner += lock(tone);
   } else if (beat === 5) {
+    // The ask, then how simple it is, the same three steps on every post.
     tone = TONES.dark;
-    const cy = tt ? 560 : 300;
+    const steps = post.ui_card === "ui-inperson-split" ? ["Open In person.", "Put the phone between you.", "Each of you reads your own half."]
+      : post.ui_card === "ui-group-captions" ? ["Send one link.", "Everyone taps it. No app needed.", "Each person reads in their own language."]
+      : ["Send a link.", "They tap it. No app, no account.", "Talk in your language. Read theirs."];
+    const cy = tt ? 250 : 96;
     inner += art(W, H, motif(tone, -260, H - 760, 30) + motif(tone, W - 700, -420, 26, true));
-    inner += `<div data-a="card" style="left:0;right:0;top:${cy}px;display:flex;justify-content:center"><div class="askcard">${mark(250, "big")}<span>Simpatico</span></div></div>`;
-    inner += `<div class="head" data-fit="84,48" style="left:${pad + 40}px;top:${cy + 500}px;width:${W - 2 * pad - 80}px;height:230px;color:${C.ink};text-align:center;align-items:center;justify-content:center"><span class="t">${words(text)}</span></div>`;
-    inner += `<div class="slogan" data-a="slogan" style="left:0;right:0;top:${cy + (tt ? 790 : 750)}px">Different languages. Same conversation.</div>`;
+    inner += `<div data-a="card" style="left:0;right:0;top:${cy}px;display:flex;justify-content:center"><div class="askcard small">${mark(150, "big")}<span>Simpatico</span></div></div>`;
+    inner += `<div class="head" data-fit="80,48" style="left:${pad + 40}px;top:${cy + 330}px;width:${W - 2 * pad - 80}px;height:190px;color:${C.ink};text-align:center;align-items:center;justify-content:center"><span class="t">${words(text)}</span></div>`;
+    inner += `<div class="steps" style="left:${tt ? 110 : 150}px;top:${cy + 560}px;width:${tt ? 760 : 780}px">${steps.map((t, i) => `<div class="step" data-a="step"><b>${i + 1}</b><span>${esc(t)}</span></div>`).join("")}</div>`;
+    inner += `<div class="slogan" data-a="slogan" style="left:0;right:0;top:${cy + (tt ? 1010 : 985)}px">Different languages. Same conversation.</div>`;
     if (chrome && !tt) inner += `<div style="left:0;right:0;top:${footY + 26}px;display:flex;justify-content:center">${dots(5, tone)}</div>`;
   } else if (beat === 3) {
     tone = TONES.mint;

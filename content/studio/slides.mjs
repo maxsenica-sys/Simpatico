@@ -111,7 +111,7 @@ export function frame(post, beat, opts = {}) {
     tone = TONES[[n % 2 ? "dark" : "blue", "ink", "dark", "mint", "inkblue"][beat]];
     const pose = [post.pose_1, post.pose_2, post.pose_3, post.pose_4, post.pose_5][beat];
     const x = [W * 0.6, W * 0.42, W * 0.5, 0, W * 0.56][beat];
-    const ch = tt ? 700 : beat === 0 ? 590 : 660;
+    const ch = tt ? 670 : beat === 0 ? 560 : 606;
     const m = beat === 0 ? motif(tone, -200, feet - 700, 24) : beat === 4 ? motif(tone, W - 820, feet - 820, 24, true) : "";
     inner += art(W, H, m + stage(tone, pose, { x: isPair(pose) ? W / 2 : x, feet, h: ch, maxW: tt ? 900 : 860 }));
     inner += head(text, tone, { x: pad, y: beat === 0 && !tt ? 96 : headY, w: tw, h: tt ? 420 : beat === 0 ? 470 : 400 }, beat === 0 ? (tt ? "128,56" : "118,56") : tt ? "100,48" : "96,46");

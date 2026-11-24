@@ -1,7 +1,7 @@
 // Shared pieces: fonts, the logo, character helpers.
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { figure, CAST, C } from "./cast.mjs";
+import { figure, CAST, C, headBox } from "./cast.mjs";
 import { POSES } from "./poses.mjs";
 export { C };
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -40,13 +40,13 @@ export const charOf = (pose) => (POSES[pose] && !["two-people-one-phone", "famil
 export const isPair = (pose) => !charOf(pose);
 /** Head and shoulders of a cast member, for video tiles. */
 export function bust(who, pose = {}, attrs = "") {
-  const s = CAST[who].scale;
-  return `<svg ${attrs} viewBox="${-190 * s} ${-650 * s} ${380 * s} ${350 * s}" preserveAspectRatio="xMidYMax slice">${figure(who, { expr: "grin", ...pose })}</svg>`;
+  const k = CAST[who].scale, hb = headBox(who), r = hb.r * k, cy = hb.cy * k;
+  return `<svg ${attrs} viewBox="${-r * 3.1} ${cy - r * 2.3} ${r * 6.2} ${r * 5.7}" preserveAspectRatio="xMidYMax slice">${figure(who, { expr: "grin", ...pose })}</svg>`;
 }
 /** A pose placed with its feet at (x, y) and about h pixels tall (pairs are fitted to maxW). */
 export function placed(pose, { x, y, h, maxW = 900, flip = false }) {
-  let scale = h / 610;
-  if (isPair(pose)) scale = Math.min(scale, maxW / (pose === "family-group-call" ? 720 : 700));
+  let scale = h / 575;
+  if (isPair(pose)) scale = Math.min(scale, maxW / (pose === "family-group-call" ? 640 : 620));
   return POSES[pose]({ x, y, scale, flip });
 }
 export const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

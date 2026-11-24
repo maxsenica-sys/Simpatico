@@ -13,6 +13,7 @@ Nothing here is drawn by hand, so a change to a costume, a colour or a template 
 | `render.mjs` | Renders carousels and stills. |
 | `reel.mjs` | Renders reels as video, frame by frame. |
 | `gallery.mjs` | Builds `content/out/index.html`, every post in posting order with captions to copy. |
+| `pack.py` | Zips the output for handing over: one zip per week of the plan, plus the spare posts. |
 
 ## Render
 
@@ -30,6 +31,10 @@ node content/studio/reel.mjs
 
 ```bash
 node content/studio/gallery.mjs
+```
+
+```bash
+python3 content/studio/pack.py
 ```
 
 Add post ids to render only those (`node content/studio/render.mjs S001 S043`). Output goes to `content/out/`

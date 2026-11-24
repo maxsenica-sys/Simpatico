@@ -1,8 +1,8 @@
 // Renders the reels: the same five beats and the ask as moving scenes, 1080 x 1920, 30 frames a
 // second. Every frame is drawn by setting the animations to an exact time, so a render is repeatable.
-//   node content/studio/reel.mjs [post ids...] [--part i/n] [--only ig|tt]
+//   node content/studio/reel.mjs [post ids...] [--part i/n] [--only ig|tt] [--missing]
 import { spawn } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { frame, page } from "./slides.mjs";
@@ -52,21 +52,27 @@ async function render(p, hook, file) {
   const { total } = timing(p);
   const pg = await open(reelPage(p, hook), 1080, 1920);
   const ff = spawn("ffmpeg", ["-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", String(FPS), "-c:v", "mjpeg", "-i", "-", "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
-    "-c:v", "libx264", "-preset", "medium", "-crf", "17", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "96k", "-shortest", "-movflags", "+faststart", file], { stdio: ["pipe", "inherit", "inherit"] });
+    "-c:v", "libx264", "-preset", "medium", "-crf", "17", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "96k", "-shortest", "-movflags", "+faststart", "-f", "mp4", file + ".part"], { stdio: ["pipe", "inherit", "inherit"] });
   const n = Math.round(total * FPS);
   for (let f = 0; f < n; f++) {
     await pg.evaluate((t) => window.setTime(t), (f / FPS) * 1000);
-    const buf = await pg.screenshot({ type: "jpeg", quality: 93 });
+    let buf;
+    for (let tries = 0; !buf; tries++) {
+      try { buf = await pg.screenshot({ type: "jpeg", quality: 93 }); }
+      catch (e) { if (tries > 4) throw e; await new Promise((r) => setTimeout(r, 400)); }
+    }
     if (!ff.stdin.write(buf)) await new Promise((r) => ff.stdin.once("drain", r));
   }
   ff.stdin.end();
   await new Promise((r) => ff.on("close", r));
   await pg.close();
+  renameSync(file + ".part", file);
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const part = args.includes("--part") ? args[args.indexOf("--part") + 1].split("/").map(Number) : null;
   const only = args.includes("--only") ? args[args.indexOf("--only") + 1] : null;
+  const missing = args.includes("--missing"); // only the files that are not there yet
   const ids = args.filter((a) => /^S\d+$/.test(a));
   let q = (await readQueue(path.resolve(here, "../queue.csv"))).filter((p) => p.format === "reel" && (!ids.length || ids.includes(p.post_id)));
   if (part) q = q.filter((_, i) => i % part[1] === part[0]);
@@ -76,8 +82,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const names = ["Hook", "Right now", "What it costs", "With Simpatico", "What changes", "Ask"];
     const lines = [p.hook, p.old_way, p.cost, p.mechanic, p.change, p.ask];
     writeFileSync(path.join(dir, "voiceover.txt"), `Voiceover (${count(p.voiceover_script)} words, the video runs ${t.total.toFixed(1)} seconds):\n\n${p.voiceover_script}\n\nWhat is on screen, and when:\n${names.map((nm, i) => `${sec(t.starts[i])} s  ${nm}: ${lines[i]}`).join("\n")}\n`);
-    if (only !== "tt") await render(p, undefined, path.join(dir, "reel-instagram.mp4"));
-    if (only !== "ig") await render(p, p.tiktok_hook, path.join(dir, "reel-tiktok.mp4"));
+    const want = [["ig", undefined, "reel-instagram.mp4"], ["tt", p.tiktok_hook, "reel-tiktok.mp4"]].filter(([k, , f]) => only !== (k === "ig" ? "tt" : "ig") && !(missing && existsSync(path.join(dir, f))));
+    for (const [, hook, f] of want) await render(p, hook, path.join(dir, f));
     console.log(p.post_id, t.total.toFixed(1) + "s");
   }
   await done();

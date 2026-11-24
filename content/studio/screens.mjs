@@ -142,7 +142,8 @@ export function context(post) {
   if (!remote) remote = self === "grandma" ? "grandkid" : self === "partner-a" ? "partner-b" : "grandma";
   if (post.pose_4 === "two-people-one-phone") remote = "shopkeeper";
   const n = parseInt(post.post_id.slice(1), 10);
-  return { lang, L, self, remote, name: L.names[KIND[remote]], n, poses };
+  // partner-a is the Australian in the cast, so he keeps an English name whatever the other language is.
+  return { lang, L, self, remote, name: remote === "partner-a" ? "Max" : L.names[KIND[remote]], n, poses };
 }
 
 function callCaptions(post, x) {

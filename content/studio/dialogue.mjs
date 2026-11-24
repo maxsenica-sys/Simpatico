@@ -85,7 +85,7 @@ export function quoted(post) {
   if (m.length < 2) return null;
   let read = m[1].slice(0, m[1].lastIndexOf("'"));
   read = read[0].toUpperCase() + read.slice(1) + (/[.!?]$/.test(read) ? "" : ".");
-  const said = m[0].match(/(?:says|yells) '(.+)'/);
+  const said = m[0].match(/(?:says|yells) '(.+?)'[;,]/);
   return { said: said ? said[1] : null, read };
 }
 /** Posts whose phone shows a different language from the first one their words name. */

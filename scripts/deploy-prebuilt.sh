@@ -19,5 +19,7 @@ COPY . .
 EXPOSE 8080
 CMD ["node_modules/.bin/tsx", "server.ts"]
 DOCKER
-(cd "$STAGE" && "$FLY" deploy --local-only --ha=false --yes)
+# Only the running servers; the parked ones (iad lax gru jnb sin nrt) stay stopped. To turn them on:
+# DEPLOY_REGIONS=fra,syd,iad,lax,gru,jnb,sin,nrt, then fly machine uncordon + start (docs/launch-steps.md).
+(cd "$STAGE" && "$FLY" deploy --local-only --ha=false --yes --regions "${DEPLOY_REGIONS:-fra,syd}")
 rm -rf "$STAGE"

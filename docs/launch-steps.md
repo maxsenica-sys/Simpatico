@@ -6,7 +6,15 @@ Kept in the repository so they survive beyond any one chat. Last updated 21 Nove
 - Apple Developer account: **individual** (no company yet).
 - Legal owner: **Max Senica** (individual; kept here only, never on public pages, which say "Simpatico"). Support email: **simpaticosupport@gmail.com**.
 - Public pages name providers by role only (cloud hosting, speech recognition, AI translation, connection helpers). The real list, for a regulator on request: Fly.io (hosting: fra calls; syd, iad, lax, gru, jnb, sin, nrt pages), Soniox (speech), Anthropic (translation), Cloudflare and Google (STUN).
-- Servers (24 Nov 2026): calls in Frankfurt; page servers on every continent (about US$3 to 5 a month each).
+- Servers (24 Nov 2026): Frankfurt (calls and pages) and Sydney (pages) running. Six more page servers are set up but **parked** (stopped and cordoned, no traffic, near-zero cost: only their 1 GB disks, about US$0.15 a month each): iad, lax, gru, jnb, sin, nrt. Deploys go only to fra and syd (scripts/deploy-prebuilt.sh). To turn them on: `fly machine uncordon <id>` and `fly machine start <id>` for each, then deploy once with `DEPLOY_REGIONS=fra,syd,iad,lax,gru,jnb,sin,nrt`. Ids: iad 8111ee1b47d408, lax 874599c63427e8, gru d8d1390c507658, jnb 8303d6a72d2698, sin 48ee713cde6658, nrt e82667dc430258.
+
+## Privacy to-do (agreed 24 Nov 2026, to do soon)
+Max wants nothing in the app that leads back to him personally. Done: public pages say "Simpatico", providers named only by role, no server locations. Still to do:
+1. **Company:** set up a Pty Ltd (or at least register "Simpatico" as a business name under his ABN) so a business, not a person, stands behind the privacy policy and terms.
+2. **Apple organisation account:** an individual account shows "Max Senica" as the seller on the App Store. Moving to an organisation account (needs the company and a free D-U-N-S number) shows the company instead. Do this before the public launch.
+3. **Own domain:** talk-calls.fly.dev names the hosting company. Buy the domain, then point the app, links and bio links at it.
+4. **Support email:** simpaticosupport@gmail.com is fine for now; move to support@<domain> with the domain.
+(The GitHub repository stays public by choice, for easy updates.)
 - Terms of use (/terms) under **Queensland** law; support page (/support); privacy (/privacy).
 - App name **Simpatico**, bundle ID **app.simpatico** (no "call").
 - Long-speech captions: **"Make room"** is the default (smaller text, video moves up); "Scroll" stays as an option.

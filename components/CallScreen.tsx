@@ -55,7 +55,8 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   }, []);
   const stageRef = useRef<HTMLVideoElement>(null);
   const [blocked, setBlocked] = useState<Set<string>>(new Set());
-  const [selfView, setSelfView] = useState(true);
+  /** Your own words, opened on purpose with the "You" button to scroll back through them. */
+  const [ownPinned, setOwnPinned] = useState(false);
   const [selfMode, setSelfMode] = useState<SelfMode>("small");
   const [transcript, setTranscript] = useState(false);
   const [more, setMore] = useState(false);
@@ -307,7 +308,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   const ccState = worst([s.captionStatus, s.myCaptionStatus]);
   const showOwn = connected && s.ownLine && now - s.ownLine.at < OWN_LINE_MS;
   // Your own recent sentences, for the scrollable "You" panel.
-  const ownLines = s.transcript.filter((l) => l.who === "me" && l.text.trim()).slice(-12);
+  const ownLines = s.transcript.filter((l) => l.who === "me" && l.text.trim()).slice(-80);
   const showOwnHint = showOwn && firstOwnAt !== null && now - firstOwnAt < 8000;
   const names = Object.fromEntries(s.participants.map((p) => [p.id, p.name]));
   const anySpeaking = s.participants.some((p) => p.speaking);
@@ -389,6 +390,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
       });
     if (!group && stage?.partnerAudioOnly && s.camOn) banners.push({ key: "partner-audio", tone: "info", text: t("theyAreAudioOnly") });
     for (const p of s.participants) if (p.away) banners.push({ key: `away-${p.id}`, tone: "info", text: t("isAway", { name: p.name }) });
+    for (const p of s.participants) if (p.bg && !p.away) banners.push({ key: `bg-${p.id}`, tone: "info", text: t("isOnVoice", { name: p.name }) });
     for (const p of s.participants) if (p.noMic && !p.away) banners.push({ key: `nomic-${p.id}`, tone: "info", text: t("peerNoMic", { name: p.name }) });
     // A photo or video just arrived: say who from, with a way to see it (the Text button keeps a count).
     const lastMedia = [...s.transcript].reverse().find((l) => l.media && l.who === "them");
@@ -438,7 +440,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
 
   return (
     <main
-      className={`call ${group ? "group" : ""} ${prefs.box ? "cap-box" : ""} ${selfView && s.camOn && s.selfVideo && selfMode === "split" ? "split" : ""}`}
+      className={`call ${group ? "group" : ""} ${prefs.box ? "cap-box" : ""} ${s.camOn && s.selfVideo && selfMode === "split" ? "split" : ""}`}
       style={{ ["--cap-size" as string]: CAPTION_SIZES[prefs.size] }}
     >
       <video
@@ -534,6 +536,21 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
               {ccState === "ok" ? t("captionsOn") : ccState === "paused" ? t("captionsPaused") : t("captionsUnavailable")}
             </button>
             {group && <span className="cc-pill count">{t("peopleCount", { n: String(s.participants.length + 1) })}</span>}
+            {/* Your own words again, to scroll back through: plain text, not another box. */}
+            {connected && ownLines.length > 0 && (
+              <button className={`you-tab ${ownPinned ? "on" : ""}`} aria-pressed={ownPinned} onClick={() => setOwnPinned((v) => !v)}>
+                {t("you")}
+                <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d={ownPinned ? "M2.5 7.5L6 4l3.5 3.5" : "M2.5 4.5L6 8l3.5-3.5"} />
+                </svg>
+              </button>
+            )}
+            {/* How long the call has run: small, still, and out of the way. */}
+            {s.startedAt !== null && (
+              <span className="call-time" role="timer" aria-label={t("callLength")}>
+                {clock(now - s.startedAt)}
+              </span>
+            )}
           </div>
           <div className="controls">
             <Ctrl label={t("lblMic")} title={s.muted ? t("unmute") : t("mute")} danger={s.muted} active={s.meSpeaking && !s.muted} onClick={() => call.setMuted(!s.muted)}>
@@ -563,18 +580,6 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
           </div>
           {more && (
             <div className="more-menu" role="menu">
-              {s.camOn && s.canSwitchCamera && (
-                <button
-                  role="menuitem"
-                  onClick={() => {
-                    void call.switchCamera();
-                    setMore(false);
-                  }}
-                >
-                  <FlipIcon />
-                  <span>{t("switchCamera")}</span>
-                </button>
-              )}
               {!s.audioOnly && (
                 <button
                   role="menuitem"
@@ -650,38 +655,25 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
                 lastAt={s.ownLine?.at ?? null}
                 speaking={s.meSpeaking && !s.muted}
                 hint={!!showOwnHint}
+                pinned={ownPinned}
+                onUnpin={() => setOwnPinned(false)}
               />
             )}
           </div>
         )}
       </div>
 
-      {selfView && s.camOn && s.selfVideo && (
+      {s.camOn && s.selfVideo && (
         <SelfView
           stream={s.selfVideo}
           mirror={facingMirror(s)}
           low={s.phase === "waiting"}
           mode={selfMode}
           onMode={setSelfMode}
-          onHide={() => {
-            setSelfView(false);
-            setSelfMode("small");
-          }}
-          hideLabel={t("hideSelf")}
+          onFlip={s.canSwitchCamera ? () => void call.switchCamera() : undefined}
+          flipLabel={t("switchCamera")}
           sizeLabel={t("selfSize")}
         />
-      )}
-      {!selfView && s.camOn && (
-        <button
-          className="self-restore"
-          aria-label={t("showSelf")}
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelfView(true);
-          }}
-        >
-          <CameraIcon off={false} size={18} />
-        </button>
       )}
 
       {prefs.long === "room" ? (
@@ -915,13 +907,11 @@ function MoreIcon() {
   );
 }
 
-function FlipIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22" {...svg} aria-hidden="true">
-      <path d="M4 7h11a5 5 0 0 1 5 5M20 17H9a5 5 0 0 1-5-5" />
-      <path d="M16 4l3 3-3 3M8 20l-3-3 3-3" />
-    </svg>
-  );
+/** 4:07, or 1:04:07 once past the hour. */
+function clock(ms: number): string {
+  const sec = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), ss = String(sec % 60).padStart(2, "0");
+  return h ? `${h}:${String(m).padStart(2, "0")}:${ss}` : `${m}:${ss}`;
 }
 function AudioOnlyIcon({ size = 22 }: { size?: number }) {
   return (

@@ -31,6 +31,8 @@ export type PeerStatus = {
   recvAudio: boolean | null;
   /** I switched to another app: my phone has paused my camera and mic, and I can't hear you. */
   away?: boolean;
+  /** I switched to another app but my microphone is still live: voice only until I'm back. */
+  bg?: boolean;
   /** My phone hasn't let me use my microphone yet (I can still hear you and read captions). */
   noMic?: boolean;
 };
@@ -127,3 +129,6 @@ export type InPersonServerMsg =
   | { t: "own"; by: "me" | "them"; id: string; text: string; final: boolean }
   | { t: "status"; state: CaptionState }
   | { t: "error"; code: "bad-request" | "unavailable" };
+
+/** The longest message you can type or paste into a call's chat (about what Instagram allows in a direct message). */
+export const TYPED_MAX = 1000;

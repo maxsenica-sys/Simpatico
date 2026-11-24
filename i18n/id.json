@@ -126,6 +126,8 @@
   "deniedApp": "Buka Pengaturan › Simpatico, izinkan Kamera dan Mikrofon, lalu kembali ke sini.",
   "micModes": "Isolasi Suara iPhone",
   "isAway": "{name} sedang keluar dari aplikasi sebentar dan tidak bisa mendengarmu.",
+  "isOnVoice": "{name} sedang di aplikasi lain. Kalian masih bisa saling mendengar.",
+  "callLength": "Lama panggilan",
   "selfSize": "Kameramu. Ketuk untuk ubah ukuran, seret untuk memindahkan.",
   "gender": "Jenis kelamin",
   "genderPick": "Pilih",

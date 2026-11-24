@@ -147,6 +147,20 @@ try {
   await a.getByPlaceholder("Type a message…").fill("my flat is number 12");
   await a.getByRole("button", { name: "Send", exact: true }).click();
   await b.waitForFunction(() => [...document.querySelectorAll(".cap")].some((e) => e.textContent.includes("(Turkish) my flat is number 12")), null, { timeout: 10000 });
+
+  step("A long pasted message: up to 1000 characters go through whole, the box grows, the counter shows near the limit");
+  const long = ("Take the tram to the last stop, then walk past the bakery. " .repeat(20)).slice(0, 1200);
+  await a.getByPlaceholder("Type a message…").fill(long);
+  const typed = await a.getByPlaceholder("Type a message…").inputValue();
+  if (typed.length !== 1000) throw new Error(`the box should hold 1000 characters, holds ${typed.length}`);
+  await a.locator(".type-count").filter({ hasText: "1000/1000" }).waitFor({ timeout: 3000 });
+  const boxH = await a.getByPlaceholder("Type a message…").evaluate((e) => e.getBoundingClientRect().height);
+  if (boxH < 100) throw new Error(`the box should grow for long text, is ${boxH}px tall`);
+  await a.screenshot({ path: OUT + "chat-long.png" });
+  await a.waitForTimeout(1100);
+  await a.getByRole("button", { name: "Send", exact: true }).click();
+  await a.waitForFunction((n) => [...document.querySelectorAll(".tline.me p")].some((e) => e.textContent.length >= n), 990, { timeout: 15000 });
+  await b.waitForFunction(() => [...document.querySelectorAll(".cap")].some((e) => e.textContent.includes("walk past the bakery")), null, { timeout: 15000 });
   await a.getByRole("button", { name: "Close", exact: true }).click();
   await b.locator(".controls").getByRole("button", { name: "Sohbeti aç" }).click();
   await b.getByRole("button", { name: "Altyazı ayarları" }).click();
@@ -207,13 +221,28 @@ try {
   await a.locator(".self.small").waitFor({ timeout: 3000 });
   if (await a.locator(".call.split").count()) throw new Error("split should be off again");
 
-  step("B switches to another app: A is told B can't hear; it clears when B comes back");
+  step("B switches to another app with the mic still live: A is told it's voice only; it clears when B comes back");
   const setVisible = (p, visible) => p.evaluate((v) => {
     Object.defineProperty(document, "visibilityState", { value: v ? "visible" : "hidden", configurable: true });
     document.dispatchEvent(new Event("visibilitychange"));
   }, visible);
   await setVisible(b, false);
+  await a.getByText("Ayşe is in another app. You can still hear each other.").waitFor({ timeout: 8000 });
+  await b.waitForTimeout(600);
+  if (await a.locator(".no-video").count() === 0) throw new Error("A should see B's picture replaced while B is in another app");
+  await setVisible(b, true);
+  await a.getByText("Ayşe is in another app").waitFor({ state: "detached", timeout: 8000 });
+
+  step("B's phone pauses the mic in the background (a browser on iPhone): A is told B can't hear");
+  await b.evaluate(() => {
+    const proto = MediaStreamTrack.prototype;
+    const real = Object.getOwnPropertyDescriptor(proto, "muted");
+    window.__realMuted = real;
+    Object.defineProperty(proto, "muted", { configurable: true, get() { return this.kind === "audio" ? true : real.get.call(this); } });
+  });
+  await setVisible(b, false);
   await a.getByText("Ayşe left the app for a moment").waitFor({ timeout: 8000 });
+  await b.evaluate(() => Object.defineProperty(MediaStreamTrack.prototype, "muted", window.__realMuted));
   await setVisible(b, true);
   await a.getByText("Ayşe left the app for a moment").waitFor({ state: "detached", timeout: 8000 });
 

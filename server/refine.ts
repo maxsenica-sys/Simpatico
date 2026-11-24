@@ -371,11 +371,13 @@ export async function refine(input: RefineInput): Promise<string | null> {
     .join("\n\n");
 
   const started = Date.now();
+  // Speech comes a sentence at a time; a pasted chat message can be far longer and needs the room.
+  const maxTokens = Math.min(1800, Math.max(400, Math.round(input.source.length * 1.6)));
   try {
     const res = await client.messages.create(
       {
         model: MODEL,
-        max_tokens: 400,
+        max_tokens: maxTokens,
         // Latency matters more than depth here: a subtitle rewrite needs no reasoning pass.
         thinking: { type: "disabled" },
         output_config: { effort: "medium" },
@@ -398,7 +400,7 @@ export async function refine(input: RefineInput): Promise<string | null> {
     }
     text = await fixLeftovers(text, input.source, input.sourceLang, input.targetLang, [...(input.callNames ?? []), ...(input.callWords ?? [])], (extra) =>
       client!.messages.create(
-        { model: MODEL, max_tokens: 400, thinking: { type: "disabled" }, output_config: { effort: "medium" }, system: [{ type: "text", text: SYSTEM }, { type: "text", text: slangReference(input.sourceLang, input.targetLang), cache_control: { type: "ephemeral" } }], messages: [{ role: "user", content: user }, ...extra] },
+        { model: MODEL, max_tokens: maxTokens, thinking: { type: "disabled" }, output_config: { effort: "medium" }, system: [{ type: "text", text: SYSTEM }, { type: "text", text: slangReference(input.sourceLang, input.targetLang), cache_control: { type: "ephemeral" } }], messages: [{ role: "user", content: user }, ...extra] },
         { signal: input.signal, maxRetries: 0 },
       ),
       context,

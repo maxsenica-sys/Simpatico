@@ -126,6 +126,8 @@
   "deniedApp": "Open Settings › Simpatico and allow Camera and Microphone, then come back.",
   "micModes": "iPhone voice isolation",
   "isAway": "{name} left the app for a moment and can't hear you.",
+  "isOnVoice": "{name} is in another app. You can still hear each other.",
+  "callLength": "Call length",
   "selfSize": "Your camera. Tap to change size, drag to move.",
   "gender": "Gender",
   "genderPick": "Choose",

@@ -65,6 +65,10 @@ export class MicCapture {
     await this.resume();
   }
 
+  /** "running", "suspended"…: for the logs when the app is in the background. */
+  get contextState(): string {
+    return this.ctx.state;
+  }
   async resume() {
     if (this.ctx.state !== "running") await this.ctx.resume().catch(() => {});
   }

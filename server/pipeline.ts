@@ -467,7 +467,8 @@ export class SpeakerPipeline {
       callNames: this.host.callNames?.(),
       callWords: this.host.callWords?.(),
       speakerName: this.host.speakerName?.(),
-      signal: AbortSignal.timeout(TYPED_TIMEOUT_MS),
+      // A long pasted message takes longer to translate than a typed sentence.
+      signal: AbortSignal.timeout(TYPED_TIMEOUT_MS + text.length * 12),
     }).then((out) => {
       // If translation fails, the reader still gets the message as typed rather than nothing.
       const shown = out ?? text;

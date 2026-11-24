@@ -4,6 +4,7 @@ import type { MediaError, MediaRef, TranscriptLine } from "@/lib/call";
 import type { CaptionPrefs } from "@/lib/captionPrefs";
 import { CaptionSettings } from "./CaptionSettings";
 import { useT } from "@/lib/i18n";
+import { TYPED_MAX } from "@/shared/protocol";
 
 export function Transcript({
   lines,
@@ -38,6 +39,17 @@ export function Transcript({
   const [view, setView] = useState<MediaRef | null>(null);
   const [mediaError, setMediaError] = useState<MediaError | null>(null);
   const picker = useRef<HTMLInputElement>(null);
+  const field = useRef<HTMLTextAreaElement>(null);
+  // The box grows with what you type or paste, up to about six lines, then scrolls.
+  useEffect(() => {
+    const el = field.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 148)}px`;
+  }, [draft]);
+  const submit = () => {
+    if (draft.trim() && onType?.(draft)) setDraft("");
+  };
   const pick = async (files: FileList | null) => {
     if (!files || !onMedia) return;
     setMediaError(null);
@@ -147,7 +159,7 @@ export function Transcript({
             className="type-row"
             onSubmit={(e) => {
               e.preventDefault();
-              if (draft.trim() && onType(draft)) setDraft("");
+              submit();
             }}
           >
             {onMedia && (
@@ -162,15 +174,30 @@ export function Transcript({
                 <input ref={picker} type="file" accept="image/*,video/*" multiple hidden onChange={(e) => pick(e.target.files)} />
               </>
             )}
-            <input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder={t("typePlaceholder")}
-              aria-label={t("typePlaceholder")}
-              maxLength={300}
-              enterKeyHint="send"
-              autoComplete="off"
-            />
+            <div className="type-field">
+              <textarea
+                ref={field}
+                rows={1}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value.slice(0, TYPED_MAX))}
+                onKeyDown={(e) => {
+                  // A keyboard's Enter sends (Shift+Enter for a new line); on a phone Return makes a new line and Send sends.
+                  if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+                    e.preventDefault();
+                    submit();
+                  }
+                }}
+                placeholder={t("typePlaceholder")}
+                aria-label={t("typePlaceholder")}
+                maxLength={TYPED_MAX}
+                autoComplete="off"
+              />
+              {draft.length > TYPED_MAX * 0.8 && (
+                <span className={`type-count ${draft.length >= TYPED_MAX ? "full" : ""}`} aria-live="polite">
+                  {draft.length}/{TYPED_MAX}
+                </span>
+              )}
+            </div>
             <button className="btn primary small" type="submit" disabled={!draft.trim()}>
               {t("typeSend")}
             </button>

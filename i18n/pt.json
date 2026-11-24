@@ -126,6 +126,8 @@
   "deniedApp": "Abra Ajustes › Simpatico e permita Câmera e Microfone. Depois, volte aqui.",
   "micModes": "Isolamento de Voz do iPhone",
   "isAway": "{name} saiu do app por um momento e não está ouvindo você.",
+  "isOnVoice": "{name} está em outro app. Vocês ainda se ouvem.",
+  "callLength": "Duração da chamada",
   "selfSize": "Sua câmera. Toque para mudar o tamanho e arraste para mover.",
   "gender": "Gênero",
   "genderPick": "Escolha",

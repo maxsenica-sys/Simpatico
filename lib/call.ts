@@ -4,6 +4,7 @@ import type { ParticipantLang } from "@/shared/lang";
 import { validPhoto } from "./photo";
 import { validKey } from "./pair";
 import type { CaptionStage, CaptionState, CaptionStyle, Gender, SpeakerProfile, ClientMsg, PeerInfo, PeerStatus, RoomKind, ServerMsg, SignalData } from "@/shared/protocol";
+import { TYPED_MAX } from "@/shared/protocol";
 import { MicCapture } from "./audio";
 import { ScreenAwake } from "./wakeLock";
 import { getCameraTrack, getMicTrack, hasMultipleCameras, isMobileDevice } from "./media";
@@ -48,6 +49,8 @@ export type Participant = PeerInfo & {
   partnerAudioOnly: boolean;
   /** They switched to another app (their phone paused their camera and mic). */
   away: boolean;
+  /** They switched to another app but can still be heard (and hear): voice only until they're back. */
+  bg: boolean;
   /** Their phone hasn't let them use their microphone yet. */
   noMic: boolean;
   /** Their speech is being captioned right now. */
@@ -412,7 +415,7 @@ export class CallController {
   sendTyped(text: string): boolean {
     const t = text.trim();
     if (!t || this.ws?.readyState !== WebSocket.OPEN) return false;
-    this.send({ t: "typed", text: t.slice(0, 300) });
+    this.send({ t: "typed", text: t.slice(0, TYPED_MAX) });
     return true;
   }
 
@@ -537,21 +540,57 @@ export class CallController {
 
   /** This page is in the background (another app, or the screen locked). */
   private hidden = false;
+  /** In another app with the microphone still running (the iPhone and Android apps; a browser tab pauses it). */
+  private bgAudio = false;
+  private bgTimers: ReturnType<typeof setTimeout>[] = [];
+
+  /** Is my microphone really delivering sound right now? */
+  private micLive(): boolean {
+    const a = this.local.getAudioTracks()[0];
+    return !!a && a.readyState === "live" && !a.muted;
+  }
+  /** While in another app: keep the others told whether they can still hear me. */
+  private checkBackgroundMic = (why: string) => {
+    if (!this.hidden) return;
+    const live = this.micLive();
+    if (live !== this.bgAudio) {
+      this.bgAudio = live;
+      this.sendAllStatus();
+    }
+    this.log("bg_mic", { why, live, ctx: this.mic?.contextState ?? null });
+  };
 
   private onVisible = () => {
+    const mic = this.local.getAudioTracks()[0];
     if (document.visibilityState !== "visible") {
-      // Tell the others straight away: the phone is about to pause our camera and mic.
+      // Tell the others straight away: the phone pauses our camera, and (in a browser) our mic.
+      // Inside the app the mic keeps running, so the call carries on as voice only.
       if (!this.hidden) {
         this.hidden = true;
+        // Safari on iPhone pauses the mic a moment after you leave it, so there we assume the worst
+        // until a later look says otherwise; our own app, and other browsers, keep it running.
+        const iosBrowser = /iP(hone|ad|od)/.test(navigator.userAgent) && !/SimpaticoApp\//.test(navigator.userAgent);
+        this.bgAudio = !iosBrowser && this.micLive();
         this.sendAllStatus();
-        this.log("away", {});
+        void this.applyAllVideo();
+        this.log("away", { micLive: this.bgAudio });
+        if (mic) {
+          mic.onmute = () => this.checkBackgroundMic("mute");
+          mic.onunmute = () => this.checkBackgroundMic("unmute");
+        }
+        // The phone decides a moment after we leave; look again then.
+        this.bgTimers = [1500, 5000, 15000].map((ms) => setTimeout(() => this.checkBackgroundMic(`after ${ms}`), ms));
       }
       return;
     }
+    for (const id of this.bgTimers) clearTimeout(id);
+    this.bgTimers = [];
+    if (mic) mic.onmute = mic.onunmute = null;
     if (this.hidden) {
       this.hidden = false;
+      this.bgAudio = false;
       this.sendAllStatus();
-      this.log("back", {});
+      this.log("back", { micLive: this.micLive() });
     }
     this.mic?.resume();
     this.checkSocket();
@@ -725,7 +764,8 @@ export class CallController {
   /** I mean to be sending video to this person, whether or not it's working. */
   private sendingVideo(id: string): boolean {
     const p = this.participant(id);
-    return this.state.camOn && !!p && !p.partnerAudioOnly && this.mayShowVideo();
+    // In another app the phone has paused the camera: say so, so they see "camera off", not a frozen picture.
+    return this.state.camOn && !this.hidden && !!p && !p.partnerAudioOnly && this.mayShowVideo();
   }
 
   /** What actually goes out on each video sender: my camera, unless off, paused, or not my turn. */
@@ -855,6 +895,7 @@ export class CallController {
       videoOk: false,
       partnerAudioOnly: false,
       away: false,
+      bg: false,
       noMic: false,
       speaking: false,
       captionStatus: "ok",
@@ -1297,7 +1338,8 @@ export class CallController {
         wantVideo: !this.state.audioOnly,
         recvVideo: recv?.video ?? (p?.videoOk || null),
         recvAudio: recv?.audio ?? null,
-        away: this.hidden,
+        away: this.hidden && !this.bgAudio,
+        bg: (this.hidden && this.bgAudio) || undefined,
         noMic: this.state.noMic || undefined,
       },
     });
@@ -1440,6 +1482,7 @@ export class CallController {
     }
     if (s.cam !== p.remoteCam) this.patchParticipant(from, { remoteCam: s.cam });
     if (!!s.away !== p.away) this.patchParticipant(from, { away: !!s.away });
+    if (!!s.bg !== p.bg) this.patchParticipant(from, { bg: !!s.bg });
     if (!!s.noMic !== p.noMic) this.patchParticipant(from, { noMic: !!s.noMic });
     if (s.away) return; // their phone isn't measuring anything while they're in another app
 

@@ -126,6 +126,8 @@
   "deniedApp": "打开“设置” › Simpatico，允许“相机”和“麦克风”，然后返回此处。",
   "micModes": "iPhone 语音突显",
   "isAway": "{name} 暂时离开了 App，听不到你说话。",
+  "isOnVoice": "{name} 切到了其他 App，你们仍然能听到对方。",
+  "callLength": "通话时长",
   "selfSize": "你的画面。点按可调整大小，拖动可移动位置。",
   "gender": "性别",
   "genderPick": "请选择",

@@ -2,6 +2,7 @@ import { randomInt } from "node:crypto";
 import type { WebSocket } from "ws";
 import { baseLang, type ParticipantLang } from "../shared/lang";
 import type { CaptionStyle, Gender, PeerInfo, RoomKind, ServerMsg, SpeakerProfile, Topic } from "../shared/protocol";
+import { TYPED_MAX } from "../shared/protocol";
 import { log } from "./log";
 import { dropRoomMedia, newMediaKey } from "./media";
 import { SpeakerPipeline, type ReaderMsg } from "./pipeline";
@@ -233,11 +234,11 @@ export function reportLine(room: Room, peer: Peer, id: unknown) {
   log("translation_reported", { room: room.code, from: line.srcLang, to: line.tgtLang });
 }
 
-/** Type to talk: at most one message a second, 300 characters, plain text. */
+/** Type to talk: at most one message a second, TYPED_MAX characters, plain text (line breaks kept). */
 const lastTyped = new WeakMap<Peer, number>();
 export function typedText(room: Room, peer: Peer, raw: unknown) {
   if (typeof raw !== "string") return;
-  const text = raw.replace(/[\u0000-\u001f]/g, " ").trim().slice(0, 300);
+  const text = raw.replace(/\r\n?/g, "\n").replace(/[\u0000-\u0009\u000b-\u001f]/g, " ").replace(/\n{3,}/g, "\n\n").trim().slice(0, TYPED_MAX);
   const now = Date.now();
   if (!text || now - (lastTyped.get(peer) ?? 0) < 1000) return;
   lastTyped.set(peer, now);

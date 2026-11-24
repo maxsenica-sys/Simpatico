@@ -13,7 +13,8 @@ const OLD_CORNER_KEY = "talk.selfCorner";
 /**
  * Your own camera. Drag it anywhere along either side (it tucks against the nearer edge, at the
  * height you leave it, between the top bar and the captions); tap it to make it bigger, tap again to split the screen
- * with the other person, and once more to go back to the small preview.
+ * with the other person, and once more to go back to the small preview. The round arrows on it
+ * switch between the front and back cameras (turning the camera off is the Camera button up top).
  */
 export function SelfView({
   stream,
@@ -21,8 +22,8 @@ export function SelfView({
   low,
   mode,
   onMode,
-  onHide,
-  hideLabel,
+  onFlip,
+  flipLabel,
   sizeLabel,
 }: {
   stream: MediaStream;
@@ -31,8 +32,9 @@ export function SelfView({
   low: boolean;
   mode: SelfMode;
   onMode: (m: SelfMode) => void;
-  onHide: () => void;
-  hideLabel: string;
+  /** Switch between the front and back cameras (absent when the device has only one). */
+  onFlip?: () => void;
+  flipLabel: string;
   sizeLabel: string;
 }) {
   const video = useRef<HTMLVideoElement>(null);
@@ -125,9 +127,16 @@ export function SelfView({
       }}
     >
       <video ref={video} className={mirror} autoPlay playsInline muted />
-      <button className="self-x" aria-label={hideLabel} onClick={onHide}>
-        ×
-      </button>
+      {onFlip && (
+        <button className="self-flip" aria-label={flipLabel} title={flipLabel} onClick={onFlip}>
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M20 11a8 8 0 0 0-14.3-4.2L4 9" />
+            <path d="M4 4v5h5" />
+            <path d="M4 13a8 8 0 0 0 14.3 4.2L20 15" />
+            <path d="M20 20v-5h-5" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

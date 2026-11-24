@@ -1,6 +1,7 @@
 import UIKit
 import AVFoundation
 import Capacitor
+import WebKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -53,8 +54,35 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 /// The app's main screen: Capacitor's web view (loading the Simpatico web app) plus our plugins.
 class MainViewController: CAPBridgeViewController {
+    private var backgroundObserver: NSObjectProtocol?
+
     override open func capacitorDidLoad() {
         bridge?.registerPluginInstance(VoiceFocusPlugin())
+        // A call carries on as voice only when you leave the app (the "audio" background mode in
+        // Info.plist allows it). iOS pauses the camera itself; make sure the microphone is not
+        // paused with it: keep the audio session active and un-mute the web view's microphone if
+        // the system muted it on the way out.
+        backgroundObserver = NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.keepMicrophoneLive()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { self?.keepMicrophoneLive() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) { self?.keepMicrophoneLive() }
+        }
+    }
+
+    private func keepMicrophoneLive() {
+        guard UIApplication.shared.applicationState != .active, let web = bridge?.webView else { return }
+        if #available(iOS 15.0, *) {
+            // Only during a call (the page has the microphone); otherwise there is nothing to keep.
+            guard web.microphoneCaptureState != .none else { return }
+            try? AVAudioSession.sharedInstance().setActive(true)
+            if web.microphoneCaptureState == .muted {
+                web.setMicrophoneCaptureState(.active, completionHandler: nil)
+            }
+        }
+    }
+
+    deinit {
+        if let o = backgroundObserver { NotificationCenter.default.removeObserver(o) }
     }
 }
 

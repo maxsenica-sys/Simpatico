@@ -321,7 +321,6 @@ p { margin: 0; line-height: 1.5; }
 .remote.hidden-video { opacity: 0; }
 .no-video { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; background: radial-gradient(ellipse at center, #1a1f29, #07080a); color: var(--muted); }
 .no-video-icon { width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, 0.07); color: var(--text); }
-.self-restore { position: absolute; right: 12px; bottom: calc(var(--safe-b) + var(--cap-bottom) + var(--cap-size) * var(--cap-lh) * (var(--cap-lines) + 0.7) + 16px); width: 40px; height: 40px; border-radius: 50%; border: 0; display: grid; place-items: center; background: rgba(20, 22, 26, 0.6); cursor: pointer; }
 
 .typing { position: absolute; left: 0; right: 0; bottom: calc(var(--safe-b) + 6px); display: flex; gap: 8px; justify-content: center; opacity: 0.75; pointer-events: none; }
 .typing span { width: 9px; height: 9px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.8); animation: blink 1.2s infinite ease-in-out; }
@@ -358,7 +357,6 @@ p { margin: 0; line-height: 1.5; }
 .self.big { width: clamp(150px, 46vw, 340px); }
 /* Split: the other person in the top half, you in the bottom half (side by side in landscape). */
 .self.split { inset: 50% 0 0 0; width: auto; aspect-ratio: auto; border-radius: 0; border: 0; border-top: 2px solid #000; box-shadow: none; cursor: pointer; }
-.self.split .self-x { display: none; }
 .call.split .remote, .call.split .no-video { top: 0; left: 0; right: auto; bottom: auto; width: 100%; height: 50%; }
 .call.split .captions-zone { z-index: 5; }
 @media (orientation: landscape) {
@@ -366,7 +364,9 @@ p { margin: 0; line-height: 1.5; }
   .call.split .remote, .call.split .no-video { width: 50%; height: 100%; }
 }
 .self video { width: 100%; height: 100%; object-fit: cover; display: block; }
-.self-x { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(0, 0, 0, 0.55); font-size: 18px; line-height: 1; cursor: pointer; }
+/* Front / back camera, on your own picture. */
+.self-flip { position: absolute; top: 5px; right: 5px; width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(0, 0, 0, 0.5); color: #fff; display: grid; place-items: center; cursor: pointer; }
+.self-flip:active { background: rgba(0, 0, 0, 0.75); }
 
 /* Nothing on the call screen blurs the video behind it (backdrop-filter): over live video the
    blur is redone every frame, which costs battery and heat on a long call. */
@@ -402,7 +402,7 @@ p { margin: 0; line-height: 1.5; }
 .sheet-head h2 { margin: 0; }
 .sheet-body { flex: 1; overflow-y: auto; padding: 16px 16px calc(24px + var(--safe-b)); display: flex; flex-direction: column; gap: 14px; -webkit-overflow-scrolling: touch; user-select: text; -webkit-user-select: text; }
 .tline { max-width: 85%; }
-.tline p { font-size: 1.15rem; line-height: 1.45; }
+.tline p { font-size: 1.15rem; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
 .tline.them { align-self: flex-start; }
 .tline.me { align-self: flex-end; text-align: end; color: var(--muted); }
 .tline.live p { opacity: 0.6; }
@@ -426,7 +426,15 @@ p { margin: 0; line-height: 1.5; }
 .consent a, .home-foot a { color: var(--accent); }
 
 /* ---------------------------------------------------------------- group calls */
-.pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.pills { display: flex; gap: 6px; flex-wrap: wrap; align-self: stretch; align-items: center; }
+/* The call's running time and the way back to your own words: plain text on the picture, no box,
+   small and still, so they are there when wanted and never in the way. */
+.call-time { margin-inline-start: auto; padding: 5px 6px; font-size: 0.8rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; color: #fff; opacity: 0.8; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.5); pointer-events: none; }
+.you-tab { display: inline-flex; align-items: center; gap: 4px; padding: 5px 6px; border: 0; background: none; color: #fff; font: inherit; font-size: 0.8rem; font-weight: 700; opacity: 0.8; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.5); cursor: pointer; }
+.you-tab.on { opacity: 1; }
+/* Both sit together at the right end of the row. */
+.you-tab { margin-inline-start: auto; }
+.you-tab + .call-time { margin-inline-start: 0; }
 .cc-pill.count { cursor: default; }
 .controls { max-height: 196px; row-gap: 8px; column-gap: 4px; }
 .people { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 4px; scrollbar-width: none; justify-content: center; }
@@ -512,9 +520,13 @@ p { margin: 0; line-height: 1.5; }
 .sheet-foot { padding: 10px 16px calc(12px + var(--safe-b)); border-top: 1px solid var(--line); display: flex; }
 .sheet-foot { flex-direction: column; gap: 8px; }
 .sheet-foot > .btn { width: 100%; }
-.type-row { display: flex; gap: 8px; width: 100%; }
-.type-row input { flex: 1; min-width: 0; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
-.type-row input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.type-row { display: flex; gap: 8px; width: 100%; align-items: flex-end; }
+.type-field { position: relative; flex: 1; min-width: 0; display: flex; }
+.type-row textarea { flex: 1; min-width: 0; font: inherit; line-height: 1.35; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; resize: none; max-height: 148px; overflow-y: auto; display: block; }
+.type-row textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.type-count { position: absolute; right: 10px; bottom: 4px; font-size: 0.68rem; font-weight: 700; opacity: 0.6; font-variant-numeric: tabular-nums; pointer-events: none; }
+.type-count.full { color: var(--danger); opacity: 1; }
+.type-row textarea:has(+ .type-count) { padding-bottom: 20px; }
 .kbd-hint { width: 100%; margin: 0; }
 @media (hover: none) { .kbd-hint { display: none; } }
 

@@ -126,6 +126,8 @@
   "deniedApp": "Ouvre Réglages › Simpatico et autorise Appareil photo et Micro, puis reviens ici.",
   "micModes": "Isolation de la voix de l’iPhone",
   "isAway": "{name} a quitté l’app un instant et ne t’entend pas.",
+  "isOnVoice": "{name} est dans une autre app. Vous vous entendez toujours.",
+  "callLength": "Durée de l’appel",
   "selfSize": "Ta caméra. Touche pour changer la taille, fais glisser pour déplacer.",
   "gender": "Genre",
   "genderPick": "Choisir",

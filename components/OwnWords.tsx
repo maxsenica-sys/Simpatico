@@ -3,31 +3,25 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { TranscriptLine } from "@/lib/call";
 import { useT } from "@/lib/i18n";
 
-/** Stays on screen while you talk and this long after your last words. */
+/** Stays open while you talk and this long after your last words. */
 const SHOW_MS = 4_000;
-/** Opened with the "You" button: stays this long after your last touch. */
-const PIN_IDLE_MS = 8_000;
+/** Opened by touching it: stays open this long after your last touch. */
+const TOUCH_MS = 6_000;
 
 /**
- * "You": what speech recognition heard you say, so you can check it at a glance. Your recent
- * sentences in a small scrollable panel, newest at the bottom and kept in view as you talk.
- * It shows it can scroll (a scroll bar, a fade at the top and "Scroll for earlier"); scroll
- * back and it stays put, with "Latest" to jump back. Nothing is cut off with "…".
+ * "You": what speech recognition heard you say, so you can check it at a glance, and scroll back
+ * through it if a word came out wrong. A small box under the buttons. At rest it is one faint
+ * line (your last words); while you talk, or when you touch it, it grows to a few lines (no more,
+ * so the other person stays in view) with a scroll bar, and you can scroll back through what you
+ * said; "Latest" jumps back. Left alone, it settles to one line again. Nothing is cut off with "…".
  */
-export function OwnWords({ lines, lastAt, speaking, hint, pinned, onUnpin }: { lines: TranscriptLine[]; lastAt: number | null; speaking: boolean; hint: boolean; /** Opened on purpose (the "You" button): stays while you read. */ pinned?: boolean; onUnpin?: () => void }) {
+export function OwnWords({ lines, lastAt, speaking, hint }: { lines: TranscriptLine[]; lastAt: number | null; speaking: boolean; hint: boolean }) {
   const t = useT();
   const box = useRef<HTMLDivElement>(null);
   const [atBottom, setAtBottom] = useState(true);
   const [bar, setBar] = useState<{ top: number; height: number } | null>(null);
   const [now, setNow] = useState(() => Date.now());
-  const [touchedAt, setTouchedAt] = useState(() => Date.now());
-  useEffect(() => {
-    if (pinned) setTouchedAt(Date.now());
-  }, [pinned]);
-  // Opened on purpose: it closes by itself once you're back at the newest words and have left it alone.
-  useEffect(() => {
-    if (pinned && atBottom && !speaking && now - touchedAt > PIN_IDLE_MS) onUnpin?.();
-  }, [pinned, atBottom, speaking, now, touchedAt, onUnpin]);
+  const [touchedAt, setTouchedAt] = useState(0);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -44,41 +38,51 @@ export function OwnWords({ lines, lastAt, speaking, hint, pinned, onUnpin }: { l
     setBar({ height, top: (el.scrollTop / over) * (el.clientHeight - height) });
   };
 
-  // New words: follow them, unless you've scrolled back to read.
+  const touched = now - touchedAt < TOUCH_MS;
+  const talking = speaking || (lastAt !== null && now - lastAt < SHOW_MS);
+  // Open: talking, just touched, or scrolled back to read. Otherwise it rests on one line.
+  const open = talking || touched || !atBottom;
+
+  // New words, or the box changing size: follow the newest words, unless you've scrolled back to read.
   const text = lines.map((l) => l.text).join("\n");
-  const visible = lines.length > 0 && (speaking || pinned || !atBottom || (lastAt !== null && now - lastAt < SHOW_MS));
-  // Also when the panel (re)appears: it starts at the newest words.
   useLayoutEffect(() => {
     const el = box.current;
     if (el && atBottom) el.scrollTop = el.scrollHeight;
     measure();
+    // The box grows over a moment: once it has, the newest words should still be the ones in view.
+    const id = setTimeout(() => {
+      const e = box.current;
+      if (e && atBottom) e.scrollTop = e.scrollHeight;
+      measure();
+    }, 240);
+    return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, visible]);
-  // Closed with the "You" button while scrolled back: return to the newest words so it can go.
-  const wasPinned = useRef(!!pinned);
-  useEffect(() => {
-    if (wasPinned.current && !pinned) {
-      const el = box.current;
-      if (el) el.scrollTop = el.scrollHeight;
-      setAtBottom(true);
-    }
-    wasPinned.current = !!pinned;
-  }, [pinned]);
+  }, [text, open]);
 
-  if (!visible) return null;
+  if (lines.length === 0) return null;
+  const touch = () => setTouchedAt(Date.now());
   return (
-    <div className="own-words" dir="auto" onPointerDown={() => setTouchedAt(Date.now())}>
+    <div className={`own-words ${open ? "open" : "rest"} ${touched || !atBottom ? "reading" : ""}`} dir="auto" onPointerDown={touch}>
       <div className="own-head">
         <span className="who">{t("you")}</span>
       </div>
-      <div className={`own-box ${bar && box.current && box.current.scrollTop > 2 ? "faded" : ""}`} ref={box} onScroll={() => { measure(); setTouchedAt(Date.now()); }}>
+      <div
+        className={`own-box ${open && bar && box.current && box.current.scrollTop > 2 ? "faded" : ""}`}
+        ref={box}
+        onScroll={() => {
+          measure();
+          // Scrolling it (not our own follow-the-newest) counts as a touch.
+          const el = box.current;
+          if (el && el.scrollHeight - el.clientHeight - el.scrollTop >= 8) touch();
+        }}
+      >
         {lines.map((l, i) => (
           <p key={l.id} className={`${i === lines.length - 1 ? "latest" : ""} ${l.final ? "" : "live"}`}>
             {l.text}
           </p>
         ))}
       </div>
-      {bar && (
+      {open && bar && (
         <div className="own-track" aria-hidden="true">
           <div className="own-thumb" style={{ top: bar.top, height: bar.height }} />
         </div>
@@ -94,7 +98,7 @@ export function OwnWords({ lines, lastAt, speaking, hint, pinned, onUnpin }: { l
           ↓ {t("ownLatest")}
         </button>
       )}
-      {hint && <div className="own-hint">{t("captionsCheck")}</div>}
+      {hint && open && <div className="own-hint">{t("captionsCheck")}</div>}
     </div>
   );
 }

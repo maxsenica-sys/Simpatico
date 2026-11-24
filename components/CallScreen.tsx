@@ -55,8 +55,6 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
   }, []);
   const stageRef = useRef<HTMLVideoElement>(null);
   const [blocked, setBlocked] = useState<Set<string>>(new Set());
-  /** Your own words, opened on purpose with the "You" button to scroll back through them. */
-  const [ownPinned, setOwnPinned] = useState(false);
   const [selfMode, setSelfMode] = useState<SelfMode>("small");
   const [transcript, setTranscript] = useState(false);
   const [more, setMore] = useState(false);
@@ -293,6 +291,8 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
         ? stage.videoOk
           ? null
           : "" // group: their avatar and name until their video is actually arriving
+        : stage.bg && !stage.away && !group
+        ? t("isOnVoice", { name: stage.name }) // their picture (or initials), and why there is no video
         : stageAudioOnly
         ? t("youAreAudioOnly")
         : stage.remoteCam === false
@@ -390,7 +390,8 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
       });
     if (!group && stage?.partnerAudioOnly && s.camOn) banners.push({ key: "partner-audio", tone: "info", text: t("theyAreAudioOnly") });
     for (const p of s.participants) if (p.away) banners.push({ key: `away-${p.id}`, tone: "info", text: t("isAway", { name: p.name }) });
-    for (const p of s.participants) if (p.bg && !p.away) banners.push({ key: `bg-${p.id}`, tone: "info", text: t("isOnVoice", { name: p.name }) });
+    // In another app but still on the line. One-to-one, that is said under their picture; in a group, here.
+    for (const p of s.participants) if (p.bg && !p.away && (group || p.id !== stage?.id)) banners.push({ key: `bg-${p.id}`, tone: "info", text: t("isOnVoice", { name: p.name }) });
     for (const p of s.participants) if (p.noMic && !p.away) banners.push({ key: `nomic-${p.id}`, tone: "info", text: t("peerNoMic", { name: p.name }) });
     // A photo or video just arrived: say who from, with a way to see it (the Text button keeps a count).
     const lastMedia = [...s.transcript].reverse().find((l) => l.media && l.who === "them");
@@ -459,7 +460,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
 
       {placeholder !== null && stage && (
         <div className="no-video">
-          {group || stage.photo ? (
+          {group || stage.photo || stage.bg ? (
             <Avatar className={`avatar big ${stage.speaking ? "speaking" : ""}`} photo={stage.photo} fallback={initials(stage.name)} />
           ) : (
             <div className="no-video-icon" aria-hidden="true">
@@ -544,17 +545,6 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
                 {clock(now - s.startedAt)}
               </span>
             )}
-            <div className="pills-r">
-            {/* Your own words again, to scroll back through: plain text, not another box. */}
-            {connected && ownLines.length > 0 && (
-              <button className={`you-tab ${ownPinned ? "on" : ""}`} aria-pressed={ownPinned} onClick={() => setOwnPinned((v) => !v)}>
-                {t("you")}
-                <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d={ownPinned ? "M2.5 7.5L6 4l3.5 3.5" : "M2.5 4.5L6 8l3.5-3.5"} />
-                </svg>
-              </button>
-            )}
-            </div>
           </div>
           <div className="controls">
             <Ctrl label={t("lblMic")} title={s.muted ? t("unmute") : t("mute")} danger={s.muted} active={s.meSpeaking && !s.muted} onClick={() => call.setMuted(!s.muted)}>
@@ -659,8 +649,6 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
                 lastAt={s.ownLine?.at ?? null}
                 speaking={s.meSpeaking && !s.muted}
                 hint={!!showOwnHint}
-                pinned={ownPinned}
-                onUnpin={() => setOwnPinned(false)}
               />
             )}
           </div>

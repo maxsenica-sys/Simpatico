@@ -1,4 +1,5 @@
 "use client";
+import { UnsavedTalk } from "./UnsavedTalk";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -95,6 +96,8 @@ export function Home() {
           <span className="waiting-join">{t("joinNow")}</span>
         </button>
       )}
+
+      <UnsavedTalk />
 
       <nav className="home-actions">
         <div className="htile-row">

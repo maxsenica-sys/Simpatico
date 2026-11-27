@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BRAND } from "@/shared/brand";
+import { RECOVERY_DAYS } from "@/lib/saved";
 
 export const metadata: Metadata = { title: `Privacy · ${BRAND.appName}` };
 
@@ -53,15 +54,21 @@ export default function Privacy() {
         </p>
         <h3>Captions and transcript</h3>
         <p>
-          The transcript you can open during a call lives only in your browser and is gone when you close the page. To keep translations consistent, our server holds the
+          The transcript you can open during a call lives only on your device (see &ldquo;Recovery copies&rdquo; below). To keep translations consistent, our server holds the
           most recent sentences of the conversation in memory while the call room exists. It is never written to disk and is deleted when the room closes.
         </p>
-        <h3>Keeping your conversations (optional)</h3>
+        <h3>Recovery copies and keeping your conversations</h3>
         <p>
-          This is off unless you turn it on (Me page, &ldquo;Keep my conversations on this phone&rdquo;, or the tick box when a conversation ends). When it is
-          on, the words of your calls and In person conversations, in both languages, are saved in the app&rsquo;s storage on your own device so you can read
-          them again or save them as a file. They are not stored on our servers. You can delete any of them, or all of them, on the Me page, and &ldquo;Clear
-          my profile&rdquo; removes them too. Tell the people you talk to if you keep a copy.
+          So that a flat battery, a crash or a closed app cannot lose a conversation, its words are written to the app&rsquo;s storage on your own device
+          while it runs, in both languages. This recovery copy never leaves your device. If you do not choose to keep it, it deletes itself after{" "}
+          {RECOVERY_DAYS} days, and you can delete it sooner on the Me page.
+        </p>
+        <p>
+          Keeping conversations is off unless you turn it on (Me page, &ldquo;Keep my conversations on this phone&rdquo;, or the tick box when a conversation
+          ends). When it is on, your calls and In person conversations stay on your device until you delete them, so you can read them again or save them
+          as a file. In the iPhone app, kept conversations are also written as text files in the app&rsquo;s own folder on your phone, which your phone&rsquo;s
+          backups may include. None of this is stored on our servers. &ldquo;Clear my profile&rdquo; removes all of it. Tell the people you talk to if you
+          keep a copy.
         </p>
         <h3>Reporting a translation</h3>
         <p>

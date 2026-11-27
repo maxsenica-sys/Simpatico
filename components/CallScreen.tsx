@@ -1,5 +1,5 @@
 "use client";
-import { keepsTalks, saveTalk, setKeepTalks, type SavedTalk } from "@/lib/saved";
+import { RECOVERY_DAYS, callTalkId, getTalk, keepsTalks, mergeLines, setKeepTalks, stashTalk, touchCallTalk, type SavedTalk } from "@/lib/saved";
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { worst, type CallController, type CallState, type Participant } from "@/lib/call";
@@ -143,37 +143,57 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
     call.setCaptionStyle(p.style);
     call.setVoiceFocus(p.focus);
   };
-  // For people who keep their conversations on this phone: save as the call goes (and at the end),
-  // so nothing is lost if the phone locks, the app closes or the battery dies.
-  const talk = (): SavedTalk => ({
-    id: `call-${call.info.room}-${s.startedAt ?? 0}`,
-    kind: s.kind === "group" ? "group" : "pair",
-    startedAt: s.startedAt ?? Date.now(),
-    endedAt: s.endedAt ?? Date.now(),
-    with: Object.values(s.names).filter(Boolean),
-    langs: [call.info.lang.speaks, ...new Set(s.participants.map((p) => p.lang.speaks))].filter(Boolean),
-    lines: s.transcript
+  // Every finished line is written to this phone as the call goes (a recovery copy, or a kept
+  // conversation for people who turned that on), so a dead battery, a crash, a reload or a closed
+  // app loses nothing. A reload rejoins the same room: its lines carry on in the same conversation.
+  const talkId = useRef("");
+  const prior = useRef<SavedTalk | null>(null);
+  useEffect(() => {
+    talkId.current = callTalkId(call.info.room);
+    void getTalk(talkId.current).then((t) => (prior.current = t));
+  }, [call]);
+  const talk = (): SavedTalk => {
+    const lines = s.transcript
       .filter((l) => l.final && l.text && !l.media)
-      .map((l) => ({ who: l.who, name: l.from ? s.names[l.from] : undefined, said: l.who === "me" ? l.text : l.other, read: l.who === "me" ? l.other : l.text, at: l.at })),
-  });
+      .map((l) => ({ who: l.who, name: l.from ? s.names[l.from] : undefined, said: l.who === "me" ? l.text : l.other, read: l.who === "me" ? l.other : l.text, at: l.at }));
+    const before = prior.current;
+    return {
+      id: talkId.current || `call-${call.info.room}-${s.startedAt ?? 0}`,
+      kind: s.kind === "group" ? "group" : "pair",
+      startedAt: Math.min(before?.startedAt ?? Infinity, s.startedAt ?? Date.now()),
+      endedAt: s.endedAt ?? Date.now(),
+      with: [...new Set([...(before?.with ?? []), ...Object.values(s.names).filter(Boolean)])],
+      langs: [...new Set([call.info.lang.speaks, ...s.participants.map((p) => p.lang.speaks), ...(before?.langs ?? [])])].filter(Boolean),
+      lines: mergeLines(before?.lines ?? [], lines),
+    };
+  };
   const talkRef = useRef(talk);
   talkRef.current = talk;
+  const [storeFailed, setStoreFailed] = useState(false);
+  const stash = (open: boolean) => {
+    const t = talkRef.current();
+    if (!t.lines.length) return;
+    touchCallTalk(call.info.room, t.id);
+    void stashTalk(t, open).then((ok) => setStoreFailed(!ok));
+  };
+  const stashRef = useRef(stash);
+  stashRef.current = stash;
   const finals = s.transcript.filter((l) => l.final).length + s.transcript.filter((l) => l.other).length;
   useEffect(() => {
-    if (!s.startedAt || !finals || !keepsTalks()) return;
-    const id = setTimeout(() => void saveTalk(talkRef.current()), s.phase === "ended" ? 0 : 3000);
+    if (!finals) return;
+    const id = setTimeout(() => stashRef.current(s.phase !== "ended"), s.phase === "ended" ? 0 : 600);
     return () => clearTimeout(id);
-  }, [finals, s.phase, s.startedAt]);
+  }, [finals, s.phase]);
   useEffect(() => {
-    const now = () => {
-      if (keepsTalks() && talkRef.current().lines.length) void saveTalk(talkRef.current());
-    };
+    const now = () => stashRef.current(true);
     const hidden = () => document.visibilityState !== "visible" && now();
     document.addEventListener("visibilitychange", hidden);
     window.addEventListener("pagehide", now);
+    window.addEventListener("freeze", now);
     return () => {
       document.removeEventListener("visibilitychange", hidden);
       window.removeEventListener("pagehide", now);
+      window.removeEventListener("freeze", now);
     };
   }, []);
   const save = () => {
@@ -266,7 +286,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
       return next;
     });
 
-  if (s.phase === "ended") return <EndScreen call={call} s={s} onSave={save} onRejoin={onRejoin}  onKeep={() => void saveTalk(talk())} />;
+  if (s.phase === "ended") return <EndScreen call={call} s={s} onSave={save} onRejoin={onRejoin}  onKeep={() => stash(false)} storeFailed={storeFailed} />;
   if (s.phase === "unavailable")
     return (
       <Notice title={t("personUnavailable")}>
@@ -793,7 +813,7 @@ function initials(name: string) {
 }
 
 /** After hanging up: call again, a new call, save the transcript. */
-function EndScreen({ call, s, onSave, onRejoin, onKeep }: { call: CallController; s: CallState; onSave: () => void; onRejoin: () => void; onKeep?: () => void }) {
+function EndScreen({ call, s, onSave, onRejoin, onKeep, storeFailed }: { call: CallController; s: CallState; onSave: () => void; onRejoin: () => void; onKeep?: () => void; storeFailed?: boolean }) {
   const t = useT();
   const [keep, setKeep] = useState(false);
   useEffect(() => setKeep(keepsTalks()), []);
@@ -860,7 +880,7 @@ function EndScreen({ call, s, onSave, onRejoin, onKeep }: { call: CallController
               onChange={(e) => {
                 setKeep(e.target.checked);
                 setKeepTalks(e.target.checked);
-                if (e.target.checked) onKeep();
+                onKeep();
               }}
             />
             <span>
@@ -869,6 +889,8 @@ function EndScreen({ call, s, onSave, onRejoin, onKeep }: { call: CallController
             </span>
           </label>
         )}
+        {hasTranscript && storeFailed && <p className="small clear-warn">{t("talkStoreFailed")}</p>}
+        {hasTranscript && !keep && !storeFailed && <p className="muted small">{t("talkRecoveryNote", { n: String(RECOVERY_DAYS) })}</p>}
 
         {hadCall && <SourceCard />}
         {hadCall && <LearnCard s={s} />}

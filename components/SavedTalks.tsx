@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n";
-import { clearTalks, deleteTalk, keepsTalks, listTalks, setKeepTalks, talkText, type SavedTalk } from "@/lib/saved";
+import { isNativeApp } from "@/lib/env";
+import { RECOVERY_DAYS, clearTalks, deleteTalk, keepTalk, keepsTalks, listDrafts, listTalks, setKeepTalks, talkText, type SavedTalk } from "@/lib/saved";
 import { saveTranscript } from "@/lib/transcriptFile";
 import { langInfo } from "@/shared/lang";
 
@@ -18,9 +19,15 @@ export function SavedTalks() {
   const [talks, setTalks] = useState<SavedTalk[] | null>(null);
   const [open, setOpen] = useState<SavedTalk | null>(null);
   const [all, setAll] = useState(false);
-  const refresh = () => void listTalks().then(setTalks);
+  const [drafts, setDrafts] = useState<SavedTalk[]>([]);
+  const [native, setNative] = useState(false);
+  const refresh = () => {
+    void listTalks().then(setTalks);
+    void listDrafts().then(setDrafts);
+  };
   useEffect(() => {
     setKeep(keepsTalks());
+    setNative(isNativeApp());
     refresh();
   }, []);
   const kindName = (k: SavedTalk["kind"]) => t(k === "inperson" ? "talkInPerson" : k === "group" ? "talkGroup" : "talkCall");
@@ -72,7 +79,22 @@ export function SavedTalks() {
           {t("talkShowAll", { n: String(talks.length) })}
         </button>
       )}
-      {talks && talks.length > 0 && (
+      {drafts.length > 0 && (
+        <>
+          <h3 className="talk-head">{t("recoveryList", { n: String(RECOVERY_DAYS) })}</h3>
+          <ul className="talk-list">
+            {drafts.map((x) => (
+              <li key={x.id}>
+                <button className="talk-row draft" onClick={() => setOpen(x)}>
+                  <b>{title(x)}</b>
+                  <span>{sub(x)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {talks && talks.length + drafts.length > 0 && (
         <button
           className="btn small"
           onClick={() => {
@@ -82,6 +104,10 @@ export function SavedTalks() {
           {t("talkDeleteAll")}
         </button>
       )}
+      <p className="muted small">
+        {t("savedStorageNote")}
+        {native ? ` ${t("savedFilesNote")}` : ""}
+      </p>
       {open && (
         <div className="sheet" role="dialog" aria-modal="true" aria-label={title(open)}>
           <header className="sheet-head">
@@ -108,6 +134,17 @@ export function SavedTalks() {
             <button className="btn primary small" onClick={() => void saveTranscript(talkText(open, { you: t("you"), them: t("talkThem"), title: kindName(open.kind) }), `simpatico-${stamp(open.startedAt)}.txt`)}>
               {t("talkSave")}
             </button>
+            {open.draft && (
+              <button
+                className="btn small"
+                onClick={() => {
+                  void keepTalk(open.id).then(refresh);
+                  setOpen(null);
+                }}
+              >
+                {t("unsavedKeep")}
+              </button>
+            )}
             <button
               className="btn small danger"
               onClick={() => {

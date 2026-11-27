@@ -10,7 +10,7 @@
     "translate-ui": "tsx scripts/translate-ui.ts",
     "mock-soniox": "tsx test/mock-soniox.ts",
     "e2e": "node test/e2e.mjs",
-    "test": "ECHO_CHECK=off SONIOX_API_KEY=x SONIOX_URL=ws://localhost:3997 tsx test/pipeline.test.ts && tsx test/rooms.test.ts && tsx test/vad.test.ts && tsx test/push.test.ts && tsx test/subtitle.test.ts && tsx test/phrasebook.test.ts && tsx test/inperson.test.ts && tsx test/outbox.test.ts",
+    "test": "ECHO_CHECK=off SONIOX_API_KEY=x SONIOX_URL=ws://localhost:3997 tsx test/pipeline.test.ts && tsx test/rooms.test.ts && tsx test/vad.test.ts && tsx test/push.test.ts && tsx test/subtitle.test.ts && tsx test/phrasebook.test.ts && tsx test/inperson.test.ts && tsx test/outbox.test.ts && tsx test/saved.test.ts",
     "e2e:group": "node test/e2e-group.mjs",
     "e2e:perms": "node test/e2e-perms.mjs",
     "e2e:pair": "node test/e2e-pair.mjs",

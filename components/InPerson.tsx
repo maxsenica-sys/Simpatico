@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MicCapture } from "@/lib/audio";
 import type { Caption } from "@/lib/call";
 import { useT } from "@/lib/i18n";
@@ -9,7 +9,7 @@ import { getMicTrack } from "@/lib/media";
 import { loadLang } from "@/lib/prefs";
 import { loadProfile } from "@/lib/profile";
 import { loadRecent } from "@/lib/recent";
-import { keepsTalks, saveTalk, setKeepTalks, talkText, type SavedTalk } from "@/lib/saved";
+import { RECOVERY_DAYS, keepsTalks, setKeepTalks, stashTalk, talkText, type SavedTalk } from "@/lib/saved";
 import { saveTranscript } from "@/lib/transcriptFile";
 import { ScreenAwake } from "@/lib/wakeLock";
 import { en, loadStrings, type StringKey, type Strings } from "@/i18n";
@@ -335,23 +335,37 @@ function Live({ session: s, onEnd }: { session: Session; onEnd: () => void }) {
     };
   }, [s]);
   useEffect(() => () => s.end(), [s]);
-  // For people who keep their conversations: save as it goes (every few seconds, and when the app
-  // is put away), so nothing is lost if the phone locks, the app closes or the battery dies.
+  // Every line is written to this phone the moment it changes (a recovery copy, or a kept
+  // conversation for people who turned that on), and again when the app is put away. So a dead
+  // battery, a crash, a locked phone or a swipe away loses nothing.
+  const ended = useRef(false);
+  const [storeFailed, setStoreFailed] = useState(false);
   useEffect(() => {
     let saved = -1;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     const save = () => {
-      if (!keepsTalks() || s.rev === saved) return;
+      if (timer) clearTimeout(timer);
+      timer = null;
+      if (s.rev === saved) return;
       saved = s.rev;
-      void saveTalk(s.talk());
+      void stashTalk(s.talk(), !ended.current).then((ok) => setStoreFailed(!ok));
     };
-    const id = setInterval(save, 4000);
+    const soon = () => {
+      if (!timer) timer = setTimeout(save, 600);
+    };
+    s.listeners.add(soon);
     const hidden = () => document.visibilityState !== "visible" && save();
     document.addEventListener("visibilitychange", hidden);
     window.addEventListener("pagehide", save);
+    window.addEventListener("freeze", save);
     return () => {
-      clearInterval(id);
+      s.listeners.delete(soon);
       document.removeEventListener("visibilitychange", hidden);
       window.removeEventListener("pagehide", save);
+      window.removeEventListener("freeze", save);
+      // Leaving without the End button (back gesture, a notification, a link): still saved, and
+      // offered again on the home screen.
+      saved = -1;
       save();
     };
   }, [s]);
@@ -362,9 +376,11 @@ function Live({ session: s, onEnd }: { session: Session; onEnd: () => void }) {
   const finish = () => {
     s.end();
     if (s.talk().lines.length === 0) return onEnd();
-    if (keepsTalks()) void saveTalk(s.talk());
+    ended.current = true;
+    void stashTalk(s.talk(), false).then((ok) => setStoreFailed(!ok));
     setDone(true);
   };
+
   // Their half speaks their language (when the app has it; English otherwise).
   const theirUi = baseLang(s.theirs);
   useEffect(() => {
@@ -398,7 +414,7 @@ function Live({ session: s, onEnd }: { session: Session; onEnd: () => void }) {
                 onChange={(e) => {
                   setKeep(e.target.checked);
                   setKeepTalks(e.target.checked);
-                  if (e.target.checked) void saveTalk(s.talk());
+                  void stashTalk(s.talk(), false).then((ok) => setStoreFailed(!ok));
                 }}
               />
               <span>
@@ -406,6 +422,8 @@ function Live({ session: s, onEnd }: { session: Session; onEnd: () => void }) {
                 <small className="muted">{t("keepTalksHint")}</small>
               </span>
             </label>
+            {storeFailed && <p className="small clear-warn">{t("talkStoreFailed")}</p>}
+            {!keep && !storeFailed && <p className="muted small">{t("talkRecoveryNote", { n: String(RECOVERY_DAYS) })}</p>}
             <button className="btn" onClick={onEnd}>
               {t("talkDone")}
             </button>

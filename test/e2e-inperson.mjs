@@ -105,7 +105,7 @@ try {
   await page.waitForURL((u) => new URL(u).pathname === "/", { timeout: 5000 });
   step("The Me page lists it, with both languages on a line, and it can be deleted");
   await page.goto(BASE + "/profile");
-  await page.getByText("Saved conversations").click();
+  await page.locator("details.pgroup summary", { hasText: "Saved conversations" }).click();
   await page.locator(".talk-row").first().waitFor({ timeout: 5000 });
   await page.locator(".talk-row").first().click();
   const sheet = page.getByRole("dialog").filter({ has: page.locator(".tline") });
@@ -115,6 +115,94 @@ try {
   if (!both) throw new Error("a saved line should carry both languages");
   await sheet.getByRole("button", { name: "Delete", exact: true }).click();
   await page.locator(".talk-row").waitFor({ state: "detached", timeout: 5000 });
+
+  // ---------------------------------------------------------------- nothing gets lost
+  const fresh = async (init) => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "en-AU", permissions: ["microphone"] });
+    if (init) await ctx.addInitScript(init);
+    const p = await ctx.newPage();
+    await p.goto(BASE);
+    await p.evaluate(() => {
+      localStorage.setItem("talk.name", "Max");
+      localStorage.setItem("talk.gender", "m");
+      sessionStorage.setItem("talk.splash", "1");
+    });
+    return p;
+  };
+  const talkABit = async (p) => {
+    await p.goto(BASE + "/talk");
+    await p.getByRole("button", { name: "Start" }).click();
+    await p.locator(".ip-live").waitFor({ timeout: 10000 });
+    await p.waitForFunction(() => document.querySelector(".ip-half.me .cap")?.textContent.length > 3 && document.querySelector(".ip-half.them .cap")?.textContent.length > 3, null, { timeout: 30000 });
+    await p.waitForTimeout(1500);
+  };
+
+  step("The app dies mid-conversation (battery, crash, swiped away), keeping never turned on: the words are still on the phone");
+  const crash = await fresh();
+  await talkABit(crash);
+  // No End, no goodbye: the page is simply gone.
+  await crash.goto("about:blank");
+  await crash.goto(BASE);
+  await crash.getByText("Your last conversation was not saved").waitFor({ timeout: 15000 });
+  await crash.screenshot({ path: out("inperson-5-unsaved-banner.png") });
+  await crash.getByRole("button", { name: "Keep it" }).click();
+  await crash.getByText("Kept on this phone").waitFor({ timeout: 3000 });
+  await crash.goto(BASE + "/profile");
+  await crash.locator("details.pgroup summary", { hasText: "Saved conversations" }).click();
+  await crash.locator(".talk-row:not(.draft)").first().click();
+  const rescued = await crash.locator(".sheet .tline").count();
+  console.log("  rescued lines:", rescued);
+  if (rescued < 2) throw new Error("the crashed conversation should have been rescued with its lines");
+  await crash.context().close();
+
+  step("Ended, Done tapped without keeping: a recovery copy waits on the Me page for 3 days, with no nagging on the home screen");
+  const declined = await fresh();
+  await talkABit(declined);
+  await declined.getByRole("button", { name: "End" }).click();
+  await declined.getByText("A recovery copy stays on this phone for 3 days").waitFor({ timeout: 5000 });
+  await declined.getByRole("button", { name: "Done" }).click();
+  await declined.waitForURL((u) => new URL(u).pathname === "/", { timeout: 5000 });
+  await declined.waitForTimeout(800);
+  if (await declined.getByText("Your last conversation was not saved").count()) throw new Error("no banner after a deliberate Done");
+  await declined.goto(BASE + "/profile");
+  await declined.locator("details.pgroup summary", { hasText: "Saved conversations" }).click();
+  await declined.locator(".talk-row.draft").first().waitFor({ timeout: 5000 });
+  const exp = await declined.evaluate(() => new Promise((res) => { const q = indexedDB.open("simpatico", 1); q.onsuccess = () => { const g = q.result.transaction("talks").objectStore("talks").getAll(); g.onsuccess = () => res(g.result.map((t) => [t.draft, Math.round((t.expires - Date.now()) / 86400000)])); }; }));
+  console.log("  recovery copies [draft, days left]:", JSON.stringify(exp));
+  if (!exp.length || exp[0][0] !== true || exp[0][1] !== 3) throw new Error("a declined conversation should be a recovery copy that expires in 3 days");
+  await declined.context().close();
+
+  step("The phone's main storage is broken: the second store takes over, nothing is lost");
+  const broken = await fresh(() => {
+    indexedDB.open = () => {
+      throw new Error("storage is broken");
+    };
+  });
+  await talkABit(broken);
+  await broken.getByRole("button", { name: "End" }).click();
+  await broken.getByRole("dialog", { name: "Conversation ended" }).waitFor({ timeout: 5000 });
+  const fb = await broken.evaluate(() => Object.values(JSON.parse(localStorage.getItem("talk.saved.fallback") ?? "{}")).map((t) => t.lines.length));
+  console.log("  second store holds conversations with lines:", JSON.stringify(fb));
+  if (!fb.length || fb[0] < 2) throw new Error("the second store should hold the conversation when the main one fails");
+  if (await broken.getByText("This phone could not store the conversation").count()) throw new Error("no warning when the second store worked");
+  await broken.context().close();
+
+  step("No storage at all: a clear warning to save it as a file before leaving");
+  const none = await fresh(() => {
+    indexedDB.open = () => {
+      throw new Error("storage is broken");
+    };
+    const real = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (k === "talk.saved.fallback") throw new Error("quota");
+      return real.call(this, k, v);
+    };
+  });
+  await talkABit(none);
+  await none.getByRole("button", { name: "End" }).click();
+  await none.getByText("This phone could not store the conversation").waitFor({ timeout: 5000 });
+  await none.getByRole("button", { name: "Save conversation" }).waitFor();
+  await none.context().close();
 
   console.log("\nIN PERSON E2E PASSED");
   process.exit(0);

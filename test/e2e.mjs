@@ -285,6 +285,13 @@ try {
   if (!(await videoFlowing(b))) throw new Error("A's video did not resume on B");
   console.log("  video resumed both ways");
 
+  step("Nothing gets lost: every finished line of the call is already on A's phone, in both languages, before anyone hangs up");
+  const stored = await a.evaluate(() => new Promise((res) => { const q = indexedDB.open("simpatico", 1); q.onsuccess = () => { const g = q.result.transaction("talks").objectStore("talks").getAll(); g.onsuccess = () => res(g.result.map((t) => ({ id: t.id, draft: t.draft, open: t.open, lines: t.lines.length, both: t.lines.filter((l) => l.said && l.read).length, withNames: t.with }))); }; q.onerror = () => res([]); }));
+  console.log("  on A's phone during the call:", JSON.stringify(stored));
+  if (!stored.length || stored[0].lines < 2) throw new Error("the running call should already be stored on the phone");
+  if (!stored[0].draft || !stored[0].open) throw new Error("with keeping off it should be an open recovery copy");
+  if (!stored[0].both) throw new Error("stored lines should carry both languages");
+
   step("A hangs up: B is told, upstream streams close");
   await show(a);
   await a.getByRole("button", { name: "End call" }).click();

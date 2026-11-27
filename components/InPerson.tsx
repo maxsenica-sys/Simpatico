@@ -9,6 +9,8 @@ import { getMicTrack } from "@/lib/media";
 import { loadLang } from "@/lib/prefs";
 import { loadProfile } from "@/lib/profile";
 import { loadRecent } from "@/lib/recent";
+import { keepsTalks, saveTalk, setKeepTalks, talkText, type SavedTalk } from "@/lib/saved";
+import { saveTranscript } from "@/lib/transcriptFile";
 import { ScreenAwake } from "@/lib/wakeLock";
 import { en, loadStrings, type StringKey, type Strings } from "@/i18n";
 import { baseLang, isRtl, langInfo } from "@/shared/lang";
@@ -162,6 +164,32 @@ class Session {
   ownMe: Own = null;
   ownThem: Own = null;
   status: CaptionState = "ok";
+  /** Everything said, in order, in both languages: so it can be saved when the conversation ends. */
+  log = new Map<string, { by: "me" | "them"; said: string; read: string; at: number }>();
+  startedAt = Date.now();
+  endedAt = 0;
+  /** Counts changes to the log, so saving only happens when there is something new. */
+  rev = 0;
+  private note(id: string, by: "me" | "them", part: { said?: string; read?: string }) {
+    const key = id.replace(/~s$/, "");
+    const e = this.log.get(key) ?? { by, said: "", read: "", at: Date.now() };
+    if (part.said) e.said = part.said;
+    if (part.read) e.read = part.read;
+    this.log.set(key, e);
+    this.rev++;
+  }
+  /** The conversation so far, ready to keep. */
+  talk(): SavedTalk {
+    return {
+      id: `ip-${this.startedAt}`,
+      kind: "inperson",
+      startedAt: this.startedAt,
+      endedAt: this.endedAt || Date.now(),
+      with: [],
+      langs: [this.mine, this.theirs ?? ""].filter(Boolean),
+      lines: [...this.log.values()].filter((l) => l.said.trim() || l.read.trim()).map((l) => ({ who: l.by, said: l.said.trim() || undefined, read: l.read.trim() || undefined, at: l.at })),
+    };
+  }
 
   constructor(
     public mine: string,
@@ -229,10 +257,14 @@ class Session {
       else if (m.t === "cap") {
         if (m.for === "me") this.forMe = applyCaption(this.forMe, m);
         else this.forThem = applyCaption(this.forThem, m);
+        // A caption on my half is their words translated, and the other way round.
+        const shown = `${m.text}${m.tail ? ` ${m.tail}` : ""}`.trim();
+        if (shown) this.note(m.id, m.for === "me" ? "them" : "me", { read: shown });
       } else if (m.t === "own") {
         const line = { id: m.id, text: m.text, final: m.final, at: Date.now() };
         if (m.by === "me") this.ownMe = line;
         else this.ownThem = line;
+        if (m.text.trim()) this.note(m.id, m.by, { said: m.text });
       }
       this.changed();
     };
@@ -275,7 +307,9 @@ class Session {
   }
 
   end() {
+    if (this.ended) return;
     this.ended = true;
+    this.endedAt = Date.now();
     this.send({ t: "end" });
     this.ws?.close();
     this.track?.stop();
@@ -301,6 +335,36 @@ function Live({ session: s, onEnd }: { session: Session; onEnd: () => void }) {
     };
   }, [s]);
   useEffect(() => () => s.end(), [s]);
+  // For people who keep their conversations: save as it goes (every few seconds, and when the app
+  // is put away), so nothing is lost if the phone locks, the app closes or the battery dies.
+  useEffect(() => {
+    let saved = -1;
+    const save = () => {
+      if (!keepsTalks() || s.rev === saved) return;
+      saved = s.rev;
+      void saveTalk(s.talk());
+    };
+    const id = setInterval(save, 4000);
+    const hidden = () => document.visibilityState !== "visible" && save();
+    document.addEventListener("visibilitychange", hidden);
+    window.addEventListener("pagehide", save);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", hidden);
+      window.removeEventListener("pagehide", save);
+      save();
+    };
+  }, [s]);
+  /** Ended with something said: a last chance to save it before leaving. */
+  const [done, setDone] = useState(false);
+  const [keep, setKeep] = useState(false);
+  useEffect(() => setKeep(keepsTalks()), []);
+  const finish = () => {
+    s.end();
+    if (s.talk().lines.length === 0) return onEnd();
+    if (keepsTalks()) void saveTalk(s.talk());
+    setDone(true);
+  };
   // Their half speaks their language (when the app has it; English otherwise).
   const theirUi = baseLang(s.theirs);
   useEffect(() => {
@@ -317,6 +381,37 @@ function Live({ session: s, onEnd }: { session: Session; onEnd: () => void }) {
 
   return (
     <main className={`ip-live ${flipped ? "flipped" : ""}`} style={{ ["--cap-size" as string]: SIZES[size] }}>
+      {done && (
+        <div className="ip-end" role="dialog" aria-modal="true" aria-label={t("talkEnded")}>
+          <div className="ip-end-card">
+            <h2>{t("talkEnded")}</h2>
+            <p className="muted small">
+              {t("talkLines", { n: String(s.talk().lines.length) })} · {t("minutesShort", { n: String(Math.max(1, Math.round((s.endedAt - s.startedAt) / 60000))) })}
+            </p>
+            <button className="btn primary" onClick={() => void saveTranscript(talkText(s.talk(), { you: t("you"), them: t("talkThem"), title: t("talkInPerson") }), `simpatico-${new Date(s.startedAt).toISOString().slice(0, 16).replace(/[:T]/g, "-")}.txt`)}>
+              {t("talkSave")}
+            </button>
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={keep}
+                onChange={(e) => {
+                  setKeep(e.target.checked);
+                  setKeepTalks(e.target.checked);
+                  if (e.target.checked) void saveTalk(s.talk());
+                }}
+              />
+              <span>
+                {keep ? t("talkKept") : t("keepTalks")}
+                <small className="muted">{t("keepTalksHint")}</small>
+              </span>
+            </label>
+            <button className="btn" onClick={onEnd}>
+              {t("talkDone")}
+            </button>
+          </div>
+        </div>
+      )}
       <section className="ip-half them" lang={s.theirs ?? undefined} dir={s.theirs && isRtl(s.theirs) ? "rtl" : "ltr"}>
         <div className="ip-head">
           {/* New key when their language is known: the label pops in, so it's noticed. */}
@@ -362,10 +457,7 @@ function Live({ session: s, onEnd }: { session: Session; onEnd: () => void }) {
         </button>
         <button
           className="pill end"
-          onClick={() => {
-            s.end();
-            onEnd();
-          }}
+          onClick={finish}
         >
           {t("ipEnd")}
         </button>

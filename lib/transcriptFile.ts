@@ -7,7 +7,7 @@ export function transcriptText(lines: TranscriptLine[], names: Record<string, st
   const head = `${title} · ${new Date(lines[0]?.at ?? Date.now()).toLocaleString()}`;
   const body = lines
     .filter((l) => l.final && (l.text || l.media))
-    .map((l) => `[${time(l.at)}] ${l.who === "me" ? you : (l.from && names[l.from]) || "—"}: ${l.text || (l.media?.kind === "video" ? media.video : media.image)}`)
+    .map((l) => `[${time(l.at)}] ${l.who === "me" ? you : (l.from && names[l.from]) || "—"}: ${l.text || (l.media?.kind === "video" ? media.video : media.image)}${l.other && l.text ? `\n    → ${l.other}` : ""}`)
     .join("\n");
   return `${head}\n\n${body}\n`;
 }

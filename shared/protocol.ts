@@ -105,6 +105,8 @@ export type ServerMsg =
   | { t: "caption"; id: string; from: string; stage: CaptionStage; text: string; tail?: string }
   /** What this participant themself said (source language), for the transcript. */
   | { t: "own"; id: string; text: string; final: boolean }
+  /** Both languages of a finished line: to the speaker (what the others read) and to its readers (what was said). */
+  | { t: "pair"; id: string; source: string; translation: string }
   /** Caption service health: "theirs" = captions of `from` reaching me, "mine" = captions of my speech. */
   | { t: "captions"; state: CaptionState; side: "theirs" | "mine"; from?: string }
   /** Someone's speech is being captioned right now (sent to everyone, the speaker included). */

@@ -1038,6 +1038,17 @@ p { margin: 0; line-height: 1.5; }
 .ip-empty { margin: auto 0 0; color: var(--muted); font-size: 1.05rem; line-height: 1.45; }
 .ip-own { padding: 9px 12px; border-radius: 14px; background: rgba(255, 255, 255, 0.06); font-size: 0.95rem; line-height: 1.35; color: rgba(255, 255, 255, 0.85); max-height: 4.2em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
 .ip-own i { display: block; font-style: normal; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 1px; }
+/* In person, ended: save it before leaving (in the owner's half, the right way up). */
+.ip-end { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: rgba(11, 13, 16, 0.92); }
+.ip-end-card { width: min(420px, 100%); display: flex; flex-direction: column; gap: 14px; padding: 22px; border-radius: 24px; background: var(--surface); border: 1px solid var(--line); text-align: center; }
+.ip-end-card h2 { margin: 0; }
+.ip-end-card .check { text-align: start; }
+.end-keep { margin-top: 14px; text-align: start; }
+/* Saved conversations (Me page). */
+.talk-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.talk-row { width: 100%; display: flex; flex-direction: column; gap: 2px; align-items: flex-start; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); font: inherit; text-align: start; cursor: pointer; }
+.talk-row span, .talk-sub { display: block; font-size: 0.8rem; font-weight: 500; color: var(--muted, rgba(244, 245, 247, 0.6)); }
+.talk-other { font-size: 0.95rem !important; opacity: 0.6; margin-top: 2px; }
 .ip-mid { flex: none; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 10px; border-block: 1px solid var(--line); background: #111419; flex-wrap: wrap; }
 .ip-mid .pill { padding: 8px 13px; border-radius: 999px; border: 0; background: var(--surface-2); color: var(--text); font: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
 .ip-mid .pill.end { background: var(--danger); }

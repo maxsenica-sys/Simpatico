@@ -1,4 +1,5 @@
 "use client";
+import { keepsTalks, saveTalk, setKeepTalks, type SavedTalk } from "@/lib/saved";
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { worst, type CallController, type CallState, type Participant } from "@/lib/call";
@@ -142,6 +143,39 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
     call.setCaptionStyle(p.style);
     call.setVoiceFocus(p.focus);
   };
+  // For people who keep their conversations on this phone: save as the call goes (and at the end),
+  // so nothing is lost if the phone locks, the app closes or the battery dies.
+  const talk = (): SavedTalk => ({
+    id: `call-${call.info.room}-${s.startedAt ?? 0}`,
+    kind: s.kind === "group" ? "group" : "pair",
+    startedAt: s.startedAt ?? Date.now(),
+    endedAt: s.endedAt ?? Date.now(),
+    with: Object.values(s.names).filter(Boolean),
+    langs: [call.info.lang.speaks, ...new Set(s.participants.map((p) => p.lang.speaks))].filter(Boolean),
+    lines: s.transcript
+      .filter((l) => l.final && l.text && !l.media)
+      .map((l) => ({ who: l.who, name: l.from ? s.names[l.from] : undefined, said: l.who === "me" ? l.text : l.other, read: l.who === "me" ? l.other : l.text, at: l.at })),
+  });
+  const talkRef = useRef(talk);
+  talkRef.current = talk;
+  const finals = s.transcript.filter((l) => l.final).length + s.transcript.filter((l) => l.other).length;
+  useEffect(() => {
+    if (!s.startedAt || !finals || !keepsTalks()) return;
+    const id = setTimeout(() => void saveTalk(talkRef.current()), s.phase === "ended" ? 0 : 3000);
+    return () => clearTimeout(id);
+  }, [finals, s.phase, s.startedAt]);
+  useEffect(() => {
+    const now = () => {
+      if (keepsTalks() && talkRef.current().lines.length) void saveTalk(talkRef.current());
+    };
+    const hidden = () => document.visibilityState !== "visible" && now();
+    document.addEventListener("visibilitychange", hidden);
+    window.addEventListener("pagehide", now);
+    return () => {
+      document.removeEventListener("visibilitychange", hidden);
+      window.removeEventListener("pagehide", now);
+    };
+  }, []);
   const save = () => {
     const names = { ...s.names };
     const text = transcriptText(s.transcript, names, t("you"), t("transcriptTitle"), { image: `[${t("mediaPhoto")}]`, video: `[${t("mediaVideo")}]` });
@@ -232,7 +266,7 @@ export function CallScreen({ call, shareUrl, onRejoin }: { call: CallController;
       return next;
     });
 
-  if (s.phase === "ended") return <EndScreen call={call} s={s} onSave={save} onRejoin={onRejoin} />;
+  if (s.phase === "ended") return <EndScreen call={call} s={s} onSave={save} onRejoin={onRejoin}  onKeep={() => void saveTalk(talk())} />;
   if (s.phase === "unavailable")
     return (
       <Notice title={t("personUnavailable")}>
@@ -759,8 +793,10 @@ function initials(name: string) {
 }
 
 /** After hanging up: call again, a new call, save the transcript. */
-function EndScreen({ call, s, onSave, onRejoin }: { call: CallController; s: CallState; onSave: () => void; onRejoin: () => void }) {
+function EndScreen({ call, s, onSave, onRejoin, onKeep }: { call: CallController; s: CallState; onSave: () => void; onRejoin: () => void; onKeep?: () => void }) {
   const t = useT();
+  const [keep, setKeep] = useState(false);
+  useEffect(() => setKeep(keepsTalks()), []);
   const hadCall = s.startedAt !== null;
   const minutes = s.startedAt && s.endedAt ? Math.round((s.endedAt - s.startedAt) / 60000) : 0;
   const duration = minutes < 1 ? t("underMinute") : t("minutesShort", { n: String(minutes) });
@@ -815,6 +851,24 @@ function EndScreen({ call, s, onSave, onRejoin }: { call: CallController; s: Cal
             </button>
           )}
         </nav>
+
+        {hasTranscript && onKeep && (
+          <label className="check end-keep">
+            <input
+              type="checkbox"
+              checked={keep}
+              onChange={(e) => {
+                setKeep(e.target.checked);
+                setKeepTalks(e.target.checked);
+                if (e.target.checked) onKeep();
+              }}
+            />
+            <span>
+              {keep ? t("talkKept") : t("keepTalks")}
+              <small className="muted">{t("keepTalksHint")}</small>
+            </span>
+          </label>
+        )}
 
         {hadCall && <SourceCard />}
         {hadCall && <LearnCard s={s} />}

@@ -417,6 +417,11 @@ function makePipeline(room: Room, p: Peer, key: string): SpeakerPipeline {
     settled: (id, source, translation) => {
       room.recent.set(id, { from: p.id, source, translation, srcLang: p.lang.speaks, tgtLang: key === "same" ? p.lang.speaks : key });
       if (room.recent.size > RECENT_LINES) room.recent.delete(room.recent.keys().next().value!);
+      // Both languages go to the phones in the call, for people who keep their conversations on
+      // their own phone. Nothing more is held here than before.
+      const pair: ServerMsg = { t: "pair", id, source, translation };
+      send(p.ws, pair);
+      for (const r of readersOf(room, p, key)) send(r.ws, pair);
     },
     people: () => {
       const readers = readersOf(room, p, key);

@@ -24,7 +24,8 @@ export type Phase =
 export type Caption = { id: string; from: string; text: string; tail?: string; stage: CaptionStage; updatedAt: number; doneAt: number | null };
 /** A photo or video in the messages. `progress` (0–1) while it's still being sent. */
 export type MediaRef = { kind: "image" | "video"; url: string; mime: string; progress?: number; failed?: boolean };
-export type TranscriptLine = { id: string; who: "me" | "them"; from: string | null; text: string; final: boolean; at: number; media?: MediaRef };
+/** `other`: the same line in the other language (my words as they read them; their words as they said them), once known. */
+export type TranscriptLine = { id: string; who: "me" | "them"; from: string | null; text: string; final: boolean; at: number; media?: MediaRef; other?: string };
 /** What sending a photo or video can run into (shown to the person in their language). */
 export type MediaError = "too-big" | "bad-type" | "offline" | "failed";
 
@@ -1007,6 +1008,13 @@ export class CallController {
       case "caption":
         this.onCaption(msg.from, msg.id, msg.stage, msg.text, msg.tail);
         break;
+      case "pair": {
+        // The other language of a line already in the transcript (ids differ only by the reading style's "~s").
+        const base = msg.id.replace(/~s$/, "");
+        const transcript = this.state.transcript.map((l) => (l.id.replace(/~s$/, "") === base ? { ...l, other: l.who === "me" ? msg.translation : msg.source } : l));
+        this.set({ transcript });
+        break;
+      }
       case "own":
         this.upsertTranscript({ id: msg.id, who: "me", from: null, text: msg.text, final: msg.final });
         this.set({ ownLine: { text: msg.text, at: Date.now() } });

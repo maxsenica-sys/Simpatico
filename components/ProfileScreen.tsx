@@ -1,4 +1,6 @@
 "use client";
+import { SavedTalks } from "./SavedTalks";
+import { clearTalks, setKeepTalks } from "@/lib/saved";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Avatar } from "./Avatar";
@@ -121,6 +123,8 @@ export function ProfileScreen() {
                   className="btn small danger"
                   onClick={() => {
                     clearProfile(newLink);
+                    setKeepTalks(false);
+                    void clearTalks();
                     void forgetPush();
                     setP(loadProfile());
                     setPrefs(loadCaptionPrefs());
@@ -412,6 +416,7 @@ export function ProfileScreen() {
 
         </div>
       </details>
+      <SavedTalks />
 
       <BlockedList />
 

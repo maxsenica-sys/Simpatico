@@ -56,6 +56,13 @@ export default function Privacy() {
           The transcript you can open during a call lives only in your browser and is gone when you close the page. To keep translations consistent, our server holds the
           most recent sentences of the conversation in memory while the call room exists. It is never written to disk and is deleted when the room closes.
         </p>
+        <h3>Keeping your conversations (optional)</h3>
+        <p>
+          This is off unless you turn it on (Me page, &ldquo;Keep my conversations on this phone&rdquo;, or the tick box when a conversation ends). When it is
+          on, the words of your calls and In person conversations, in both languages, are saved in the app&rsquo;s storage on your own device so you can read
+          them again or save them as a file. They are not stored on our servers. You can delete any of them, or all of them, on the Me page, and &ldquo;Clear
+          my profile&rdquo; removes them too. Tell the people you talk to if you keep a copy.
+        </p>
         <h3>Reporting a translation</h3>
         <p>
           In the transcript, each caption you received has a &ldquo;Not right?&rdquo; button. If you tap it, our server saves that one sentence: what was said, the

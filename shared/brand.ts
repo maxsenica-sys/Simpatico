@@ -10,7 +10,7 @@ export const BRAND = {
   /** Who runs it, as shown publicly: the brand, not a person. (The legal owner is in docs/launch-steps.md.) */
   operator: "Simpatico",
   contactEmail: "simpaticosupport@gmail.com",
-  policyUpdated: "24 November 2026",
+  policyUpdated: "27 November 2026",
   /** Where disputes are decided (terms of use). */
   governingLaw: "Queensland, Australia",
 };

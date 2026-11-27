@@ -95,7 +95,26 @@ try {
   await page.getByRole("button", { name: "Flip" }).click();
   if (!(await page.locator(".ip-live.flipped").count())) throw new Error("flip should turn the screen round");
   await page.getByRole("button", { name: "End" }).click();
+  step("Ending with something said: a last chance to save it, and the choice to keep conversations on this phone");
+  await page.getByRole("dialog", { name: "Conversation ended" }).waitFor({ timeout: 5000 });
+  if (await page.evaluate(() => localStorage.getItem("talk.keep"))) throw new Error("keeping conversations must be off until chosen");
+  await page.getByRole("button", { name: "Save conversation" }).waitFor();
+  await page.getByLabel("Keep my conversations on this phone").check();
+  await page.getByText("Kept on this phone").waitFor({ timeout: 3000 });
+  await page.getByRole("button", { name: "Done" }).click();
   await page.waitForURL((u) => new URL(u).pathname === "/", { timeout: 5000 });
+  step("The Me page lists it, with both languages on a line, and it can be deleted");
+  await page.goto(BASE + "/profile");
+  await page.getByText("Saved conversations").click();
+  await page.locator(".talk-row").first().waitFor({ timeout: 5000 });
+  await page.locator(".talk-row").first().click();
+  const sheet = page.getByRole("dialog").filter({ has: page.locator(".tline") });
+  await sheet.locator(".tline").first().waitFor();
+  const both = await sheet.locator(".tline .talk-other").count();
+  console.log("  saved lines:", await sheet.locator(".tline").count(), "| with both languages:", both);
+  if (!both) throw new Error("a saved line should carry both languages");
+  await sheet.getByRole("button", { name: "Delete", exact: true }).click();
+  await page.locator(".talk-row").waitFor({ state: "detached", timeout: 5000 });
 
   console.log("\nIN PERSON E2E PASSED");
   process.exit(0);

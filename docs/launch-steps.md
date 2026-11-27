@@ -8,6 +8,13 @@ Kept in the repository so they survive beyond any one chat. Last updated 21 Nove
 - Public pages name providers by role only (cloud hosting, speech recognition, AI translation, connection helpers). The real list, for a regulator on request: Fly.io (hosting: fra calls; syd, iad, lax, gru, jnb, sin, nrt pages), Soniox (speech), Anthropic (translation), Cloudflare and Google (STUN).
 - Servers (24 Nov 2026): Frankfurt (calls and pages) and Sydney (pages) running. Six more page servers are set up but **parked** (stopped and cordoned, no traffic, near-zero cost: only their 1 GB disks, about US$0.15 a month each): iad, lax, gru, jnb, sin, nrt. Deploys go only to fra and syd (scripts/deploy-prebuilt.sh). To turn them on: `fly machine uncordon <id>` and `fly machine start <id>` for each, then deploy once with `DEPLOY_REGIONS=fra,syd,iad,lax,gru,jnb,sin,nrt`. Ids: iad 8111ee1b47d408, lax 874599c63427e8, gru d8d1390c507658, jnb 8303d6a72d2698, sin 48ee713cde6658, nrt e82667dc430258.
 
+## Keeping conversations (decided 27 Nov 2026)
+- Conversations are kept on the person's own phone only, never on the server. A copy on the server for a lost or destroyed phone was considered and dropped: too hard to cover.
+- A recovery copy of every conversation stays on the phone for 2 days (`RECOVERY_DAYS` in `lib/saved.ts`), then deletes itself, so a crash or dead battery cannot lose one.
+- "Keep my conversations on this phone" is ON by default for now, during testing (`KEEP_BY_DEFAULT` in `lib/saved.ts`).
+- Plan: keeping becomes a paid extra, off unless bought. When the paid plans are built, set `KEEP_BY_DEFAULT` to false and tie the setting to the plan.
+- People must be able to see, before a call or In person conversation starts, that it will be kept (a small green sign). Look chosen from options shown to Max.
+
 ## Privacy to-do (agreed 24 Nov 2026, to do soon)
 Max wants nothing in the app that leads back to him personally. Done: public pages say "Simpatico", providers named only by role, no server locations. Still to do:
 1. **Company:** set up a Pty Ltd (or at least register "Simpatico" as a business name under his ABN) so a business, not a person, stands behind the privacy policy and terms.

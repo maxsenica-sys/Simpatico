@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BRAND } from "@/shared/brand";
-import { RECOVERY_DAYS } from "@/lib/saved";
+import { KEEP_BY_DEFAULT, RECOVERY_DAYS } from "@/lib/saved";
 
 export const metadata: Metadata = { title: `Privacy · ${BRAND.appName}` };
 
@@ -64,9 +64,9 @@ export default function Privacy() {
           {RECOVERY_DAYS} days, and you can delete it sooner on the Me page.
         </p>
         <p>
-          Keeping conversations is off unless you turn it on (Me page, &ldquo;Keep my conversations on this phone&rdquo;, or the tick box when a conversation
-          ends). When it is on, your calls and In person conversations stay on your device until you delete them, so you can read them again or save them
-          as a file. In the iPhone app, kept conversations are also written as text files in the app&rsquo;s own folder on your phone, which your phone&rsquo;s
+          You choose whether conversations are kept (Me page, &ldquo;Keep my conversations on this phone&rdquo;, or the tick box when a conversation ends).
+          {KEEP_BY_DEFAULT ? "For now this is on until you turn it off." : "It is off unless you turn it on."} When it is on, your calls and In person
+          conversations stay on your device until you delete them, so you can read them again or save them as a file. In the iPhone app, kept conversations are also written as text files in the app&rsquo;s own folder on your phone, which your phone&rsquo;s
           backups may include. None of this is stored on our servers. &ldquo;Clear my profile&rdquo; removes all of it. Tell the people you talk to if you
           keep a copy.
         </p>

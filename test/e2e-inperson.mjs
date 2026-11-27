@@ -97,10 +97,10 @@ try {
   await page.getByRole("button", { name: "End" }).click();
   step("Ending with something said: a last chance to save it, and the choice to keep conversations on this phone");
   await page.getByRole("dialog", { name: "Conversation ended" }).waitFor({ timeout: 5000 });
-  if (await page.evaluate(() => localStorage.getItem("talk.keep"))) throw new Error("keeping conversations must be off until chosen");
+  // For now keeping is on unless turned off (it becomes a paid extra later), so it is already kept.
   await page.getByRole("button", { name: "Save conversation" }).waitFor();
-  await page.getByLabel("Keep my conversations on this phone").check();
   await page.getByText("Kept on this phone").waitFor({ timeout: 3000 });
+  if (!(await page.locator(".ip-end-card input[type=checkbox]").isChecked())) throw new Error("keeping should be on by default for now");
   await page.getByRole("button", { name: "Done" }).click();
   await page.waitForURL((u) => new URL(u).pathname === "/", { timeout: 5000 });
   step("The Me page lists it, with both languages on a line, and it can be deleted");
@@ -125,6 +125,7 @@ try {
     await p.evaluate(() => {
       localStorage.setItem("talk.name", "Max");
       localStorage.setItem("talk.gender", "m");
+      localStorage.setItem("talk.keep", "0"); // these scenarios are about people who have keeping off
       sessionStorage.setItem("talk.splash", "1");
     });
     return p;
@@ -155,11 +156,11 @@ try {
   if (rescued < 2) throw new Error("the crashed conversation should have been rescued with its lines");
   await crash.context().close();
 
-  step("Ended, Done tapped without keeping: a recovery copy waits on the Me page for 3 days, with no nagging on the home screen");
+  step("Ended, Done tapped without keeping: a recovery copy waits on the Me page for 2 days, with no nagging on the home screen");
   const declined = await fresh();
   await talkABit(declined);
   await declined.getByRole("button", { name: "End" }).click();
-  await declined.getByText("A recovery copy stays on this phone for 3 days").waitFor({ timeout: 5000 });
+  await declined.getByText("A recovery copy stays on this phone for 2 days").waitFor({ timeout: 5000 });
   await declined.getByRole("button", { name: "Done" }).click();
   await declined.waitForURL((u) => new URL(u).pathname === "/", { timeout: 5000 });
   await declined.waitForTimeout(800);
@@ -169,7 +170,7 @@ try {
   await declined.locator(".talk-row.draft").first().waitFor({ timeout: 5000 });
   const exp = await declined.evaluate(() => new Promise((res) => { const q = indexedDB.open("simpatico", 1); q.onsuccess = () => { const g = q.result.transaction("talks").objectStore("talks").getAll(); g.onsuccess = () => res(g.result.map((t) => [t.draft, Math.round((t.expires - Date.now()) / 86400000)])); }; }));
   console.log("  recovery copies [draft, days left]:", JSON.stringify(exp));
-  if (!exp.length || exp[0][0] !== true || exp[0][1] !== 3) throw new Error("a declined conversation should be a recovery copy that expires in 3 days");
+  if (!exp.length || exp[0][0] !== true || exp[0][1] !== 2) throw new Error("a declined conversation should be a recovery copy that expires in 2 days");
   await declined.context().close();
 
   step("The phone's main storage is broken: the second store takes over, nothing is lost");

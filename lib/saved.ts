@@ -51,23 +51,35 @@ const STORE = "talks";
 /** The most conversations kept; the oldest go first. */
 const MAX_TALKS = 200;
 /** How long a recovery copy nobody kept stays on the phone. */
-export const RECOVERY_DAYS = 3;
+export const RECOVERY_DAYS = 2;
 /** The second store is small: only the newest few conversations fit. */
 const FALLBACK_MAX_CHARS = 1_500_000;
 
+/**
+ * Whether conversations are kept when the person has not chosen. On for now, while the app is in
+ * testing. The plan is for keeping to become a paid extra that is off unless bought: switch this
+ * to false then (docs/launch-steps.md).
+ */
+export const KEEP_BY_DEFAULT = true;
 export function keepsTalks(): boolean {
   try {
-    return localStorage.getItem(KEEP) === "1";
+    const v = localStorage.getItem(KEEP);
+    return v === "1" || (v === null && KEEP_BY_DEFAULT);
   } catch {
     return false;
   }
 }
 export function setKeepTalks(on: boolean) {
   try {
-    if (on) localStorage.setItem(KEEP, "1");
-    else localStorage.removeItem(KEEP);
+    localStorage.setItem(KEEP, on ? "1" : "0");
   } catch {}
   if (on) askPermanent();
+}
+/** Back to "has not chosen" (clearing the profile). */
+export function forgetKeepChoice() {
+  try {
+    localStorage.removeItem(KEEP);
+  } catch {}
 }
 
 /** Ask the phone not to clear this storage when it is short of space. Harmless where unsupported. */

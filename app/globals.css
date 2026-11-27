@@ -993,7 +993,7 @@ p { margin: 0; line-height: 1.5; }
 .card-row-share { color: var(--accent); font-weight: 700; }
 
 /* In person: setup */
-.ip-setup { gap: 14px; max-width: 520px; margin: 0 auto; padding: calc(var(--safe-t) + 16px) 20px calc(var(--safe-b) + 20px); }
+.ip-setup { display: flex; flex-direction: column; gap: 14px; max-width: 520px; margin: 0 auto; padding: calc(var(--safe-t) + 16px) 20px calc(var(--safe-b) + 20px); }
 .ip-setup h1 { margin: 4px 0 0; font-size: 1.7rem; letter-spacing: -0.02em; }
 .ip-setup > p { margin: 0; line-height: 1.45; }
 .ip-choice { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 18px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; text-align: start; cursor: pointer; }
@@ -1044,6 +1044,16 @@ p { margin: 0; line-height: 1.5; }
 .ip-end-card h2 { margin: 0; }
 .ip-end-card .check { text-align: start; }
 .end-keep { margin-top: 14px; text-align: start; }
+/* Before a call or In person: the small green "this will be kept" line, and a tiny switch under it. */
+.keep-sign { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 2px 0; }
+.keep-line { display: inline-flex; align-items: center; gap: 7px; font-size: 0.82rem; font-weight: 700; color: rgba(244, 245, 247, 0.5); text-align: center; }
+.keep-line i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: rgba(244, 245, 247, 0.35); }
+.keep-sign.on .keep-line { color: #3ddc84; }
+.keep-sign.on .keep-line i { background: #3ddc84; box-shadow: 0 0 6px #3ddc84; }
+.switch.mini { width: 34px; height: 20px; }
+.switch.mini::after { top: 2px; left: 2px; width: 16px; height: 16px; }
+.switch.mini:checked { background: #3ddc84; }
+.switch.mini:checked::after { transform: translateX(14px); }
 /* Home: a conversation that closed before it could be saved. */
 .unsaved { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 18px; background: rgba(255, 194, 75, 0.12); border: 1px solid rgba(255, 194, 75, 0.45); }
 .unsaved span { font-size: 0.85rem; color: rgba(244, 245, 247, 0.75); }

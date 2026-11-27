@@ -1,4 +1,5 @@
 "use client";
+import { KeepSign } from "./KeepSign";
 import Link from "next/link";
 import { Avatar } from "./Avatar";
 import { MediaCheck } from "./MediaCheck";
@@ -255,6 +256,7 @@ export function JoinScreen({
             {t("join")}
           </button>
         )}
+        <KeepSign />
         <p className="muted consent">
           {t("consent")}{" "}
           <Link href="/privacy" target="_blank">

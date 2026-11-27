@@ -17,6 +17,7 @@ import { baseLang, isRtl, langInfo } from "@/shared/lang";
 import { LANGUAGES } from "@/shared/languages";
 import type { CaptionState, InPersonServerMsg } from "@/shared/protocol";
 import { CaptionBox } from "./CaptionBox";
+import { KeepSign } from "./KeepSign";
 import { LanguageLine } from "./LanguageLine";
 import { Logo } from "./Logo";
 import { AudioOutbox } from "@/lib/outbox";
@@ -140,6 +141,7 @@ export function InPerson() {
         >
           {phase === "starting" ? t("starting") : t("ipStart")}
         </button>
+        <KeepSign />
         <LanguageLine />
       </main>
     );
